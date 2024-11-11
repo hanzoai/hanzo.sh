@@ -21,8 +21,9 @@ const Testimonials = () => {
   ];
 
   return (
-    <div className="py-20 px-4 bg-background">
-      <div className="max-w-7xl mx-auto">
+    <div className="py-20 px-4 bg-background relative overflow-hidden">
+      <div className="absolute inset-0 bg-accent/5 backdrop-blur-3xl"></div>
+      <div className="max-w-7xl mx-auto relative z-10">
         <h2 className="text-4xl font-bold text-white text-center mb-4">
           What Our Users Say
         </h2>

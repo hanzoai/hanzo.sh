@@ -1,31 +1,45 @@
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Download } from "lucide-react";
 
 const Hero = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 pt-20">
-      <h1 className="text-6xl font-bold text-center max-w-4xl leading-tight mb-6">
-        Manage your secrete finance system with safety
-      </h1>
-      <p className="text-xl text-secondary-foreground text-center max-w-2xl mb-12">
-        Monie is a secrate and trusted platform to save your money. We make clear
-        transaction and keep your finance safe.
-      </p>
-      <div className="flex flex-col items-center gap-8">
-        <Button className="px-8 py-6 text-lg">
-          Get Started
-        </Button>
-        <div className="flex items-center -space-x-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Avatar key={i} className="border-2 border-white">
-              <AvatarImage src={`https://i.pravatar.cc/150?img=${i}`} />
-              <AvatarFallback>U{i}</AvatarFallback>
-            </Avatar>
-          ))}
-          <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white">
-            <Plus className="w-5 h-5" />
+    <div className="min-h-screen flex items-center justify-center px-4 pt-20 bg-background">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className="space-y-8">
+          <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
+            Responsible Banking Made Easier
+          </h1>
+          <p className="text-lg text-white/80 max-w-xl">
+            Financial services, including P2P payments, balance check and top-ups - are now available from any mobile app, including all messaging ones.
+          </p>
+          <Button className="px-8 py-6 text-lg bg-white text-black hover:bg-white/90 flex items-center gap-2">
+            <Download className="w-5 h-5" />
+            Download Application
+          </Button>
+          <div className="grid grid-cols-3 gap-8 pt-8">
+            <div>
+              <div className="text-3xl font-bold text-white">5000+</div>
+              <div className="text-white/60">Active users</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white">30.3k</div>
+              <div className="text-white/60">Download</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-white">1200+</div>
+              <div className="text-white/60">Reviews</div>
+            </div>
           </div>
+        </div>
+        <div className="relative">
+          <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl">
+            <img 
+              src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1288&auto=format&fit=crop"
+              alt="Banking App"
+              className="w-full h-auto"
+            />
+          </div>
+          <div className="absolute -bottom-4 -right-4 w-72 h-72 bg-accent/20 rounded-full blur-3xl"></div>
         </div>
       </div>
     </div>

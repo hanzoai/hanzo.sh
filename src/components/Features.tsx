@@ -1,43 +1,45 @@
 import { Card } from "@/components/ui/card";
-import { LineChart, DollarSign, Shield } from "lucide-react";
+import { Wallet, Shield, CreditCard } from "lucide-react";
 
 const Features = () => {
   const features = [
     {
-      icon: <LineChart className="w-6 h-6" />,
-      title: "Track Progress",
-      description: "Monitor your financial growth with intuitive charts and analytics"
+      icon: <Wallet className="w-6 h-6 text-white" />,
+      title: "Mobile Banking",
+      description: "Manage your finances on the go with our secure mobile banking platform"
     },
     {
-      icon: <DollarSign className="w-6 h-6" />,
+      icon: <Shield className="w-6 h-6 text-white" />,
       title: "Secure Transactions",
-      description: "Every transaction is encrypted and protected"
+      description: "Bank-grade security for all your transactions and personal data"
     },
     {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Bank-Grade Security",
-      description: "Your data is protected with military-grade encryption"
+      icon: <CreditCard className="w-6 h-6 text-white" />,
+      title: "Digital Cards",
+      description: "Virtual and physical cards with advanced control features"
     }
   ];
 
   return (
-    <div className="py-20 px-4">
-      <h2 className="text-4xl font-bold text-center mb-4">
-        Meet our most popular features to establish smooth transaction
-      </h2>
-      <p className="text-xl text-secondary-foreground text-center mb-12">
-        Monie is a secrate and trusted platform to save your money
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        {features.map((feature, index) => (
-          <Card key={index} className="p-6 hover-lift">
-            <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-4">
-              {feature.icon}
-            </div>
-            <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-            <p className="text-secondary-foreground">{feature.description}</p>
-          </Card>
-        ))}
+    <div className="py-20 px-4 bg-background">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-4xl font-bold text-white text-center mb-4">
+          All the experience in the new application
+        </h2>
+        <p className="text-xl text-white/60 text-center mb-12 max-w-2xl mx-auto">
+          Simple transfers, payments for utilities, functional statements, card settings, for which you used to have to go to the branch online-banking
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {features.map((feature, index) => (
+            <Card key={index} className="p-6 hover-lift bg-white/5 backdrop-blur border-white/10">
+              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                {feature.icon}
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
+              <p className="text-white/60">{feature.description}</p>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

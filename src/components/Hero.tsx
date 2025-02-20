@@ -1,8 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import { Download, Terminal, Copy } from "lucide-react";
+import { Terminal, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const Hero = () => {
   const [showScript, setShowScript] = useState(false);
@@ -170,10 +172,10 @@ fi`;
       <div className="max-w-7xl mx-auto grid grid-cols-1 gap-12">
         <div className="space-y-8">
           <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
-            Develop & Deploy with Hanzo
+            Build Better Apps with Hanzo
           </h1>
           <p className="text-lg text-white/80 max-w-xl">
-            Install Hanzo Platform locally using this simple command:
+            Install Hanzo Platform locally to start building and deploying your applications:
           </p>
           
           <div className="flex items-center gap-4 bg-white/5 p-4 rounded-lg max-w-xl">
@@ -198,36 +200,41 @@ fi`;
           </Button>
 
           {showScript && (
-            <div className="bg-white/5 p-6 rounded-lg overflow-x-auto">
-              <pre className="text-sm text-white/80 font-mono">
-                <code>{installationScript}</code>
-              </pre>
+            <div className="bg-white/5 rounded-lg overflow-hidden">
+              <SyntaxHighlighter 
+                language="bash"
+                style={vscDarkPlus}
+                customStyle={{
+                  margin: 0,
+                  padding: '1.5rem',
+                  background: 'transparent'
+                }}
+              >
+                {installationScript}
+              </SyntaxHighlighter>
             </div>
           )}
 
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">What's Included:</h2>
-            <ul className="list-disc list-inside text-white/80 space-y-2">
-              <li>Hanzo Container Runtime</li>
-              <li>Hanzo Platform</li>
-              <li>Hanzo Base</li>
-              <li>Easy deployment to Hanzo Cloud</li>
+            <h2 className="text-2xl font-bold text-white">Hanzo Products:</h2>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-6 list-none">
+              <li className="bg-white/5 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Platform</h3>
+                <p className="text-white/80">Modern application platform for building and deploying cloud-native applications</p>
+              </li>
+              <li className="bg-white/5 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Base</h3>
+                <p className="text-white/80">Secure and scalable infrastructure for your applications</p>
+              </li>
+              <li className="bg-white/5 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Cloud</h3>
+                <p className="text-white/80">Enterprise-grade cloud platform for production workloads</p>
+              </li>
+              <li className="bg-white/5 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Container Runtime</h3>
+                <p className="text-white/80">Optimized container runtime for modern applications</p>
+              </li>
             </ul>
-          </div>
-
-          <div className="grid grid-cols-3 gap-8 pt-8">
-            <div>
-              <div className="text-3xl font-bold text-white">5000+</div>
-              <div className="text-white/60">Active users</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white">30.3k</div>
-              <div className="text-white/60">Installations</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-white">1200+</div>
-              <div className="text-white/60">Reviews</div>
-            </div>
           </div>
         </div>
       </div>

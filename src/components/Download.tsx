@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Apple, Play } from "lucide-react";
 
@@ -18,7 +19,7 @@ const Download = () => {
               <Apple className="w-5 h-5" />
               App Store
             </Button>
-            <Button className="px-8 py-6 text-lg glass-effect hover:bg-white/10 flex items-center gap-2">
+            <Button variant="outline" className="px-8 py-6 text-lg border-white text-white hover:bg-white/10 flex items-center gap-2">
               <Play className="w-5 h-5" />
               Play Store
             </Button>

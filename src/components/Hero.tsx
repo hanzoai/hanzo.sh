@@ -12,42 +12,7 @@ const Hero = () => {
     toast.success("Command copied to clipboard!");
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-20 bg-background">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 gap-12">
-        <div className="space-y-8">
-          <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
-            Develop & Deploy with Hanzo
-          </h1>
-          <p className="text-lg text-white/80 max-w-xl">
-            Install Hanzo Platform locally using this simple command:
-          </p>
-          
-          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-lg max-w-xl">
-            <code className="text-white font-mono">curl -sL hanzo.sh | sh</code>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="ml-auto hover:bg-white/10"
-              onClick={handleCopy}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-          </div>
-
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setShowScript(!showScript)}
-          >
-            <Terminal className="w-4 h-4" />
-            {showScript ? "Hide Installation Script" : "View Installation Script"}
-          </Button>
-
-          {showScript && (
-            <div className="bg-white/5 p-6 rounded-lg overflow-x-auto">
-              <pre className="text-sm text-white/80 font-mono">
-                <code>{`#!/bin/bash
+  const installationScript = `#!/bin/bash
 
 # Function to install Hanzo Platform
 install_hanzo() {
@@ -124,7 +89,7 @@ install_hanzo() {
   }
 
   # Setup and Configuration
-  advertise_addr="${ADVERTISE_ADDR:-$(get_ip)}"
+  advertise_addr="\${ADVERTISE_ADDR:-\$(get_ip)}"
   echo "Using advertise address: $advertise_addr"
 
   # Initialize Docker Swarm
@@ -149,18 +114,18 @@ install_hanzo() {
   docker pull hanzo/platform:latest
 
   # Deploy Hanzo Service
-  docker service create \
-    --name hanzo \
-    --replicas 1 \
-    --network hanzo-network \
-    --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
-    --mount type=bind,source=/etc/hanzo,target=/etc/hanzo \
-    --mount type=volume,source=hanzo-docker-config,target=/root/.docker \
-    --publish published=3000,target=3000,mode=host \
-    --update-parallelism 1 \
-    --update-order stop-first \
-    --constraint 'node.role == manager' \
-    -e ADVERTISE_ADDR=$advertise_addr \
+  docker service create \\
+    --name hanzo \\
+    --replicas 1 \\
+    --network hanzo-network \\
+    --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \\
+    --mount type=bind,source=/etc/hanzo,target=/etc/hanzo \\
+    --mount type=volume,source=hanzo-docker-config,target=/root/.docker \\
+    --publish published=3000,target=3000,mode=host \\
+    --update-parallelism 1 \\
+    --update-order stop-first \\
+    --constraint 'node.role == manager' \\
+    -e ADVERTISE_ADDR=$advertise_addr \\
     hanzo/platform:latest
 
   # Success Message
@@ -172,17 +137,17 @@ install_hanzo() {
   format_ip_for_url() {
     local ip="$1"
     if echo "$ip" | grep -q ':'; then
-      echo "[${ip}]"
+      echo "[\${ip}]"
     else
-      echo "${ip}"
+      echo "\${ip}"
     fi
   }
 
-  formatted_addr=$(format_ip_for_url "$advertise_addr")
+  formatted_addr=\$(format_ip_for_url "$advertise_addr")
   echo ""
-  printf "${GREEN}Congratulations, hanzo is installed!${NC}\\n"
-  printf "${BLUE}Wait 15 seconds for the server to start${NC}\\n"
-  printf "${YELLOW}Please go to http://${formatted_addr}:3000${NC}\\n\\n"
+  printf "\${GREEN}Congratulations, hanzo is installed!\${NC}\\n"
+  printf "\${BLUE}Wait 15 seconds for the server to start\${NC}\\n"
+  printf "\${YELLOW}Please go to http://\${formatted_addr}:3000\${NC}\\n\\n"
 }
 
 # Update Function
@@ -198,7 +163,44 @@ if [ "$1" = "update" ]; then
   update_hanzo
 else
   install_hanzo
-fi`}</code>
+fi`;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 pt-20 bg-background">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 gap-12">
+        <div className="space-y-8">
+          <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
+            Develop & Deploy with Hanzo
+          </h1>
+          <p className="text-lg text-white/80 max-w-xl">
+            Install Hanzo Platform locally using this simple command:
+          </p>
+          
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-lg max-w-xl">
+            <code className="text-white font-mono">curl -sL hanzo.sh | sh</code>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="ml-auto hover:bg-white/10"
+              onClick={handleCopy}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setShowScript(!showScript)}
+          >
+            <Terminal className="w-4 h-4" />
+            {showScript ? "Hide Installation Script" : "View Installation Script"}
+          </Button>
+
+          {showScript && (
+            <div className="bg-white/5 p-6 rounded-lg overflow-x-auto">
+              <pre className="text-sm text-white/80 font-mono">
+                <code>{installationScript}</code>
               </pre>
             </div>
           )}

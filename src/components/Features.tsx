@@ -1,22 +1,28 @@
+
 import { Card } from "@/components/ui/card";
-import { Wallet, Shield, CreditCard } from "lucide-react";
+import { Code, Database, Bot, Share2 } from "lucide-react";
 
 const Features = () => {
   const features = [
     {
-      icon: <Wallet className="w-6 h-6 text-white" />,
-      title: "Mobile Banking",
-      description: "Manage your finances on the go with our secure mobile banking platform"
+      icon: <Code className="w-6 h-6 text-white" />,
+      title: "Hanzo Code & App Builder",
+      description: "Build applications faster with our AI-powered code editor and visual app builder"
     },
     {
-      icon: <Shield className="w-6 h-6 text-white" />,
-      title: "Secure Transactions",
-      description: "Bank-grade security for all your transactions and personal data"
+      icon: <Database className="w-6 h-6 text-white" />,
+      title: "Hanzo Analytics & Base",
+      description: "Scalable infrastructure and real-time analytics built for modern applications"
     },
     {
-      icon: <CreditCard className="w-6 h-6 text-white" />,
-      title: "Digital Cards",
-      description: "Virtual and physical cards with advanced control features"
+      icon: <Bot className="w-6 h-6 text-white" />,
+      title: "Hanzo Dev AI Team",
+      description: "AI-powered development assistance that works alongside your team"
+    },
+    {
+      icon: <Share2 className="w-6 h-6 text-white" />,
+      title: "Open Source & Extensible",
+      description: "Permissively licensed and easy to fork for unlimited possibilities"
     }
   ];
 
@@ -27,10 +33,10 @@ const Features = () => {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <h2 className="text-4xl font-bold text-white">
-              All the experience in the new application
+              Build alongside your AI team
             </h2>
             <p className="text-xl text-white/60">
-              Simple transfers, payments for utilities, functional statements, card settings, for which you used to have to go to the branch online-banking
+              Leverage our suite of AI-powered tools and infrastructure to build, deploy, and scale your applications faster than ever before. From code generation to analytics, we're here to help you succeed.
             </p>
           </div>
           <div className="grid gap-6">

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
@@ -7,14 +8,16 @@ const Hero = () => {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="space-y-8">
           <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
-            Responsible Banking Made Easier
+            Develop & Deploy with Hanzo
           </h1>
           <p className="text-lg text-white/80 max-w-xl">
-            Financial services, including P2P payments, balance check and top-ups - are now available from any mobile app, including all messaging ones.
+            Install Hanzo Platform locally using <code className="bg-white/10 px-2 py-1 rounded">curl -sL hanzo.sh | sh</code>. 
+            This includes Hanzo Container Runtime, Hanzo Platform and Hanzo Base, for rapid local application development, 
+            and easily deploy to Hanzo Cloud for production workloads and high availability.
           </p>
           <Button className="px-8 py-6 text-lg bg-white text-black hover:bg-white/90 flex items-center gap-2">
             <Download className="w-5 h-5" />
-            Download Application
+            Install Hanzo Platform
           </Button>
           <div className="grid grid-cols-3 gap-8 pt-8">
             <div>
@@ -23,7 +26,7 @@ const Hero = () => {
             </div>
             <div>
               <div className="text-3xl font-bold text-white">30.3k</div>
-              <div className="text-white/60">Download</div>
+              <div className="text-white/60">Installations</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-white">1200+</div>

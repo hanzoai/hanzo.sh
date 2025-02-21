@@ -7,12 +7,20 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-background/80 backdrop-blur-lg">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <svg
-            className="w-8 h-8 text-white"
-            viewBox="0 0 400 400"
-            fill="currentColor"
+          <svg 
+            width="32" 
+            height="32" 
+            viewBox="0 0 61 61" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M100 50h75v75h-75zM225 50h75v75h-75zM100 275h75v75h-75zM225 275h75v75h-75zM137.5 125v150h125V125h-125z" />
+            <path d="M20.2218 60.0521V40.0081H0V60.0521H20.2218Z" fill="white"/>
+            <path d="M0 40.0081L20.2218 41.9724V40.0081H0Z" fill="#D3D3D3"/>
+            <path d="M60.733 20.0039H20.2618L0.0805664 40.0079H40.4836L60.733 20.0039Z" fill="white"/>
+            <path d="M20.2218 0H0V20.004H20.2218V0Z" fill="white"/>
+            <path d="M60.7452 0H40.5234V20.004H60.7452V0Z" fill="white"/>
+            <path d="M60.7047 20.0039L40.5234 17.9995V20.0039H60.7047Z" fill="#D3D3D3"/>
+            <path d="M60.7452 60.0521V40.0081H40.5234V60.0521H60.7452Z" fill="white"/>
           </svg>
           <span className="text-2xl font-bold text-white">Hanzo</span>
         </div>

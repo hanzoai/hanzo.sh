@@ -12,17 +12,17 @@ const Features = () => {
     {
       icon: <Database className="w-6 h-6 text-white" />,
       title: "Hanzo Analytics & Base",
-      description: "Scalable infrastructure and real-time analytics built for modern applications"
+      description: "Enterprise-ready infrastructure with real-time analytics and monitoring"
     },
     {
       icon: <Bot className="w-6 h-6 text-white" />,
       title: "Hanzo Dev AI Team",
-      description: "AI-powered development assistance that works alongside your team"
+      description: "Your AI development team that helps write, review, and optimize code"
     },
     {
       icon: <Share2 className="w-6 h-6 text-white" />,
       title: "Open Source & Extensible",
-      description: "Permissively licensed and easy to fork for unlimited possibilities"
+      description: "Built on open source technologies and designed for unlimited customization"
     }
   ];
 
@@ -33,10 +33,10 @@ const Features = () => {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <h2 className="text-4xl font-bold text-white">
-              Build alongside your AI team
+              Accelerate Development with AI
             </h2>
             <p className="text-xl text-white/60">
-              Leverage our suite of AI-powered tools and infrastructure to build, deploy, and scale your applications faster than ever before. From code generation to analytics, we're here to help you succeed.
+              Integrate powerful AI tools into your development workflow. From smart code suggestions to automated testing, Hanzo's AI-powered platform helps you build better applications faster.
             </p>
           </div>
           <div className="grid gap-6">

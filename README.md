@@ -1,4 +1,6 @@
-# Welcome to your Hanzo project
+# hanzo.sh
+
+## Welcome to your Hanzo project
 
 ## Project info
 

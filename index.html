@@ -1,4 +1,5 @@
-
+#!/bin/sh
+<<\EOF
 <!DOCTYPE html>
 <html lang="en">
 
@@ -17,4 +18,28 @@
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
-</html>
+</html><!--
+EOF
+
+# shim for install.bash
+#
+# This is used on hanzo.sh to bootstrap the full installer, which you
+# otherwise can't curl and pipe to sh (as it requires bash). Not meant to be
+# run standalone.
+
+# wait for curl output to finish
+sleep 0.5
+
+# Ensure dependencies are installed.
+deps="bash curl git"
+
+for dep in $deps; do
+    hash $dep 2>/dev/null || { echo >&2 "Hanzo requires $dep to be installed."; exit 1; }
+done
+
+# Download full installer and execute with bash
+curl -sL https://raw.githubusercontent.com/hanzoai/platform/main/scripts/install.bash > install-$$.bash
+bash install-$$.bash
+
+# Clean up
+rm install-$$.bash

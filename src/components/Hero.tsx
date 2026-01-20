@@ -1,263 +1,175 @@
-
 import { Button } from "@/components/ui/button";
-import { Terminal, Copy } from "lucide-react";
+import { Terminal, Copy, Check, Bot, Zap, Code, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const Hero = () => {
-  const [showScript, setShowScript] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText("curl -sL hanzo.sh | sh");
+    await navigator.clipboard.writeText("curl -fsSL hanzo.sh/install.sh | sh");
+    setCopied(true);
     toast.success("Command copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
   };
-
-  const installationScript = `#!/bin/bash
-
-# Function to install Hanzo Platform
-install_hanzo() {
-  # Check if running as root
-  if [ "$(id -u)" != "0" ]; then
-    echo "This script must be run as root" >&2
-    exit 1
-  fi
-
-  # OS and Environment Checks
-  if [ "$(uname)" = "Darwin" ]; then
-    echo "This script must be run on Linux" >&2
-    exit 1
-  fi
-
-  if [ -f /.dockerenv ]; then
-    echo "This script must be run on Linux" >&2
-    exit 1
-  fi
-
-  # Port availability checks
-  if ss -tulnp | grep ':80 ' >/dev/null; then
-    echo "Error: something is already running on port 80" >&2
-    exit 1
-  fi
-
-  if ss -tulnp | grep ':443 ' >/dev/null; then
-    echo "Error: something is already running on port 443" >&2
-    exit 1
-  fi
-
-  # Docker installation check and setup
-  command_exists() {
-    command -v "$@" > /dev/null 2>&1
-  }
-
-  if command_exists docker; then
-    echo "Docker already installed"
-  else
-    curl -sSL https://get.docker.com | sh
-  fi
-
-  # Initialize Docker Swarm
-  docker swarm leave --force 2>/dev/null
-
-  # IP Address Detection
-  get_ip() {
-    local ip=""
-    # Try IPv4 with multiple services
-    ip=$(curl -4s --connect-timeout 5 https://ifconfig.io 2>/dev/null)
-    if [ -z "$ip" ]; then
-      ip=$(curl -4s --connect-timeout 5 https://icanhazip.com 2>/dev/null)
-    fi
-    if [ -z "$ip" ]; then
-      ip=$(curl -4s --connect-timeout 5 https://ipecho.net/plain 2>/dev/null)
-    fi
-    
-    # Try IPv6 if IPv4 fails
-    if [ -z "$ip" ]; then
-      ip=$(curl -6s --connect-timeout 5 https://ifconfig.io 2>/dev/null)
-      if [ -z "$ip" ]; then
-        ip=$(curl -6s --connect-timeout 5 https://icanhazip.com 2>/dev/null)
-      fi
-      if [ -z "$ip" ]; then
-        ip=$(curl -6s --connect-timeout 5 https://ipecho.net/plain 2>/dev/null)
-      fi
-    fi
-
-    if [ -z "$ip" ]; then
-      echo "Error: Could not determine server IP address" >&2
-      exit 1
-    fi
-    echo "$ip"
-  }
-
-  # Setup and Configuration
-  advertise_addr="\${ADVERTISE_ADDR:-\$(get_ip)}"
-  echo "Using advertise address: $advertise_addr"
-
-  # Initialize Docker Swarm
-  docker swarm init --advertise-addr $advertise_addr
-  if [ $? -ne 0 ]; then
-    echo "Error: Failed to initialize Docker Swarm" >&2
-    exit 1
-  fi
-
-  # Network Setup
-  docker network rm -f hanzo-network 2>/dev/null
-  docker network create --driver overlay --attachable hanzo-network
-
-  # Directory Setup
-  mkdir -p /etc/hanzo
-  chmod 777 /etc/hanzo
-
-  # Pull Required Images
-  docker pull postgres:16
-  docker pull redis:7
-  docker pull traefik:v3.1.2
-  docker pull hanzo/platform:latest
-
-  # Deploy Hanzo Service
-  docker service create \\
-    --name hanzo \\
-    --replicas 1 \\
-    --network hanzo-network \\
-    --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \\
-    --mount type=bind,source=/etc/hanzo,target=/etc/hanzo \\
-    --mount type=volume,source=hanzo-docker-config,target=/root/.docker \\
-    --publish published=3000,target=3000,mode=host \\
-    --update-parallelism 1 \\
-    --update-order stop-first \\
-    --constraint 'node.role == manager' \\
-    -e ADVERTISE_ADDR=$advertise_addr \\
-    hanzo/platform:latest
-
-  # Success Message
-  GREEN="\\033[0;32m"
-  YELLOW="\\033[1;33m"
-  BLUE="\\033[0;34m"
-  NC="\\033[0m"
-
-  format_ip_for_url() {
-    local ip="$1"
-    if echo "$ip" | grep -q ':'; then
-      echo "[\${ip}]"
-    else
-      echo "\${ip}"
-    fi
-  }
-
-  formatted_addr=\$(format_ip_for_url "$advertise_addr")
-  echo ""
-  printf "\${GREEN}Congratulations, hanzo is installed!\${NC}\\n"
-  printf "\${BLUE}Wait 15 seconds for the server to start\${NC}\\n"
-  printf "\${YELLOW}Please go to http://\${formatted_addr}:3000\${NC}\\n\\n"
-}
-
-# Update Function
-update_hanzo() {
-  echo "Updating Hanzo Platform..."
-  docker pull hanzo/platform:latest
-  docker service update --image hanzo/platform:latest hanzo
-  echo "Hanzo Platform has been updated to the latest version."
-}
-
-# Main Execution
-if [ "$1" = "update" ]; then
-  update_hanzo
-else
-  install_hanzo
-fi`;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-20 bg-background">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 gap-12">
-        <div className="space-y-8">
-          <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
-            Build Better Apps with Hanzo
+      <div className="max-w-5xl mx-auto text-center space-y-12">
+        {/* Hero Header */}
+        <div className="space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fd4444]/10 border border-[#fd4444]/30 text-[#fd4444] text-sm font-medium">
+            <Bot className="w-4 h-4" />
+            AI-Powered Development Tools
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
+            Install <span className="text-[#fd4444]">Hanzo</span>
           </h1>
-          <p className="text-lg text-white/80 max-w-xl">
-            Install Hanzo Platform locally to start building and deploying your applications:
+
+          <p className="text-xl text-white/70 max-w-2xl mx-auto">
+            Get Hanzo Dev (AI coding agent) and Hanzo CLI in one command.
+            Build faster with AI that understands your codebase.
           </p>
-          
-          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-lg max-w-xl">
-            <code className="text-white font-mono">curl -sL hanzo.sh | sh</code>
-            <Button 
-              variant="ghost" 
+        </div>
+
+        {/* Install Command */}
+        <div className="max-w-xl mx-auto">
+          <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-800 p-4 rounded-xl">
+            <Terminal className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+            <code className="text-white font-mono text-lg flex-1 text-left">
+              curl -fsSL hanzo.sh/install.sh | sh
+            </code>
+            <Button
+              variant="ghost"
               size="icon"
-              className="ml-auto hover:bg-white/10"
+              className="hover:bg-white/10 flex-shrink-0"
               onClick={handleCopy}
             >
-              <Copy className="w-4 h-4" />
+              {copied ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4 text-neutral-400" />
+              )}
             </Button>
           </div>
+          <p className="text-neutral-500 text-sm mt-3">
+            Requires Node.js 18+. Works on macOS and Linux.
+          </p>
+        </div>
 
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setShowScript(!showScript)}
-          >
-            <Terminal className="w-4 h-4" />
-            {showScript ? "Hide Installation Script" : "View Installation Script"}
-          </Button>
+        {/* Alternative Install Methods */}
+        <div className="flex flex-wrap justify-center gap-4">
+          <div className="px-4 py-2 rounded-lg bg-neutral-900/50 border border-neutral-800 text-sm">
+            <span className="text-neutral-500">npm:</span>
+            <code className="text-white ml-2 font-mono">npm i -g @hanzo/dev</code>
+          </div>
+          <div className="px-4 py-2 rounded-lg bg-neutral-900/50 border border-neutral-800 text-sm">
+            <span className="text-neutral-500">npx:</span>
+            <code className="text-white ml-2 font-mono">npx @hanzo/dev</code>
+          </div>
+          <div className="px-4 py-2 rounded-lg bg-neutral-900/50 border border-neutral-800 text-sm">
+            <span className="text-neutral-500">bun:</span>
+            <code className="text-white ml-2 font-mono">bun i -g @hanzo/dev</code>
+          </div>
+        </div>
 
-          {showScript && (
-            <div className="bg-white/5 rounded-lg overflow-hidden">
-              <SyntaxHighlighter 
-                language="bash"
-                style={vscDarkPlus}
-                customStyle={{
-                  margin: 0,
-                  padding: '1.5rem',
-                  background: 'transparent'
-                }}
-              >
-                {installationScript}
-              </SyntaxHighlighter>
+        {/* What's Included */}
+        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6 text-left">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#fd4444]/10 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-[#fd4444]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Hanzo Dev</h3>
+                <p className="text-sm text-neutral-500">@hanzo/dev</p>
+              </div>
             </div>
-          )}
-
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Hanzo Products</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="group bg-white/5 p-8 rounded-2xl hover-lift glass-effect relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <svg className="w-12 h-12 mb-4 text-accent animate-float" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 4L3 9.31372L10.5 13.5M20 4L14.5 21L10.5 13.5M20 4L10.5 13.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Platform</h3>
-                <p className="text-white/80">Modern application platform for building and deploying cloud-native applications</p>
+            <p className="text-neutral-400 text-sm mb-4">
+              AI coding agent for your terminal. Understands your codebase, edits files coherently, runs tests, and opens PRs.
+            </p>
+            <div className="space-y-2 text-sm text-neutral-500">
+              <div className="flex items-center gap-2">
+                <Code className="w-4 h-4" />
+                <span>Generate APIs, components, tests</span>
               </div>
-
-              <div className="group bg-white/5 p-8 rounded-2xl hover-lift glass-effect relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <svg className="w-12 h-12 mb-4 text-accent animate-float" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12C21 16.9706 16.9706 21 12 21M21 12C21 7.02944 16.9706 3 12 3M21 12H3M12 21C7.02944 21 3 16.9706 3 12M12 21C14.5 18.5 15 15.5 15 12C15 8.5 14.5 5.5 12 3M3 12C3 7.02944 7.02944 3 12 3" strokeLinecap="round"/>
-                </svg>
-                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Base</h3>
-                <p className="text-white/80">Secure and scalable infrastructure for your applications</p>
-              </div>
-
-              <div className="group bg-white/5 p-8 rounded-2xl hover-lift glass-effect relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <svg className="w-12 h-12 mb-4 text-accent animate-float" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 3C16.9706 3 21 7.02944 21 12M12 3C7.02944 3 3 7.02944 3 12M12 3V21M21 12C21 16.9706 16.9706 21 12 21M21 12H3M12 21C7.02944 21 3 16.9706 3 12" strokeLinecap="round"/>
-                </svg>
-                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Cloud</h3>
-                <p className="text-white/80">Enterprise-grade cloud platform for production workloads</p>
-              </div>
-
-              <div className="group bg-white/5 p-8 rounded-2xl hover-lift glass-effect relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <svg className="w-12 h-12 mb-4 text-accent animate-float" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 6H20M4 12H20M4 18H20" strokeLinecap="round"/>
-                  <circle cx="9" cy="6" r="1" fill="currentColor"/>
-                  <circle cx="15" cy="12" r="1" fill="currentColor"/>
-                  <circle cx="9" cy="18" r="1" fill="currentColor"/>
-                </svg>
-                <h3 className="text-xl font-semibold text-white mb-2">Hanzo Container Runtime</h3>
-                <p className="text-white/80">Optimized container runtime for modern applications</p>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                <span>Multi-agent orchestration</span>
               </div>
             </div>
           </div>
+
+          <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-6 text-left">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Terminal className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Hanzo CLI</h3>
+                <p className="text-sm text-neutral-500">@hanzo/cli</p>
+              </div>
+            </div>
+            <p className="text-neutral-400 text-sm mb-4">
+              Command-line interface for Hanzo Cloud. Deploy, manage, and monitor your applications.
+            </p>
+            <div className="space-y-2 text-sm text-neutral-500">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                <span>Deploy to Hanzo Cloud</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Code className="w-4 h-4" />
+                <span>Manage projects & secrets</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Start */}
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-6">Quick Start</h2>
+          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 font-mono text-sm text-left">
+            <div className="space-y-2">
+              <div>
+                <span className="text-neutral-500">$ </span>
+                <span className="text-purple-400">dev</span>
+                <span className="text-green-400"> "Fix the rate limiting bug in auth.ts"</span>
+              </div>
+              <div className="text-neutral-600 pl-2">
+                ✓ Reading codebase...<br />
+                ✓ Found auth.ts with rate limiting logic<br />
+                ✓ Identified bug in token bucket implementation<br />
+                <span className="text-green-400">✓ Fixed and tests passing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Links */}
+        <div className="flex flex-wrap justify-center gap-4">
+          <a
+            href="https://hanzo.ai/dev"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#fd4444] text-white font-medium hover:bg-[#fd4444]/90 transition-colors"
+          >
+            Learn More
+            <ExternalLink className="w-4 h-4" />
+          </a>
+          <a
+            href="https://docs.hanzo.ai"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-neutral-700 text-white font-medium hover:bg-neutral-900 transition-colors"
+          >
+            Documentation
+            <ExternalLink className="w-4 h-4" />
+          </a>
+          <a
+            href="https://github.com/hanzoai/dev"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-neutral-700 text-white font-medium hover:bg-neutral-900 transition-colors"
+          >
+            GitHub
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </div>
       </div>
     </div>

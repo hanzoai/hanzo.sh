@@ -1,0 +1,44 @@
+#!/bin/bash
+# Hanzo Node - AI Compute Node Installer
+# Usage: curl -fsSL hanzo.sh/node | bash
+set -e
+
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+INSTALL_DIR="${HANZO_INSTALL_DIR:-$HOME/.local/bin}"
+
+case "$OS" in
+    Darwin) PLATFORM="darwin" ;;
+    Linux) PLATFORM="linux" ;;
+    *) echo "Unsupported OS: $OS"; exit 1 ;;
+esac
+
+case "$ARCH" in
+    x86_64|amd64) ARCH="x64" ;;
+    arm64|aarch64) ARCH="arm64" ;;
+    *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+esac
+
+echo "Installing Hanzo Node for ${PLATFORM}-${ARCH}..."
+
+# Get latest release URL
+API_URL="https://api.github.com/repos/hanzoai/node/releases/latest"
+DOWNLOAD_URL=$(curl -sL "$API_URL" | grep "browser_download_url" | grep "${PLATFORM}-${ARCH}" | head -1 | cut -d '"' -f 4)
+
+if [ -z "$DOWNLOAD_URL" ]; then
+    echo "No release found for ${PLATFORM}-${ARCH}"
+    exit 1
+fi
+
+mkdir -p "$INSTALL_DIR"
+curl -sL "$DOWNLOAD_URL" -o /tmp/hanzo-node-$$
+
+if [[ "$DOWNLOAD_URL" == *.tar.gz ]]; then
+    tar -xzf /tmp/hanzo-node-$$ -C "$INSTALL_DIR"
+else
+    mv /tmp/hanzo-node-$$ "$INSTALL_DIR/hanzo-node"
+    chmod +x "$INSTALL_DIR/hanzo-node"
+fi
+
+rm -f /tmp/hanzo-node-$$
+echo "✓ hanzo-node installed to $INSTALL_DIR"

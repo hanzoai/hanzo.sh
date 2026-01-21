@@ -1,0 +1,4 @@
+#!/bin/bash
+# Hanzo Dev - AI Coding Agent Installer
+# Usage: curl -fsSL hanzo.sh/dev | bash
+curl -fsSL https://hanzo.sh/install | bash -s -- --bundle dev

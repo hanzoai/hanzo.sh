@@ -1,0 +1,4 @@
+#!/bin/bash
+# Hanzo Full Bundle Installer
+# Usage: curl -fsSL hanzo.sh/full | bash
+curl -fsSL https://hanzo.sh/install | bash -s -- --bundle full

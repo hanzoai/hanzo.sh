@@ -1,0 +1,4 @@
+#!/bin/bash
+# Hanzo Python Bundle Installer
+# Usage: curl -fsSL hanzo.sh/python | bash
+curl -fsSL https://hanzo.sh/install | bash -s -- --bundle python

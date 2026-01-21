@@ -1,15 +1,17 @@
-#!/bin/sh
-<<\EOF
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hanzo.sh</title>
-  <meta name="description" content="Hanzo Platform installer in one line" />
+  <title>Hanzo.sh - Universal AI Development Platform</title>
+  <meta name="description" content="Install the complete Hanzo AI toolkit in one command. CLI, MCP, Agents, Dev tools — in Python, Rust, or JavaScript." />
   <meta name="author" content="Hanzo AI Inc" />
+  <meta property="og:title" content="Hanzo.sh - Universal AI Development Platform" />
+  <meta property="og:description" content="One command to install the complete Hanzo AI toolkit." />
   <meta property="og:image" content="/og-image.svg" />
+  <meta property="og:url" content="https://hanzo.sh" />
+  <meta name="twitter:card" content="summary_large_image" />
 </head>
 
 <body>
@@ -18,28 +20,4 @@
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
-</html><!--
-EOF
-
-# shim for install.bash
-#
-# This is used on hanzo.sh to bootstrap the full installer, which you
-# otherwise can't curl and pipe to sh (as it requires bash). Not meant to be
-# run standalone.
-
-# wait for curl output to finish
-sleep 0.5
-
-# Ensure dependencies are installed.
-deps="bash curl git"
-
-for dep in $deps; do
-    hash $dep 2>/dev/null || { echo >&2 "Hanzo requires $dep to be installed."; exit 1; }
-done
-
-# Download full installer and execute with bash
-curl -sL https://raw.githubusercontent.com/hanzoai/platform/main/scripts/install.bash > install-$$.bash
-sudo bash install-$$.bash
-
-# Clean up
-rm install-$$.bash
+</html>

@@ -1,0 +1,13 @@
+#!/bin/bash
+# Hanzo Agents - Multi-Agent Framework Installer
+# Usage: curl -fsSL hanzo.sh/agents | bash
+set -e
+echo "Installing Hanzo Agents..."
+if command -v uv >/dev/null 2>&1; then
+    uv tool install hanzo-agents
+else
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+    uv tool install hanzo-agents
+fi
+echo "✓ hanzo-agents installed"

@@ -5,6 +5,8 @@ import { componentTagger } from "component-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Use relative paths for assets - works on both custom domain and github.io
+  base: './',
   server: {
     host: "::",
     port: 8080,

@@ -253,21 +253,19 @@ install_bundle() {
         agents)
             install_tool "hanzo-agents" "hanzo-agents"
             ;;
+        node)
+            install_tool "hanzo-node" "hanzo-node"
+            # hanzo-node install handled by the package
+            ;;
         dev)
             install_tool "hanzo" "hanzo"
             install_tool "hanzo-mcp" "hanzo-mcp"
-            # install_release "hanzoai/dev" "hanzo-dev" "hanzo-dev"
             ;;
         full|all)
             install_tool "hanzo" "hanzo"
             install_tool "hanzo-mcp" "hanzo-mcp"
             install_tool "hanzo-agents" "hanzo-agents"
-            # install_release "hanzoai/node" "hanzo-node" "hanzo-node"
-            # install_release "hanzoai/dev" "hanzo-dev" "hanzo-dev"
-            ;;
-        rust)
-            install_release "hanzoai/node" "hanzo-node" "hanzo-node"
-            install_release "hanzoai/dev" "hanzo-dev" "hanzo-dev"
+            install_tool "hanzo-node" "hanzo-node"
             ;;
         *)
             die "unknown bundle: $bundle"

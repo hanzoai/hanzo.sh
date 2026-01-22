@@ -27,11 +27,11 @@ declare -a INSTALLED=() SKIPPED=() UPGRADED=() FAILED=()
 
 banner() {
     [[ "$HANZO_QUIET" == "1" ]] && return
-    echo -e "\033[38;5;255m    __                          "
-    echo -e "\033[38;5;250m   / /_  ____ _____  ____  ____ "
-    echo -e "\033[38;5;95m  / __ \\/ __ \`/ __ \\/_  / / __ \\"
-    echo -e "\033[38;5;250m / / / / /_/ / / / / / /_/ /_/ /"
-    echo -e "\033[38;5;255m/_/ /_/\\__,_/_/ /_/ /___/\\____/${N} ${DM}ai development platform${N}"
+    echo -e "\033[38;5;252m    __                          "
+    echo -e "\033[38;5;248m   / /_  ____ _____  ____  ____ "
+    echo -e "\033[38;5;244m  / __ \\/ __ \`/ __ \\/_  / / __ \\"
+    echo -e "\033[38;5;240m / / / / /_/ / / / / / /_/ /_/ /"
+    echo -e "\033[38;5;236m/_/ /_/\\__,_/_/ /_/ /___/\\____/${N} ${DM}ai dev platform${N}"
     echo ""
 }
 
@@ -218,80 +218,61 @@ install_release() {
 }
 
 doctor() {
-    local found=0
+    # known hanzo packages by ecosystem
+    local py_pkgs="hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents"
+    local ts_pkgs="@hanzo/cli @hanzo/mcp @hanzo/dev @hanzo/node"
 
-    # python packages via uvx/uv tool
-    echo -e "  ${BD}uvx (python):${N}"
-    local uv_tools=$(uv tool list 2>/dev/null | grep -E "^hanzo" || true)
-    if [[ -n "$uv_tools" ]]; then
-        while IFS= read -r line; do
-            local name=$(echo "$line" | awk '{print $1}')
-            local ver=$(echo "$line" | awk '{print $2}')
-            local path=$(command -v "$name" 2>/dev/null || echo "?")
-            printf "    ${G}✓${N} %-18s %-10s %s\n" "$name" "$ver" "$path"
-            found=1
-        done <<< "$uv_tools"
-    else
-        echo -e "    ${DM}(none)${N}"
-    fi
-
-    # npm packages via npx
-    echo -e "  ${BD}npx (typescript):${N}"
-    local npm_found=0
-    local npm_bin=""
-    if has_cmd npm; then
-        npm_bin=$(npm bin -g 2>/dev/null || echo "")
-        local npm_pkgs=$(npm list -g --depth=0 2>/dev/null | grep "@hanzo/" || true)
-        if [[ -n "$npm_pkgs" ]]; then
-            while IFS= read -r line; do
-                local pkg=$(echo "$line" | grep -oE "@hanzo/[^@]+" || true)
-                local ver=$(echo "$line" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" || echo "?")
-                if [[ -n "$pkg" ]]; then
-                    local cmd=$(echo "$pkg" | sed 's/@hanzo\//hanzo-/')
-                    local path="${npm_bin}/${cmd}"
-                    [[ ! -x "$path" ]] && path=$(command -v "$cmd" 2>/dev/null || echo "?")
-                    printf "    ${G}✓${N} %-18s %-10s %s\n" "$pkg" "$ver" "$path"
-                    found=1; npm_found=1
-                fi
-            done <<< "$npm_pkgs"
-        fi
-    fi
-    [[ $npm_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    # cargo/rust packages - hanzo-node, hanzo-dev, hanzo-cli
-    echo -e "  ${BD}rust (cargo):${N}"
-    local rust_found=0
-    if has_cmd cargo; then
-        local cargo_list=$(cargo install --list 2>/dev/null || true)
-        for crate in hanzo-node hanzo-dev hanzo-cli; do
-            local crate_info=$(echo "$cargo_list" | grep -E "^${crate} " || true)
-            if [[ -n "$crate_info" ]]; then
-                local ver=$(echo "$crate_info" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+" || echo "?")
-                local path=$(command -v "$crate" 2>/dev/null || echo "~/.cargo/bin/$crate")
-                printf "    ${G}✓${N} %-18s %-10s %s\n" "$crate" "$ver" "$path"
-                found=1; rust_found=1
+    # python (uv tool)
+    echo -e "  ${BD}python (uv):${N}"
+    local py_found=0
+    if has_cmd uv; then
+        local uv_list=$(uv tool list 2>/dev/null || true)
+        for pkg in $py_pkgs; do
+            local info=$(echo "$uv_list" | grep -E "^${pkg} " || true)
+            if [[ -n "$info" ]]; then
+                local ver=$(echo "$info" | awk '{print $2}')
+                local path=$(command -v "$pkg" 2>/dev/null || echo "~/.local/bin/$pkg")
+                printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
+                py_found=1
             fi
         done
     fi
-    [[ $rust_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+    [[ $py_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # standalone binaries (installed manually or via installer)
-    echo -e "  ${BD}binaries:${N}"
-    local bin_found=0
-    for cmd in hanzo-node hanzo-dev; do
-        local path=$(command -v "$cmd" 2>/dev/null)
-        if [[ -n "$path" ]]; then
-            # skip if already found via cargo or npm
-            [[ $rust_found -eq 1 ]] && cargo install --list 2>/dev/null | grep -q "^${cmd} " && continue
-            [[ $npm_found -eq 1 ]] && [[ "$path" == *"node_modules"* ]] && continue
-            local out=$("$cmd" --version 2>&1 | head -1)
-            local ver=$(echo "$out" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-            [[ -z "$ver" ]] && ver="?"
-            printf "    ${G}✓${N} %-18s %-10s %s\n" "$cmd" "$ver" "$path"
-            found=1; bin_found=1
+    # typescript (check binaries directly, fast)
+    echo -e "  ${BD}typescript (npm):${N}"
+    local ts_found=0
+    for pkg in $ts_pkgs; do
+        local cmd=$(echo "$pkg" | sed 's/@hanzo\///')  # @hanzo/cli -> cli
+        local bin="hanzo-$cmd"
+        [[ "$cmd" == "cli" ]] && bin="hanzo"
+        local path=$(command -v "$bin" 2>/dev/null || true)
+        # skip if this is the python version
+        [[ -n "$path" ]] && [[ "$path" == *".local/bin"* ]] && continue
+        if [[ -n "$path" ]] && [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* ]]; then
+            local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
+            printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
+            ts_found=1
         fi
     done
-    [[ $bin_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+    [[ $ts_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+
+    # rust (cargo)
+    echo -e "  ${BD}rust (cargo):${N}"
+    local rs_found=0
+    if has_cmd cargo; then
+        local cargo_list=$(cargo install --list 2>/dev/null || true)
+        for crate in hanzo hanzo-node hanzo-dev hanzo-cli; do
+            local info=$(echo "$cargo_list" | grep -E "^${crate} " || true)
+            if [[ -n "$info" ]]; then
+                local ver=$(echo "$info" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "?")
+                local path=$(command -v "$crate" 2>/dev/null || echo "~/.cargo/bin/$crate")
+                printf "    ${G}✓${N} %-16s %-10s %s\n" "$crate" "$ver" "$path"
+                rs_found=1
+            fi
+        done
+    fi
+    [[ $rs_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
     echo ""
 }

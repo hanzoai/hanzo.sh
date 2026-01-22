@@ -221,7 +221,9 @@ install_release() {
 doctor() {
     # known hanzo packages by ecosystem
     local py_pkgs="hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents"
-    local ts_pkgs="@hanzo/cli @hanzo/mcp @hanzo/dev @hanzo/node"
+    local ts_pkgs="@hanzo/cli @hanzo/mcp @hanzo/dev @hanzo/node @hanzo/agents"
+    local rs_pkgs="hanzo hanzo-node hanzo-dev hanzo-cli hanzo-mcp"
+    local go_pkgs="hanzo hanzo-node hanzo-dev hanzo-cli"
 
     # python (uv tool)
     echo -e "  ${BD}python (uv):${N}"
@@ -240,17 +242,17 @@ doctor() {
     fi
     [[ $py_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # typescript (check binaries directly, fast)
-    echo -e "  ${BD}typescript (npm):${N}"
+    # typescript/node (check binaries in node paths)
+    echo -e "  ${BD}node (npm/pnpm):${N}"
     local ts_found=0
     for pkg in $ts_pkgs; do
         local cmd=$(echo "$pkg" | sed 's/@hanzo\///')  # @hanzo/cli -> cli
         local bin="hanzo-$cmd"
         [[ "$cmd" == "cli" ]] && bin="hanzo"
         local path=$(command -v "$bin" 2>/dev/null || true)
-        # skip if this is the python version
-        [[ -n "$path" ]] && [[ "$path" == *".local/bin"* ]] && continue
-        if [[ -n "$path" ]] && [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* ]]; then
+        # skip if python or cargo version
+        [[ -n "$path" ]] && [[ "$path" == *".local/bin"* || "$path" == *".cargo/bin"* ]] && continue
+        if [[ -n "$path" ]] && [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* || "$path" == *"fnm"* || "$path" == *"nvm"* ]]; then
             local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
             printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
             ts_found=1
@@ -263,7 +265,7 @@ doctor() {
     local rs_found=0
     if has_cmd cargo; then
         local cargo_list=$(cargo install --list 2>/dev/null || true)
-        for crate in hanzo hanzo-node hanzo-dev hanzo-cli; do
+        for crate in $rs_pkgs; do
             local info=$(echo "$cargo_list" | grep -E "^${crate} " || true)
             if [[ -n "$info" ]]; then
                 local ver=$(echo "$info" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "?")
@@ -274,6 +276,37 @@ doctor() {
         done
     fi
     [[ $rs_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+
+    # go (go install)
+    echo -e "  ${BD}go (go install):${N}"
+    local go_found=0
+    local gobin="${GOBIN:-${GOPATH:-$HOME/go}/bin}"
+    for pkg in $go_pkgs; do
+        local path="$gobin/$pkg"
+        if [[ -x "$path" ]]; then
+            local ver=$("$path" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
+            printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
+            go_found=1
+        fi
+    done
+    [[ $go_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+
+    # standalone binaries (homebrew, manual installs)
+    echo -e "  ${BD}binaries:${N}"
+    local bin_found=0
+    for bin in hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents hanzo-cli; do
+        local path=$(command -v "$bin" 2>/dev/null || true)
+        [[ -z "$path" ]] && continue
+        # skip if already found in other ecosystems
+        [[ "$path" == *".local/bin"* ]] && continue
+        [[ "$path" == *".cargo/bin"* ]] && continue
+        [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* ]] && continue
+        [[ "$path" == *"/go/bin"* ]] && continue
+        local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
+        printf "    ${G}✓${N} %-16s %-10s %s\n" "$bin" "$ver" "$path"
+        bin_found=1
+    done
+    [[ $bin_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
     echo ""
 }

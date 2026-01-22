@@ -438,22 +438,14 @@ extras() {
     echo -e "  ${BD}optional extras:${N}"
     echo ""
 
-    # VS Code extension
-    if has_cmd code; then
-        if ! code --list-extensions 2>/dev/null | grep -q "hanzo.hanzo-ai"; then
-            echo -e "    ${C}code --install-extension hanzo.hanzo-ai${N}"
-            echo -e "      └─ VS Code extension for Hanzo AI"
-        fi
-    fi
-
-    # Cursor extension
-    if has_cmd cursor; then
-        echo -e "    ${C}cursor --install-extension hanzo.hanzo-ai${N}"
-        echo -e "      └─ Cursor extension for Hanzo AI"
+    # Editor extensions (coming soon)
+    if has_cmd code || has_cmd cursor; then
+        echo -e "    ${BD}editor extensions:${N} ${DM}(coming soon)${N}"
+        echo -e "    ${DM}code --install-extension hanzo-ai.hanzo${N}"
+        echo ""
     fi
 
     # Shell completions
-    echo ""
     echo -e "    ${BD}shell completions:${N}"
     if [[ -n "$ZSH_VERSION" ]] || [[ "$SHELL" == *"zsh"* ]]; then
         echo -e "    ${C}hanzo completion zsh > ~/.zsh/completions/_hanzo${N}"
@@ -465,14 +457,6 @@ extras() {
         echo -e "    ${C}hanzo completion fish > ~/.config/fish/completions/hanzo.fish${N}"
     fi
 
-    # Browser extensions
-    echo ""
-    echo -e "    ${BD}browser extensions:${N}"
-    echo -e "    ${C}https://chrome.google.com/webstore/detail/hanzo-ai${N}"
-    echo -e "      └─ Chrome/Edge/Brave extension"
-    echo -e "    ${C}https://addons.mozilla.org/addon/hanzo-ai${N}"
-    echo -e "      └─ Firefox extension"
-
     # Claude Desktop MCP
     if [[ -d "$HOME/Library/Application Support/Claude" ]] || [[ -d "$HOME/.config/claude" ]]; then
         echo ""
@@ -481,12 +465,18 @@ extras() {
         echo -e "      └─ Add Hanzo MCP to Claude Desktop"
     fi
 
-    # Other CLI tools
+    # AI CLI tools - only show if not installed
     echo ""
-    echo -e "    ${BD}other ai tools:${N}"
-    echo -e "    ${C}uv tool install claude-code${N}      # Claude Code CLI"
-    echo -e "    ${C}uv tool install aider-chat${N}       # Aider pair programming"
-    echo -e "    ${C}npm i -g @anthropic-ai/claude${N}    # Claude CLI (official)"
+    echo -e "    ${BD}ai coding agents:${N}"
+    has_cmd claude || echo -e "    ${C}npm i -g @anthropic-ai/claude-code${N}   # Claude Code (free)"
+    has_cmd gemini || echo -e "    ${C}npm i -g @google/gemini-cli${N}          # Gemini CLI (free)"
+    has_cmd aider || echo -e "    ${C}uv tool install aider-chat${N}            # Aider (free)"
+    has_cmd codex || echo -e "    ${C}npm i -g @openai/codex${N}                # OpenAI Codex"
+    echo ""
+    echo -e "    ${BD}apps:${N}"
+    echo -e "    ${C}https://cursor.com${N}                     # Cursor IDE"
+    echo -e "    ${C}https://x.ai${N}                           # Grok"
+    echo -e "    ${C}https://windsurf.com${N}                   # Windsurf IDE"
 
     echo ""
 }

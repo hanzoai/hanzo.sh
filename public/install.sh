@@ -219,17 +219,23 @@ install_release() {
 }
 
 doctor() {
-    # python (uv tool) - package:binary mappings
+    # Naming strategy:
+    # Python (uv):  hanzo, hanzo-mcp, hanzo-dev, hanzo-node, hanzo-agents (full names)
+    # Rust (cargo): hanzo, mcp, dev, hanzod (short names)
+    # Node (npm):   hanzo, mcp, dev, hanzod, agents (short names)
+    # Go:           hanzo, hanzod, dev (short names)
+    # Homebrew:     hanzo, hanzo-mcp, hanzo-dev, hanzo-node (formula names)
+
+    # python (uv tool) - keeps full hanzo-* names
     echo -e "  ${BD}python (uv):${N}"
     local py_found=0
     if has_cmd uv; then
         local uv_list=$(uv tool list 2>/dev/null || true)
-        for pair in "hanzo:hanzo" "hanzo-mcp:hanzo-mcp" "hanzo-dev:hanzo-dev" "hanzo-node:hanzo-node" "hanzo-agents:hanzo-agents"; do
-            local pkg="${pair%%:*}" bin="${pair##*:}"
+        for pkg in hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents; do
             local info=$(echo "$uv_list" | grep -E "^${pkg} " || true)
             if [[ -n "$info" ]]; then
                 local ver=$(echo "$info" | awk '{print $2}')
-                local path=$(command -v "$bin" 2>/dev/null || echo "~/.local/bin/$bin")
+                local path=$(command -v "$pkg" 2>/dev/null || echo "~/.local/bin/$pkg")
                 printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
                 py_found=1
             fi
@@ -237,28 +243,12 @@ doctor() {
     fi
     [[ $py_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # node (npm/pnpm) - package:binary mappings
-    echo -e "  ${BD}node (npm/pnpm):${N}"
-    local ts_found=0
-    for pair in "@hanzo/cli:hanzo" "@hanzo/mcp:mcp" "@hanzo/dev:dev" "@hanzo/node:hanzod" "@hanzo/agents:agents"; do
-        local pkg="${pair%%:*}" bin="${pair##*:}"
-        local path=$(command -v "$bin" 2>/dev/null || true)
-        # skip if python or cargo version
-        [[ -n "$path" ]] && [[ "$path" == *".local/bin"* || "$path" == *".cargo/bin"* ]] && continue
-        if [[ -n "$path" ]] && [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* || "$path" == *"fnm"* || "$path" == *"nvm"* ]]; then
-            local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
-            printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
-            ts_found=1
-        fi
-    done
-    [[ $ts_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    # rust (cargo) - crate:binary mappings
+    # rust (cargo) - short binary names
     echo -e "  ${BD}rust (cargo):${N}"
     local rs_found=0
     if has_cmd cargo; then
         local cargo_list=$(cargo install --list 2>/dev/null || true)
-        for pair in "hanzo:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev" "hanzo-mcp:mcp"; do
+        for pair in "hanzo-cli:hanzo" "hanzo-mcp:mcp" "hanzo-dev:dev" "hanzo-node:hanzod"; do
             local crate="${pair%%:*}" bin="${pair##*:}"
             local info=$(echo "$cargo_list" | grep -E "^${crate} " || true)
             if [[ -n "$info" ]]; then
@@ -271,11 +261,30 @@ doctor() {
     fi
     [[ $rs_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # go (go install) - package:binary mappings
+    # node (npm/pnpm) - @hanzo/* packages with short binary names
+    echo -e "  ${BD}node (npm/pnpm):${N}"
+    local ts_found=0
+    for pair in "@hanzo/cli:hanzo" "@hanzo/mcp:mcp" "@hanzo/dev:dev" "@hanzo/node:hanzod" "@hanzo/agents:agents"; do
+        local pkg="${pair%%:*}" bin="${pair##*:}"
+        local path=$(command -v "$bin" 2>/dev/null || true)
+        [[ -z "$path" ]] && continue
+        # skip if python version (full names like hanzo-mcp)
+        [[ "$path" == *".local/bin"* ]] && continue
+        # skip if cargo version
+        [[ "$path" == *".cargo/bin"* ]] && continue
+        if [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* || "$path" == *"fnm"* || "$path" == *"nvm"* ]]; then
+            local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
+            printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
+            ts_found=1
+        fi
+    done
+    [[ $ts_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+
+    # go (go install) - short binary names
     echo -e "  ${BD}go (go install):${N}"
     local go_found=0
     local gobin="${GOBIN:-${GOPATH:-$HOME/go}/bin}"
-    for pair in "hanzo:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev"; do
+    for pair in "hanzo-cli:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev"; do
         local pkg="${pair%%:*}" bin="${pair##*:}"
         local path="$gobin/$bin"
         if [[ -x "$path" ]]; then
@@ -286,12 +295,12 @@ doctor() {
     done
     [[ $go_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # homebrew
+    # homebrew - formula:binary mappings
     echo -e "  ${BD}homebrew:${N}"
     local brew_found=0
     if has_cmd brew; then
         local brew_list=$(brew list --formula 2>/dev/null || true)
-        for pair in "hanzo:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev" "hanzo-mcp:mcp" "hanzo-agents:agents"; do
+        for pair in "hanzo:hanzo" "hanzo-mcp:hanzo-mcp" "hanzo-dev:hanzo-dev" "hanzo-node:hanzo-node" "hanzo-agents:hanzo-agents"; do
             local formula="${pair%%:*}" bin="${pair##*:}"
             if echo "$brew_list" | grep -q "^${formula}$"; then
                 local path=$(brew --prefix "$formula" 2>/dev/null)/bin/$bin
@@ -307,7 +316,7 @@ doctor() {
     # other binaries (manual installs, /usr/local/bin, etc)
     echo -e "  ${BD}other:${N}"
     local other_found=0
-    for bin in hanzo hanzod mcp dev agents; do
+    for bin in hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents hanzod mcp dev agents; do
         local path=$(command -v "$bin" 2>/dev/null || true)
         [[ -z "$path" ]] && continue
         # skip if found in known ecosystems

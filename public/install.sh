@@ -447,10 +447,10 @@ extras() {
 
     # Shell completions
     echo -e "    ${BD}shell completions:${N}"
-    if [[ -n "$ZSH_VERSION" ]] || [[ "$SHELL" == *"zsh"* ]]; then
+    if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == *"zsh"* ]]; then
         echo -e "    ${C}hanzo completion zsh > ~/.zsh/completions/_hanzo${N}"
     fi
-    if [[ -n "$BASH_VERSION" ]] || [[ "$SHELL" == *"bash"* ]]; then
+    if [[ -n "${BASH_VERSION:-}" ]] || [[ "$SHELL" == *"bash"* ]]; then
         echo -e "    ${C}hanzo completion bash > ~/.bash_completion.d/hanzo${N}"
     fi
     if [[ "$SHELL" == *"fish"* ]]; then

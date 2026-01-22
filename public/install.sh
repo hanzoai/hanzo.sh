@@ -435,6 +435,42 @@ finish() {
 extras() {
     [[ "$HANZO_QUIET" == "1" ]] && return
 
+    echo -e "  ${BD}environment:${N}"
+    echo ""
+
+    # Detect API keys
+    local api_keys_found=0
+    echo -e "    ${BD}api keys:${N}"
+    [[ -n "${ANTHROPIC_API_KEY:-}" ]] && echo -e "    ${G}✓${N} ANTHROPIC_API_KEY" && ((api_keys_found++))
+    [[ -n "${OPENAI_API_KEY:-}" ]] && echo -e "    ${G}✓${N} OPENAI_API_KEY" && ((api_keys_found++))
+    [[ -n "${GOOGLE_API_KEY:-}" ]] && echo -e "    ${G}✓${N} GOOGLE_API_KEY" && ((api_keys_found++))
+    [[ -n "${GEMINI_API_KEY:-}" ]] && echo -e "    ${G}✓${N} GEMINI_API_KEY" && ((api_keys_found++))
+    [[ -n "${XAI_API_KEY:-}" ]] && echo -e "    ${G}✓${N} XAI_API_KEY" && ((api_keys_found++))
+    [[ -n "${GROQ_API_KEY:-}" ]] && echo -e "    ${G}✓${N} GROQ_API_KEY" && ((api_keys_found++))
+    [[ -n "${TOGETHER_API_KEY:-}" ]] && echo -e "    ${G}✓${N} TOGETHER_API_KEY" && ((api_keys_found++))
+    [[ -n "${MISTRAL_API_KEY:-}" ]] && echo -e "    ${G}✓${N} MISTRAL_API_KEY" && ((api_keys_found++))
+    [[ -n "${COHERE_API_KEY:-}" ]] && echo -e "    ${G}✓${N} COHERE_API_KEY" && ((api_keys_found++))
+    [[ -n "${REPLICATE_API_TOKEN:-}" ]] && echo -e "    ${G}✓${N} REPLICATE_API_TOKEN" && ((api_keys_found++))
+    [[ -n "${HUGGING_FACE_HUB_TOKEN:-}" ]] && echo -e "    ${G}✓${N} HUGGING_FACE_HUB_TOKEN" && ((api_keys_found++))
+    [[ -n "${HF_TOKEN:-}" ]] && echo -e "    ${G}✓${N} HF_TOKEN" && ((api_keys_found++))
+    [[ -n "${GITHUB_TOKEN:-}" ]] && echo -e "    ${G}✓${N} GITHUB_TOKEN" && ((api_keys_found++))
+    [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] && echo -e "    ${G}✓${N} CLOUDFLARE_API_TOKEN" && ((api_keys_found++))
+    [[ -n "${AWS_ACCESS_KEY_ID:-}" ]] && echo -e "    ${G}✓${N} AWS_ACCESS_KEY_ID" && ((api_keys_found++))
+    [[ $api_keys_found -eq 0 ]] && echo -e "    ${DM}(none detected)${N}"
+    echo ""
+
+    # Detect AI CLI tools
+    echo -e "    ${BD}ai cli tools:${N}"
+    local cli_found=0
+    has_cmd claude && echo -e "    ${G}✓${N} claude        $(claude --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd gemini && echo -e "    ${G}✓${N} gemini        $(gemini --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd codex && echo -e "    ${G}✓${N} codex         $(codex --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd dev && echo -e "    ${G}✓${N} hanzo-dev     $(dev --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd grok && echo -e "    ${G}✓${N} grok" && ((cli_found++))
+    has_cmd cursor && echo -e "    ${G}✓${N} cursor" && ((cli_found++))
+    [[ $cli_found -eq 0 ]] && echo -e "    ${DM}(none detected)${N}"
+
+    echo ""
     echo -e "  ${BD}optional extras:${N}"
     echo ""
 
@@ -465,18 +501,21 @@ extras() {
         echo -e "      └─ Add Hanzo MCP to Claude Desktop"
     fi
 
-    # AI CLI tools - only show if not installed
-    echo ""
-    echo -e "    ${BD}ai coding agents:${N}"
-    has_cmd claude || echo -e "    ${C}npm i -g @anthropic-ai/claude-code${N}   # Claude Code (free)"
-    has_cmd gemini || echo -e "    ${C}npm i -g @google/gemini-cli${N}          # Gemini CLI (free)"
-    has_cmd aider || echo -e "    ${C}uv tool install aider-chat${N}            # Aider (free)"
-    has_cmd codex || echo -e "    ${C}npm i -g @openai/codex${N}                # OpenAI Codex"
-    echo ""
-    echo -e "    ${BD}apps:${N}"
-    echo -e "    ${C}https://cursor.com${N}                     # Cursor IDE"
-    echo -e "    ${C}https://x.ai${N}                           # Grok"
-    echo -e "    ${C}https://windsurf.com${N}                   # Windsurf IDE"
+    # AI CLI tools - only show missing ones
+    local missing=0
+    has_cmd claude || ((missing++))
+    has_cmd gemini || ((missing++))
+    has_cmd codex || ((missing++))
+    has_cmd dev || ((missing++))
+
+    if [[ $missing -gt 0 ]]; then
+        echo ""
+        echo -e "    ${BD}install ai agents:${N}"
+        has_cmd dev || echo -e "    ${C}cargo install hanzo-dev${N}               # Hanzo Dev (recommended)"
+        has_cmd claude || echo -e "    ${C}npm i -g @anthropic-ai/claude-code${N}   # Claude Code (free)"
+        has_cmd gemini || echo -e "    ${C}npm i -g @google/gemini-cli${N}          # Gemini CLI (free)"
+        has_cmd codex || echo -e "    ${C}npm i -g @openai/codex${N}                # OpenAI Codex"
+    fi
 
     echo ""
 }

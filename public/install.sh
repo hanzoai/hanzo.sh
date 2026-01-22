@@ -28,10 +28,10 @@ declare -a INSTALLED=() SKIPPED=() UPGRADED=() FAILED=()
 banner() {
     [[ "$HANZO_QUIET" == "1" ]] && return
     echo -e "\033[38;5;196m    __                          "
-    echo -e "\033[38;5;203m   / /_  ____ _____  ____  ____ "
-    echo -e "\033[38;5;210m  / __ \\/ __ \`/ __ \\/_  / / __ \\"
-    echo -e "\033[38;5;217m / / / / /_/ / / / / / /_/ /_/ /"
-    echo -e "\033[38;5;231m/_/ /_/\\__,_/_/ /_/ /___/\\____/${N} ${DM}ai development platform${N}"
+    echo -e "\033[38;5;160m   / /_  ____ _____  ____  ____ "
+    echo -e "\033[38;5;124m  / __ \\/ __ \`/ __ \\/_  / / __ \\"
+    echo -e "\033[38;5;95m / / / / /_/ / / / / / /_/ /_/ /"
+    echo -e "\033[38;5;240m/_/ /_/\\__,_/_/ /_/ /___/\\____/${N} ${DM}ai development platform${N}"
     echo ""
 }
 
@@ -220,8 +220,8 @@ install_release() {
 doctor() {
     local found=0
 
-    # python packages (uv tool) - hanzo, hanzo-mcp, hanzo-agents, hanzo-node, hanzo-dev
-    echo -e "  ${BD}python (uv/pip):${N}"
+    # python packages via uvx/uv tool
+    echo -e "  ${BD}uvx (python):${N}"
     local uv_tools=$(uv tool list 2>/dev/null | grep -E "^hanzo" || true)
     if [[ -n "$uv_tools" ]]; then
         while IFS= read -r line; do
@@ -235,8 +235,8 @@ doctor() {
         echo -e "    ${DM}(none)${N}"
     fi
 
-    # npm packages (@hanzo/*) - @hanzo/mcp, @hanzo/dev, @hanzo/cli, @hanzo/node
-    echo -e "  ${BD}npm (@hanzo/*):${N}"
+    # npm packages via npx
+    echo -e "  ${BD}npx (typescript):${N}"
     local npm_found=0
     local npm_bin=""
     if has_cmd npm; then

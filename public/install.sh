@@ -28,15 +28,14 @@ declare -a INSTALLED=() SKIPPED=() UPGRADED=() FAILED=()
 banner() {
     [[ "$HANZO_QUIET" == "1" ]] && return
     echo ""
-    echo -e "${HR}${BD}"
-    echo "  ██╗  ██╗ █████╗ ███╗   ██╗███████╗ ██████╗ "
-    echo "  ██║  ██║██╔══██╗████╗  ██║╚══███╔╝██╔═══██╗"
-    echo "  ███████║███████║██╔██╗ ██║  ███╔╝ ██║   ██║"
-    echo "  ██╔══██║██╔══██║██║╚██╗██║ ███╔╝  ██║   ██║"
-    echo "  ██║  ██║██║  ██║██║ ╚████║███████╗╚██████╔╝"
-    echo "  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝ ╚═════╝ "
+    echo -e "${C}"
+    echo " _                          "
+    echo "| |__   __ _ _ __  _______  "
+    echo "| '_ \\ / _\` | '_ \\|_  / _ \\ "
+    echo "| | | | (_| | | | |/ / (_) |"
+    echo "|_| |_|\\__,_|_| |_/___\\___/ "
     echo -e "${N}"
-    echo -e "${C}  ai development platform${N}"
+    echo -e "${DM}  ai development platform${N}"
     echo ""
 }
 
@@ -218,6 +217,23 @@ install_release() {
     INSTALLED+=("$name"); ok "$name"
 }
 
+doctor() {
+    echo "  installed:"
+    local found=0
+    for cmd in hanzo hanzo-mcp hanzo-agents hanzo-dev hanzo-node hanzo-ai hanzo-chat hanzo-repl; do
+        local path=$(command -v "$cmd" 2>/dev/null)
+        if [[ -n "$path" ]]; then
+            local out=$("$cmd" --version 2>&1 | head -1)
+            local ver=$(echo "$out" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+            [[ -z "$ver" ]] && ver="?"
+            printf "    ${G}✓${N} %-14s %-10s %s\n" "$cmd" "$ver" "$path"
+            found=1
+        fi
+    done
+    [[ $found -eq 0 ]] && echo "    (none found)"
+    echo ""
+}
+
 install_bundle() {
     local bundle="$1"
     echo ""
@@ -297,10 +313,10 @@ finish() {
         echo "  docs: https://docs.hanzo.ai"
         echo ""
     elif [[ ${#SKIPPED[@]} -gt 0 ]]; then
-        echo -e "  ${G}already installed${N}"
+        echo -e "  ${G}already up to date${N}"
         echo ""
+        doctor
         echo "  to upgrade: curl -fsSL hanzo.sh | bash -s -- -u"
-        echo "  to reinstall: curl -fsSL hanzo.sh | bash -s -- -f"
         echo ""
     fi
 

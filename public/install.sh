@@ -27,15 +27,11 @@ declare -a INSTALLED=() SKIPPED=() UPGRADED=() FAILED=()
 
 banner() {
     [[ "$HANZO_QUIET" == "1" ]] && return
-    echo ""
-    echo -e "${C}"
-    echo "    __                          "
-    echo "   / /_  ____ _____  ____  ____ "
-    echo "  / __ \\/ __ \`/ __ \\/_  / / __ \\"
-    echo " / / / / /_/ / / / / / /_/ /_/ /"
-    echo "/_/ /_/\\__,_/_/ /_/ /___/\\____/ "
-    echo -e "${N}"
-    echo -e "${DM}  ai development platform${N}"
+    echo -e "\033[38;5;196m    __                          "
+    echo -e "\033[38;5;202m   / /_  ____ _____  ____  ____ "
+    echo -e "\033[38;5;208m  / __ \\/ __ \`/ __ \\/_  / / __ \\"
+    echo -e "\033[38;5;214m / / / / /_/ / / / / / /_/ /_/ /"
+    echo -e "\033[38;5;220m/_/ /_/\\__,_/_/ /_/ /___/\\____/${N} ${DM}ai development platform${N}"
     echo ""
 }
 

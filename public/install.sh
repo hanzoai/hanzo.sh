@@ -219,22 +219,17 @@ install_release() {
 }
 
 doctor() {
-    # known hanzo packages by ecosystem
-    local py_pkgs="hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents"
-    local ts_pkgs="@hanzo/cli @hanzo/mcp @hanzo/dev @hanzo/node @hanzo/agents"
-    local rs_pkgs="hanzo hanzo-node hanzo-dev hanzo-cli hanzo-mcp"
-    local go_pkgs="hanzo hanzo-node hanzo-dev hanzo-cli"
-
-    # python (uv tool)
+    # python (uv tool) - package:binary mappings
     echo -e "  ${BD}python (uv):${N}"
     local py_found=0
     if has_cmd uv; then
         local uv_list=$(uv tool list 2>/dev/null || true)
-        for pkg in $py_pkgs; do
+        for pair in "hanzo:hanzo" "hanzo-mcp:hanzo-mcp" "hanzo-dev:hanzo-dev" "hanzo-node:hanzo-node" "hanzo-agents:hanzo-agents"; do
+            local pkg="${pair%%:*}" bin="${pair##*:}"
             local info=$(echo "$uv_list" | grep -E "^${pkg} " || true)
             if [[ -n "$info" ]]; then
                 local ver=$(echo "$info" | awk '{print $2}')
-                local path=$(command -v "$pkg" 2>/dev/null || echo "~/.local/bin/$pkg")
+                local path=$(command -v "$bin" 2>/dev/null || echo "~/.local/bin/$bin")
                 printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
                 py_found=1
             fi
@@ -242,13 +237,11 @@ doctor() {
     fi
     [[ $py_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # typescript/node (check binaries in node paths)
+    # node (npm/pnpm) - package:binary mappings
     echo -e "  ${BD}node (npm/pnpm):${N}"
     local ts_found=0
-    for pkg in $ts_pkgs; do
-        local cmd=$(echo "$pkg" | sed 's/@hanzo\///')  # @hanzo/cli -> cli
-        local bin="hanzo-$cmd"
-        [[ "$cmd" == "cli" ]] && bin="hanzo"
+    for pair in "@hanzo/cli:hanzo" "@hanzo/mcp:mcp" "@hanzo/dev:dev" "@hanzo/node:hanzod" "@hanzo/agents:agents"; do
+        local pkg="${pair%%:*}" bin="${pair##*:}"
         local path=$(command -v "$bin" 2>/dev/null || true)
         # skip if python or cargo version
         [[ -n "$path" ]] && [[ "$path" == *".local/bin"* || "$path" == *".cargo/bin"* ]] && continue
@@ -260,16 +253,17 @@ doctor() {
     done
     [[ $ts_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # rust (cargo)
+    # rust (cargo) - crate:binary mappings
     echo -e "  ${BD}rust (cargo):${N}"
     local rs_found=0
     if has_cmd cargo; then
         local cargo_list=$(cargo install --list 2>/dev/null || true)
-        for crate in $rs_pkgs; do
+        for pair in "hanzo:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev" "hanzo-mcp:mcp"; do
+            local crate="${pair%%:*}" bin="${pair##*:}"
             local info=$(echo "$cargo_list" | grep -E "^${crate} " || true)
             if [[ -n "$info" ]]; then
                 local ver=$(echo "$info" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "?")
-                local path=$(command -v "$crate" 2>/dev/null || echo "~/.cargo/bin/$crate")
+                local path=$(command -v "$bin" 2>/dev/null || echo "~/.cargo/bin/$bin")
                 printf "    ${G}✓${N} %-16s %-10s %s\n" "$crate" "$ver" "$path"
                 rs_found=1
             fi
@@ -277,12 +271,13 @@ doctor() {
     fi
     [[ $rs_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # go (go install)
+    # go (go install) - package:binary mappings
     echo -e "  ${BD}go (go install):${N}"
     local go_found=0
     local gobin="${GOBIN:-${GOPATH:-$HOME/go}/bin}"
-    for pkg in $go_pkgs; do
-        local path="$gobin/$pkg"
+    for pair in "hanzo:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev"; do
+        local pkg="${pair%%:*}" bin="${pair##*:}"
+        local path="$gobin/$bin"
         if [[ -x "$path" ]]; then
             local ver=$("$path" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
             printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
@@ -291,22 +286,41 @@ doctor() {
     done
     [[ $go_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # standalone binaries (homebrew, manual installs)
-    echo -e "  ${BD}binaries:${N}"
-    local bin_found=0
-    for bin in hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents hanzo-cli; do
+    # homebrew
+    echo -e "  ${BD}homebrew:${N}"
+    local brew_found=0
+    if has_cmd brew; then
+        local brew_list=$(brew list --formula 2>/dev/null || true)
+        for pair in "hanzo:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev" "hanzo-mcp:mcp" "hanzo-agents:agents"; do
+            local formula="${pair%%:*}" bin="${pair##*:}"
+            if echo "$brew_list" | grep -q "^${formula}$"; then
+                local path=$(brew --prefix "$formula" 2>/dev/null)/bin/$bin
+                [[ ! -x "$path" ]] && path=$(command -v "$bin" 2>/dev/null || echo "?")
+                local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
+                printf "    ${G}✓${N} %-16s %-10s %s\n" "$formula" "$ver" "$path"
+                brew_found=1
+            fi
+        done
+    fi
+    [[ $brew_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+
+    # other binaries (manual installs, /usr/local/bin, etc)
+    echo -e "  ${BD}other:${N}"
+    local other_found=0
+    for bin in hanzo hanzod mcp dev agents; do
         local path=$(command -v "$bin" 2>/dev/null || true)
         [[ -z "$path" ]] && continue
-        # skip if already found in other ecosystems
+        # skip if found in known ecosystems
         [[ "$path" == *".local/bin"* ]] && continue
         [[ "$path" == *".cargo/bin"* ]] && continue
         [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* ]] && continue
         [[ "$path" == *"/go/bin"* ]] && continue
+        [[ "$path" == *"homebrew"* || "$path" == *"Cellar"* ]] && continue
         local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
         printf "    ${G}✓${N} %-16s %-10s %s\n" "$bin" "$ver" "$path"
-        bin_found=1
+        other_found=1
     done
-    [[ $bin_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
+    [[ $other_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
     echo ""
 }

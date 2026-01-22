@@ -28,10 +28,10 @@ declare -a INSTALLED=() SKIPPED=() UPGRADED=() FAILED=()
 banner() {
     [[ "$HANZO_QUIET" == "1" ]] && return
     echo -e "\033[38;5;196m    __                          "
-    echo -e "\033[38;5;196m   / /_  ____ _____  ____  ____ "
-    echo -e "\033[38;5;160m  / __ \\/ __ \`/ __ \\/_  / / __ \\"
-    echo -e "\033[38;5;160m / / / / /_/ / / / / / /_/ /_/ /"
-    echo -e "\033[38;5;124m/_/ /_/\\__,_/_/ /_/ /___/\\____/${N} ${DM}ai development platform${N}"
+    echo -e "\033[38;5;203m   / /_  ____ _____  ____  ____ "
+    echo -e "\033[38;5;210m  / __ \\/ __ \`/ __ \\/_  / / __ \\"
+    echo -e "\033[38;5;217m / / / / /_/ / / / / / /_/ /_/ /"
+    echo -e "\033[38;5;231m/_/ /_/\\__,_/_/ /_/ /___/\\____/${N} ${DM}ai development platform${N}"
     echo ""
 }
 
@@ -220,8 +220,8 @@ install_release() {
 doctor() {
     local found=0
 
-    # python packages (uv tool)
-    echo -e "  ${BD}python (uv tool):${N}"
+    # python packages (uv tool) - hanzo, hanzo-mcp, hanzo-agents, hanzo-node, hanzo-dev
+    echo -e "  ${BD}python (uv/pip):${N}"
     local uv_tools=$(uv tool list 2>/dev/null | grep -E "^hanzo" || true)
     if [[ -n "$uv_tools" ]]; then
         while IFS= read -r line; do
@@ -235,17 +235,22 @@ doctor() {
         echo -e "    ${DM}(none)${N}"
     fi
 
-    # npm packages (@hanzo/*)
+    # npm packages (@hanzo/*) - @hanzo/mcp, @hanzo/dev, @hanzo/cli, @hanzo/node
     echo -e "  ${BD}npm (@hanzo/*):${N}"
     local npm_found=0
+    local npm_bin=""
     if has_cmd npm; then
+        npm_bin=$(npm bin -g 2>/dev/null || echo "")
         local npm_pkgs=$(npm list -g --depth=0 2>/dev/null | grep "@hanzo/" || true)
         if [[ -n "$npm_pkgs" ]]; then
             while IFS= read -r line; do
                 local pkg=$(echo "$line" | grep -oE "@hanzo/[^@]+" || true)
                 local ver=$(echo "$line" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" || echo "?")
                 if [[ -n "$pkg" ]]; then
-                    printf "    ${G}✓${N} %-18s %s\n" "$pkg" "$ver"
+                    local cmd=$(echo "$pkg" | sed 's/@hanzo\//hanzo-/')
+                    local path="${npm_bin}/${cmd}"
+                    [[ ! -x "$path" ]] && path=$(command -v "$cmd" 2>/dev/null || echo "?")
+                    printf "    ${G}✓${N} %-18s %-10s %s\n" "$pkg" "$ver" "$path"
                     found=1; npm_found=1
                 fi
             done <<< "$npm_pkgs"
@@ -253,15 +258,16 @@ doctor() {
     fi
     [[ $npm_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # cargo/rust packages
+    # cargo/rust packages - hanzo-node, hanzo-dev, hanzo-cli
     echo -e "  ${BD}rust (cargo):${N}"
     local rust_found=0
     if has_cmd cargo; then
+        local cargo_list=$(cargo install --list 2>/dev/null || true)
         for crate in hanzo-node hanzo-dev hanzo-cli; do
-            local crate_info=$(cargo install --list 2>/dev/null | grep -E "^${crate} " || true)
+            local crate_info=$(echo "$cargo_list" | grep -E "^${crate} " || true)
             if [[ -n "$crate_info" ]]; then
                 local ver=$(echo "$crate_info" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+" || echo "?")
-                local path=$(command -v "$crate" 2>/dev/null || echo "?")
+                local path=$(command -v "$crate" 2>/dev/null || echo "~/.cargo/bin/$crate")
                 printf "    ${G}✓${N} %-18s %-10s %s\n" "$crate" "$ver" "$path"
                 found=1; rust_found=1
             fi
@@ -269,14 +275,15 @@ doctor() {
     fi
     [[ $rust_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
 
-    # standalone binaries (not from package managers)
+    # standalone binaries (installed manually or via installer)
     echo -e "  ${BD}binaries:${N}"
     local bin_found=0
     for cmd in hanzo-node hanzo-dev; do
         local path=$(command -v "$cmd" 2>/dev/null)
         if [[ -n "$path" ]]; then
-            # skip if already found via cargo
-            [[ $rust_found -eq 1 ]] && continue
+            # skip if already found via cargo or npm
+            [[ $rust_found -eq 1 ]] && cargo install --list 2>/dev/null | grep -q "^${cmd} " && continue
+            [[ $npm_found -eq 1 ]] && [[ "$path" == *"node_modules"* ]] && continue
             local out=$("$cmd" --version 2>&1 | head -1)
             local ver=$(echo "$out" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
             [[ -z "$ver" ]] && ver="?"

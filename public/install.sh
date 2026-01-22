@@ -1,93 +1,98 @@
 #!/bin/bash
-# Hanzo Installer - Universal AI Development Platform
-# Usage: curl -fsSL https://hanzo.sh/install | bash
-#        curl -fsSL https://hanzo.sh/install | bash -s -- --bundle full
+# hanzo installer
+# usage: curl -fsSL hanzo.sh | bash
 #
-# Copyright (c) 2024-2026 Hanzo AI Inc.
+# copyright (c) 2024-2026 hanzo ai inc.
 # https://hanzo.ai
 
-set -e
+set -euo pipefail
 
-# Configuration via environment variables
-HANZO_INSTALL_DIR="${HANZO_INSTALL_DIR:-$HOME/.local/bin}"
-HANZO_BUNDLE="${HANZO_BUNDLE:-minimal}"
-HANZO_PREFER_RUST="${HANZO_PREFER_RUST:-0}"
+# config
+HANZO_DIR="${HANZO_INSTALL_DIR:-$HOME/.local/bin}"
+HANZO_BUNDLE="${HANZO_BUNDLE:-default}"
+HANZO_FORCE="${HANZO_FORCE:-0}"
+HANZO_UPGRADE="${HANZO_UPGRADE:-0}"
+HANZO_QUIET="${HANZO_QUIET:-0}"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-BOLD='\033[1m'
-HANZO_RED='\033[38;5;196m'
+# colors
+if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
+    R='\033[0;31m' G='\033[0;32m' Y='\033[0;33m' B='\033[0;34m' C='\033[0;36m'
+    N='\033[0m' BD='\033[1m' DM='\033[2m' HR='\033[38;5;196m'
+else
+    R='' G='' Y='' B='' C='' N='' BD='' DM='' HR=''
+fi
 
-print_banner() {
+# tracking
+declare -a INSTALLED=() SKIPPED=() UPGRADED=() FAILED=()
+
+banner() {
+    [[ "$HANZO_QUIET" == "1" ]] && return
     echo ""
-    echo -e "${HANZO_RED}${BOLD}"
+    echo -e "${HR}${BD}"
     echo "  ██╗  ██╗ █████╗ ███╗   ██╗███████╗ ██████╗ "
     echo "  ██║  ██║██╔══██╗████╗  ██║╚══███╔╝██╔═══██╗"
     echo "  ███████║███████║██╔██╗ ██║  ███╔╝ ██║   ██║"
     echo "  ██╔══██║██╔══██║██║╚██╗██║ ███╔╝  ██║   ██║"
     echo "  ██║  ██║██║  ██║██║ ╚████║███████╗╚██████╔╝"
     echo "  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝ ╚═════╝ "
-    echo -e "${NC}"
-    echo -e "${CYAN}  Universal AI Development Platform${NC}"
+    echo -e "${N}"
+    echo -e "${C}  ai development platform${N}"
     echo ""
 }
 
-info() { echo -e "${BLUE}info${NC}: $1"; }
-success() { echo -e "${GREEN}✓${NC} $1"; }
-warn() { echo -e "${YELLOW}warning${NC}: $1"; }
-error() { echo -e "${RED}error${NC}: $1"; exit 1; }
+log() { [[ "$HANZO_QUIET" != "1" ]] && echo -e "  $1"; }
+ok() { echo -e "  ${G}✓${N} $1"; }
+skip() { echo -e "  ${DM}○ $1${N}"; }
+warn() { echo -e "  ${Y}! $1${N}"; }
+fail() { echo -e "  ${R}✗ $1${N}"; }
+die() { fail "$1"; exit 1; }
 
-# Parse arguments
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --bundle)
-                HANZO_BUNDLE="$2"
-                shift 2
-                ;;
-            --dir)
-                HANZO_INSTALL_DIR="$2"
-                shift 2
-                ;;
-            --prefer-rust)
-                HANZO_PREFER_RUST=1
-                shift
-                ;;
+            --bundle|-b) HANZO_BUNDLE="$2"; shift 2 ;;
+            --dir|-d) HANZO_DIR="$2"; shift 2 ;;
+            --force|-f) HANZO_FORCE=1; shift ;;
+            --upgrade|-u) HANZO_UPGRADE=1; shift ;;
+            --quiet|-q) HANZO_QUIET=1; shift ;;
             --help|-h)
-                echo "Hanzo Installer"
-                echo ""
-                echo "Usage: curl -fsSL https://hanzo.sh/install | bash -s -- [OPTIONS]"
-                echo ""
-                echo "Options:"
-                echo "  --bundle BUNDLE    Installation bundle (default: minimal)"
-                echo "                     minimal  - Python CLI only"
-                echo "                     python   - CLI, MCP, Agents, AI SDK"
-                echo "                     rust     - Node, Dev, MCP (Rust)"
-                echo "                     full     - Everything: Python + Rust"
-                echo "  --dir PATH         Install directory (default: ~/.local/bin)"
-                echo "  --prefer-rust      Prefer Rust implementations when available"
-                echo "  --help             Show this help"
-                echo ""
-                echo "Environment Variables:"
-                echo "  HANZO_BUNDLE       Default bundle"
-                echo "  HANZO_INSTALL_DIR  Custom install directory"
-                echo "  HANZO_PREFER_RUST  Set to 1 to prefer Rust tools"
-                exit 0
-                ;;
-            *)
-                warn "Unknown option: $1"
-                shift
-                ;;
+                cat << 'EOF'
+hanzo installer
+
+usage: curl -fsSL hanzo.sh | bash
+       curl -fsSL hanzo.sh | bash -s -- [options]
+
+options:
+  -b, --bundle NAME    installation bundle (default: default)
+                         default  - cli + mcp + dev tools
+                         minimal  - cli only
+                         full     - everything
+  -d, --dir PATH       install directory (default: ~/.local/bin)
+  -u, --upgrade        upgrade existing installations
+  -f, --force          force reinstall
+  -q, --quiet          minimal output
+  -h, --help           show this help
+
+shortcuts:
+  curl hanzo.sh | bash           # default (cli + mcp)
+  curl hanzo.sh/cli | bash       # cli only
+  curl hanzo.sh/mcp | bash       # mcp only
+  curl hanzo.sh/dev | bash       # dev tools
+  curl hanzo.sh/full | bash      # everything
+
+examples:
+  curl -fsSL hanzo.sh | bash
+  curl -fsSL hanzo.sh | bash -s -- --upgrade
+  curl -fsSL hanzo.sh | bash -s -- --force
+
+EOF
+                exit 0 ;;
+            -*) warn "unknown option: $1"; shift ;;
+            *) HANZO_BUNDLE="$1"; shift ;;
         esac
     done
 }
 
-# Detect platform
 detect_platform() {
     OS="$(uname -s)"
     ARCH="$(uname -m)"
@@ -96,251 +101,235 @@ detect_platform() {
         Darwin) PLATFORM="macos" ;;
         Linux) PLATFORM="linux" ;;
         MINGW*|MSYS*|CYGWIN*) PLATFORM="windows" ;;
-        *) error "Unsupported OS: $OS" ;;
+        *) die "unsupported os: $OS" ;;
     esac
 
     case "$ARCH" in
         x86_64|amd64) ARCH="x64" ;;
         arm64|aarch64) ARCH="arm64" ;;
-        *) error "Unsupported architecture: $ARCH" ;;
+        armv7*) ARCH="arm" ;;
+        *) die "unsupported arch: $ARCH" ;;
     esac
 
-    info "Platform: ${PLATFORM}-${ARCH}"
+    log "${PLATFORM}-${ARCH}"
 }
 
-# Install uv (Python package manager)
+has_cmd() { command -v "$1" >/dev/null 2>&1; }
+has_uv_tool() { uv tool list 2>/dev/null | grep -q "^${1} " 2>/dev/null; }
+get_uv_version() { uv tool list 2>/dev/null | grep "^${1} " | awk '{print $2}' | tr -d 'v'; }
+
 install_uv() {
-    if command -v uv >/dev/null 2>&1; then
-        success "uv already installed: $(uv --version)"
-        return
+    if has_cmd uv; then
+        ok "uv $(uv --version 2>/dev/null | awk '{print $2}')"
+        return 0
     fi
 
-    info "Installing uv (Python package manager)..."
+    log "installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
-    # Add to PATH for this session
-    export PATH="$HOME/.local/bin:$PATH"
+    has_cmd uv && ok "uv installed" || die "failed to install uv"
+}
 
-    if command -v uv >/dev/null 2>&1; then
-        success "uv installed: $(uv --version)"
+install_tool() {
+    local tool="$1" name="${2:-$1}"
+
+    if has_uv_tool "$tool"; then
+        local ver=$(get_uv_version "$tool")
+
+        if [[ "$HANZO_FORCE" == "1" ]]; then
+            log "reinstalling $name..."
+            uv tool install "$tool" --force 2>/dev/null && { INSTALLED+=("$name"); ok "$name"; } || { FAILED+=("$name"); fail "$name"; }
+        elif [[ "$HANZO_UPGRADE" == "1" ]]; then
+            log "upgrading $name..."
+            uv tool upgrade "$tool" 2>/dev/null
+            local new_ver=$(get_uv_version "$tool")
+            [[ "$ver" != "$new_ver" ]] && { UPGRADED+=("$name"); ok "$name $ver → $new_ver"; } || { SKIPPED+=("$name"); skip "$name $ver"; }
+        else
+            SKIPPED+=("$name $ver"); skip "$name $ver"
+        fi
+        return 0
+    fi
+
+    log "installing $name..."
+    uv tool install "$tool" 2>/dev/null && { INSTALLED+=("$name"); ok "$name"; } || { FAILED+=("$name"); fail "$name"; return 1; }
+}
+
+has_bin() { [[ -x "$HANZO_DIR/$1" ]] || has_cmd "$1"; }
+get_bin_version() {
+    local p="$HANZO_DIR/$1"
+    [[ -x "$p" ]] || p="$(command -v "$1" 2>/dev/null)"
+    [[ -n "$p" ]] && "$p" --version 2>/dev/null | head -1 || echo "?"
+}
+
+install_release() {
+    local repo="$1" bin="$2" name="${3:-$2}"
+
+    if has_bin "$bin"; then
+        local ver=$(get_bin_version "$bin")
+        if [[ "$HANZO_FORCE" != "1" ]]; then
+            SKIPPED+=("$name"); skip "$name ($ver)"
+            return 0
+        fi
+        log "reinstalling $name..."
     else
-        error "Failed to install uv"
-    fi
-}
-
-# Install Python tools via uv
-install_python_tools() {
-    local tools=("$@")
-
-    for tool in "${tools[@]}"; do
-        case "$tool" in
-            cli)
-                info "Installing hanzo CLI..."
-                uv tool install hanzo
-                success "hanzo CLI installed"
-                ;;
-            mcp)
-                info "Installing hanzo-mcp..."
-                uv tool install hanzo-mcp
-                success "hanzo-mcp installed"
-                ;;
-            agents)
-                info "Installing hanzo-agents..."
-                uv tool install hanzo-agents
-                success "hanzo-agents installed"
-                ;;
-            ai)
-                info "Installing hanzoai SDK..."
-                uv tool install hanzoai
-                success "hanzoai SDK installed"
-                ;;
-        esac
-    done
-}
-
-# Install Rust tools via cargo or GitHub releases
-install_rust_tools() {
-    local tools=("$@")
-
-    # Check for cargo
-    if ! command -v cargo >/dev/null 2>&1; then
-        info "Installing Rust toolchain..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source "$HOME/.cargo/env"
+        log "installing $name..."
     fi
 
-    for tool in "${tools[@]}"; do
-        case "$tool" in
-            node)
-                info "Installing hanzo-node..."
-                install_github_release "hanzoai/node" "hanzo-node"
-                ;;
-            dev)
-                info "Installing hanzo-dev..."
-                install_github_release "hanzoai/dev" "hanzo-dev"
-                ;;
-            mcp-rs)
-                info "Installing hanzo-mcp (Rust)..."
-                install_github_release "hanzoai/mcp" "hanzo-mcp"
-                ;;
-        esac
-    done
-}
-
-# Install from GitHub releases
-install_github_release() {
-    local repo="$1"
-    local binary="$2"
-    local api_url="https://api.github.com/repos/${repo}/releases/latest"
-
-    # Determine asset name based on platform
-    local asset_suffix=""
+    local api="https://api.github.com/repos/${repo}/releases/latest"
+    local pat=""
     case "$PLATFORM-$ARCH" in
-        macos-arm64) asset_suffix="darwin-arm64" ;;
-        macos-x64) asset_suffix="darwin-x64" ;;
-        linux-x64) asset_suffix="linux-x64" ;;
-        linux-arm64) asset_suffix="linux-arm64" ;;
-        *) error "No binary available for $PLATFORM-$ARCH" ;;
+        macos-arm64)  pat="darwin.*arm64\|macos.*arm64\|apple.*arm64" ;;
+        macos-x64)    pat="darwin.*x64\|darwin.*amd64\|macos.*x64" ;;
+        linux-x64)    pat="linux.*x64\|linux.*amd64" ;;
+        linux-arm64)  pat="linux.*arm64\|linux.*aarch64" ;;
+        *) warn "no binary for $PLATFORM-$ARCH"; return 1 ;;
     esac
 
-    # Get download URL from GitHub API
-    local download_url
-    download_url=$(curl -sL "$api_url" | grep "browser_download_url" | grep "$asset_suffix" | head -1 | cut -d '"' -f 4)
+    local info url
+    info=$(curl -sL "$api" 2>/dev/null) || { FAILED+=("$name"); fail "$name"; return 1; }
+    url=$(echo "$info" | grep "browser_download_url" | grep -iE "$pat" | head -1 | cut -d '"' -f 4)
+    [[ -z "$url" ]] && { warn "no release for $repo"; FAILED+=("$name"); return 1; }
 
-    if [ -z "$download_url" ]; then
-        warn "No release found for $repo ($asset_suffix), skipping..."
-        return
-    fi
+    mkdir -p "$HANZO_DIR"
+    local tmp="/tmp/${bin}-$$"
+    curl -sL "$url" -o "$tmp" || { FAILED+=("$name"); rm -f "$tmp"; return 1; }
 
-    # Download and install
-    mkdir -p "$HANZO_INSTALL_DIR"
-    local tmp_file="/tmp/${binary}-$$"
-
-    curl -sL "$download_url" -o "$tmp_file"
-
-    # Handle tar.gz or direct binary
-    if [[ "$download_url" == *.tar.gz ]]; then
-        tar -xzf "$tmp_file" -C "$HANZO_INSTALL_DIR"
-    elif [[ "$download_url" == *.zip ]]; then
-        unzip -o "$tmp_file" -d "$HANZO_INSTALL_DIR"
+    if [[ "$url" == *.tar.gz ]] || [[ "$url" == *.tgz ]]; then
+        tar -xzf "$tmp" -C "$HANZO_DIR" 2>/dev/null || {
+            local d="/tmp/${bin}-ext-$$"; mkdir -p "$d"
+            tar -xzf "$tmp" -C "$d"
+            find "$d" -name "$bin" -type f -exec mv {} "$HANZO_DIR/$bin" \;
+            rm -rf "$d"
+        }
+    elif [[ "$url" == *.zip ]]; then
+        unzip -o "$tmp" -d "$HANZO_DIR" 2>/dev/null || {
+            local d="/tmp/${bin}-ext-$$"; mkdir -p "$d"
+            unzip -o "$tmp" -d "$d"
+            find "$d" -name "$bin" -type f -exec mv {} "$HANZO_DIR/$bin" \;
+            rm -rf "$d"
+        }
     else
-        mv "$tmp_file" "$HANZO_INSTALL_DIR/$binary"
-        chmod +x "$HANZO_INSTALL_DIR/$binary"
+        mv "$tmp" "$HANZO_DIR/$bin"
     fi
 
-    rm -f "$tmp_file"
-    success "$binary installed to $HANZO_INSTALL_DIR"
+    chmod +x "$HANZO_DIR/$bin" 2>/dev/null || true
+    rm -f "$tmp"
+    INSTALLED+=("$name"); ok "$name"
 }
 
-# Install JavaScript tools via npm/pnpm/bun
-install_js_tools() {
-    local tools=("$@")
-    local pkg_manager=""
-
-    if command -v bun >/dev/null 2>&1; then
-        pkg_manager="bun"
-    elif command -v pnpm >/dev/null 2>&1; then
-        pkg_manager="pnpm"
-    elif command -v npm >/dev/null 2>&1; then
-        pkg_manager="npm"
-    else
-        warn "No JavaScript package manager found, skipping JS tools"
-        return
-    fi
-
-    for tool in "${tools[@]}"; do
-        case "$tool" in
-            cli-js)
-                info "Installing @hanzoai/cli..."
-                $pkg_manager install -g @hanzoai/cli
-                success "@hanzoai/cli installed"
-                ;;
-            mcp-js)
-                info "Installing @hanzoai/mcp..."
-                $pkg_manager install -g @hanzoai/mcp
-                success "@hanzoai/mcp installed"
-                ;;
-        esac
-    done
-}
-
-# Install bundle
 install_bundle() {
     local bundle="$1"
-
-    info "Installing bundle: $bundle"
     echo ""
 
     case "$bundle" in
-        minimal)
-            install_python_tools cli
+        default)
+            # default: cli + mcp
+            install_tool "hanzo" "hanzo"
+            install_tool "hanzo-mcp" "hanzo-mcp"
             ;;
-        python)
-            install_python_tools cli mcp agents ai
+        minimal|cli)
+            install_tool "hanzo" "hanzo"
             ;;
-        rust)
-            install_rust_tools node dev mcp-rs
+        mcp)
+            install_tool "hanzo-mcp" "hanzo-mcp"
             ;;
-        javascript|js)
-            install_js_tools cli-js mcp-js
-            ;;
-        full)
-            install_python_tools cli mcp agents ai
-            install_rust_tools node dev mcp-rs
+        agents)
+            install_tool "hanzo-agents" "hanzo-agents"
             ;;
         dev)
-            install_python_tools cli mcp
-            install_rust_tools dev
+            install_tool "hanzo" "hanzo"
+            install_tool "hanzo-mcp" "hanzo-mcp"
+            # install_release "hanzoai/dev" "hanzo-dev" "hanzo-dev"
+            ;;
+        full|all)
+            install_tool "hanzo" "hanzo"
+            install_tool "hanzo-mcp" "hanzo-mcp"
+            install_tool "hanzo-agents" "hanzo-agents"
+            # install_release "hanzoai/node" "hanzo-node" "hanzo-node"
+            # install_release "hanzoai/dev" "hanzo-dev" "hanzo-dev"
+            ;;
+        rust)
+            install_release "hanzoai/node" "hanzo-node" "hanzo-node"
+            install_release "hanzoai/dev" "hanzo-dev" "hanzo-dev"
             ;;
         *)
-            error "Unknown bundle: $bundle. Use: minimal, python, rust, javascript, full, dev"
+            die "unknown bundle: $bundle"
             ;;
     esac
 }
 
-# Print post-install instructions
-print_instructions() {
-    echo ""
-    echo -e "${GREEN}${BOLD}Installation Complete!${NC}"
-    echo ""
-    echo "Installed bundle: $HANZO_BUNDLE"
-    echo ""
-    echo "Quick start:"
-    echo ""
-    echo -e "  ${CYAN}hanzo install doctor${NC}     # Verify installation"
-    echo -e "  ${CYAN}hanzo dev${NC}                # Start AI coding session"
-    echo -e "  ${CYAN}hanzo cloud deploy${NC}       # Deploy to cloud"
-    echo -e "  ${CYAN}hanzo-mcp${NC}                # Start MCP server"
-    echo ""
-    echo "Documentation: https://docs.hanzo.ai"
-    echo "GitHub:        https://github.com/hanzoai"
+summary() {
     echo ""
 
-    # Remind about PATH
-    if [[ ":$PATH:" != *":$HANZO_INSTALL_DIR:"* ]]; then
-        echo -e "${YELLOW}Note:${NC} Add to your shell profile:"
+    if [[ ${#INSTALLED[@]} -gt 0 ]]; then
+        echo -e "  ${G}${BD}installed:${N}"
+        for i in "${INSTALLED[@]}"; do echo -e "    ${G}✓${N} $i"; done
+    fi
+
+    if [[ ${#UPGRADED[@]} -gt 0 ]]; then
+        echo -e "  ${C}${BD}upgraded:${N}"
+        for i in "${UPGRADED[@]}"; do echo -e "    ${C}↑${N} $i"; done
+    fi
+
+    if [[ ${#SKIPPED[@]} -gt 0 ]] && [[ "$HANZO_QUIET" != "1" ]]; then
+        echo -e "  ${DM}skipped:${N}"
+        for i in "${SKIPPED[@]}"; do echo -e "    ${DM}○ $i${N}"; done
+    fi
+
+    if [[ ${#FAILED[@]} -gt 0 ]]; then
+        echo -e "  ${R}${BD}failed:${N}"
+        for i in "${FAILED[@]}"; do echo -e "    ${R}✗${N} $i"; done
+    fi
+}
+
+finish() {
+    echo ""
+
+    if [[ ${#INSTALLED[@]} -gt 0 ]] || [[ ${#UPGRADED[@]} -gt 0 ]]; then
+        echo -e "  ${G}ready!${N}"
         echo ""
-        echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+        echo "  quick start:"
+        echo -e "    ${C}hanzo --help${N}        # see commands"
+        echo -e "    ${C}hanzo cloud login${N}   # login"
+        has_uv_tool "hanzo-mcp" && echo -e "    ${C}hanzo-mcp${N}           # start mcp server"
+        echo ""
+        echo "  docs: https://docs.hanzo.ai"
+        echo ""
+    elif [[ ${#SKIPPED[@]} -gt 0 ]]; then
+        echo -e "  ${G}already installed${N}"
+        echo ""
+        echo "  to upgrade: curl -fsSL hanzo.sh | bash -s -- -u"
+        echo "  to reinstall: curl -fsSL hanzo.sh | bash -s -- -f"
+        echo ""
+    fi
+
+    if [[ ":$PATH:" != *":$HANZO_DIR:"* ]] && [[ ${#INSTALLED[@]} -gt 0 ]]; then
+        echo -e "  ${Y}add to path:${N}"
+        echo "    export PATH=\"$HANZO_DIR:\$PATH\""
         echo ""
     fi
 }
 
-# Main
 main() {
     parse_args "$@"
-    print_banner
+    banner
 
-    info "Starting Hanzo installation..."
-    info "Bundle: $HANZO_BUNDLE"
+    log "bundle: $HANZO_BUNDLE"
+    [[ "$HANZO_UPGRADE" == "1" ]] && log "mode: upgrade"
+    [[ "$HANZO_FORCE" == "1" ]] && log "mode: force"
     echo ""
 
     detect_platform
     install_uv
 
-    echo ""
     install_bundle "$HANZO_BUNDLE"
 
-    print_instructions
+    summary
+    finish
+
+    [[ ${#FAILED[@]} -gt 0 ]] && exit 1
+    exit 0
 }
 
 main "$@"

@@ -135,23 +135,27 @@ install_tool() {
 
     if has_uv_tool "$tool"; then
         local ver=$(get_uv_version "$tool")
+        local path=$(command -v "$name" 2>/dev/null || echo "~/.local/bin/$name")
 
         if [[ "$HANZO_FORCE" == "1" ]]; then
             log "reinstalling $name..."
-            uv tool install "$tool" --force 2>/dev/null && { INSTALLED+=("$name"); ok "$name"; } || { FAILED+=("$name"); fail "$name"; }
+            uv tool install "$tool" --force 2>/dev/null && { INSTALLED+=("$name $ver"); ok "$name $ver"; } || { FAILED+=("$name"); fail "$name"; }
         elif [[ "$HANZO_UPGRADE" == "1" ]]; then
             log "upgrading $name..."
             uv tool upgrade "$tool" 2>/dev/null
             local new_ver=$(get_uv_version "$tool")
-            [[ "$ver" != "$new_ver" ]] && { UPGRADED+=("$name"); ok "$name $ver → $new_ver"; } || { SKIPPED+=("$name"); skip "$name $ver"; }
+            [[ "$ver" != "$new_ver" ]] && { UPGRADED+=("$name $ver → $new_ver"); ok "$name $ver → $new_ver"; } || { SKIPPED+=("$name $ver @ $path"); skip "$name $ver"; }
         else
-            SKIPPED+=("$name $ver"); skip "$name $ver"
+            SKIPPED+=("$name $ver @ $path"); skip "$name $ver"
         fi
         return 0
     fi
 
     log "installing $name..."
-    uv tool install "$tool" 2>/dev/null && { INSTALLED+=("$name"); ok "$name"; } || { FAILED+=("$name"); fail "$name"; return 1; }
+    uv tool install "$tool" 2>/dev/null && {
+        local ver=$(get_uv_version "$tool")
+        INSTALLED+=("$name $ver"); ok "$name $ver";
+    } || { FAILED+=("$name"); fail "$name"; return 1; }
 }
 
 has_bin() { [[ -x "$HANZO_DIR/$1" ]] || has_cmd "$1"; }

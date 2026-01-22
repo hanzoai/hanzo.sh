@@ -60,26 +60,33 @@ usage: curl -fsSL hanzo.sh | bash
 
 options:
   -b, --bundle NAME    installation bundle (default: default)
-                         default  - cli + mcp + dev tools
+                         default  - cli + mcp
                          minimal  - cli only
-                         full     - everything
+                         full     - cli + mcp + agents + node
   -d, --dir PATH       install directory (default: ~/.local/bin)
   -u, --upgrade        upgrade existing installations
   -f, --force          force reinstall
-  -q, --quiet          minimal output
+  -q, --quiet          minimal output (skip extras suggestions)
   -h, --help           show this help
 
 shortcuts:
   curl hanzo.sh | bash           # default (cli + mcp)
   curl hanzo.sh/cli | bash       # cli only
   curl hanzo.sh/mcp | bash       # mcp only
-  curl hanzo.sh/dev | bash       # dev tools
+  curl hanzo.sh/agents | bash    # agents
   curl hanzo.sh/full | bash      # everything
+
+extras (shown after install):
+  - VS Code / Cursor extensions
+  - Browser extensions (Chrome, Firefox)
+  - Shell completions (zsh, bash, fish)
+  - Claude Desktop MCP integration
+  - Other AI tools (claude-code, aider)
 
 examples:
   curl -fsSL hanzo.sh | bash
   curl -fsSL hanzo.sh | bash -s -- --upgrade
-  curl -fsSL hanzo.sh | bash -s -- --force
+  curl -fsSL hanzo.sh | bash -s -- --bundle full
 
 EOF
                 exit 0 ;;
@@ -425,6 +432,65 @@ finish() {
     fi
 }
 
+extras() {
+    [[ "$HANZO_QUIET" == "1" ]] && return
+
+    echo -e "  ${BD}optional extras:${N}"
+    echo ""
+
+    # VS Code extension
+    if has_cmd code; then
+        if ! code --list-extensions 2>/dev/null | grep -q "hanzo.hanzo-ai"; then
+            echo -e "    ${C}code --install-extension hanzo.hanzo-ai${N}"
+            echo -e "      └─ VS Code extension for Hanzo AI"
+        fi
+    fi
+
+    # Cursor extension
+    if has_cmd cursor; then
+        echo -e "    ${C}cursor --install-extension hanzo.hanzo-ai${N}"
+        echo -e "      └─ Cursor extension for Hanzo AI"
+    fi
+
+    # Shell completions
+    echo ""
+    echo -e "    ${BD}shell completions:${N}"
+    if [[ -n "$ZSH_VERSION" ]] || [[ "$SHELL" == *"zsh"* ]]; then
+        echo -e "    ${C}hanzo completion zsh > ~/.zsh/completions/_hanzo${N}"
+    fi
+    if [[ -n "$BASH_VERSION" ]] || [[ "$SHELL" == *"bash"* ]]; then
+        echo -e "    ${C}hanzo completion bash > ~/.bash_completion.d/hanzo${N}"
+    fi
+    if [[ "$SHELL" == *"fish"* ]]; then
+        echo -e "    ${C}hanzo completion fish > ~/.config/fish/completions/hanzo.fish${N}"
+    fi
+
+    # Browser extensions
+    echo ""
+    echo -e "    ${BD}browser extensions:${N}"
+    echo -e "    ${C}https://chrome.google.com/webstore/detail/hanzo-ai${N}"
+    echo -e "      └─ Chrome/Edge/Brave extension"
+    echo -e "    ${C}https://addons.mozilla.org/addon/hanzo-ai${N}"
+    echo -e "      └─ Firefox extension"
+
+    # Claude Desktop MCP
+    if [[ -d "$HOME/Library/Application Support/Claude" ]] || [[ -d "$HOME/.config/claude" ]]; then
+        echo ""
+        echo -e "    ${BD}claude desktop mcp:${N}"
+        echo -e "    ${C}hanzo-mcp install claude${N}"
+        echo -e "      └─ Add Hanzo MCP to Claude Desktop"
+    fi
+
+    # Other CLI tools
+    echo ""
+    echo -e "    ${BD}other ai tools:${N}"
+    echo -e "    ${C}uv tool install claude-code${N}      # Claude Code CLI"
+    echo -e "    ${C}uv tool install aider-chat${N}       # Aider pair programming"
+    echo -e "    ${C}npm i -g @anthropic-ai/claude${N}    # Claude CLI (official)"
+
+    echo ""
+}
+
 main() {
     parse_args "$@"
     banner
@@ -441,6 +507,7 @@ main() {
 
     summary
     finish
+    extras
 
     [[ ${#FAILED[@]} -gt 0 ]] && exit 1
     exit 0

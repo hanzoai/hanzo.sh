@@ -1,0 +1,46 @@
+# Hanzo CLI
+
+> Command-line tools for the Hanzo AI platform.
+
+## About
+Hanzo CLI (hanzo.sh) provides command-line tools for installing, configuring, deploying, and managing AI models and services on the Hanzo AI platform. It supports model deployment, cloud resource management, blockchain node operations, and CI/CD integration from the terminal.
+
+## Key Features
+- Install with a single command: `curl -fsSL https://hanzo.sh | sh`
+- Deploy and manage AI models from the terminal
+- Cloud resource provisioning and management
+- Blockchain node and wallet operations
+- API key and secrets management
+- CI/CD pipeline integration
+- Multi-environment configuration (dev, staging, production)
+- Shell completions for bash, zsh, and fish
+- Plugin system for extending functionality
+
+## Usage
+```bash
+# Install
+curl -fsSL https://hanzo.sh | sh
+
+# Login
+hanzo login
+
+# Deploy a model
+hanzo deploy --model zen-qwen3-8b
+
+# Manage cloud resources
+hanzo cloud list
+hanzo cloud create --gpu a100 --count 4
+
+# Blockchain operations
+hanzo node start --chain ethereum
+```
+
+## Links
+- [Website](https://hanzo.sh)
+- [Installation Guide](https://docs.hanzo.ai/cli)
+- [Documentation](https://docs.hanzo.ai)
+- [GitHub](https://github.com/hanzoai/cli)
+
+## Contact
+- Support: support@hanzo.ai
+- GitHub Issues: https://github.com/hanzoai/cli/issues

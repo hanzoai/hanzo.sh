@@ -32,7 +32,7 @@ banner() {
     echo -e "${M}   / /${W}_${M}  ${W}____${M} ${W}_____${M}  ${W}____${M}  ${W}____${M} "
     echo -e "${K}  / ${W}__${K} \\/ ${W}__${K} \`/ ${W}__${K} \\/${W}_${K}  / / ${W}__${K} \\"
     echo -e "${D} / / / / /${W}_${D}/ / / / / / /${W}_${D}/ /${W}_${D}/ /"
-    echo -e "${D}/${W}_${D}/ /${W}_${D}/\\${W}__${D},${W}_${D}/${W}_${D}/ /${W}_${D}/ /${W}___${D}/\\${W}____${D}/${N} ${DM}ai dev platform${N}"
+    echo -e "${D}/${W}_${D}/ /${W}_${D}/\\${W}__${D},${W}_${D}/${W}_${D}/ /${W}_${D}/ /${W}___${D}/\\${W}____${D}/${N}"
     echo ""
 }
 
@@ -411,9 +411,11 @@ finish() {
         echo -e "  ${G}ready!${N}"
         echo ""
         echo "  quick start:"
-        echo -e "    ${C}hanzo --help${N}        # see commands"
-        echo -e "    ${C}hanzo cloud login${N}   # login"
-        has_uv_tool "hanzo-mcp" && echo -e "    ${C}hanzo-mcp${N}           # start mcp server"
+        echo -e "    ${C}hanzo login${N}         # authenticate with hanzo"
+        echo -e "    ${C}hanzo --help${N}        # see all commands"
+        echo -e "    ${C}hanzo dev${N}           # start dev cli (auto-installs)"
+        echo -e "    ${C}hanzo net${N}           # start compute node (auto-installs)"
+        has_uv_tool "hanzo-mcp" && echo -e "    ${C}hanzo mcp serve${N}    # start mcp server"
         echo ""
         echo "  docs: https://docs.hanzo.ai"
         echo ""
@@ -463,11 +465,15 @@ extras() {
     echo -e "    ${BD}ai cli tools:${N}"
     local cli_found=0
     has_cmd claude && echo -e "    ${G}✓${N} claude        $(claude --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd dev && echo -e "    ${G}✓${N} dev           $(dev --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
     has_cmd gemini && echo -e "    ${G}✓${N} gemini        $(gemini --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
     has_cmd codex && echo -e "    ${G}✓${N} codex         $(codex --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd dev && echo -e "    ${G}✓${N} hanzo-dev     $(dev --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd grok && echo -e "    ${G}✓${N} grok" && ((cli_found++))
-    has_cmd cursor && echo -e "    ${G}✓${N} cursor" && ((cli_found++))
+    has_cmd aider && echo -e "    ${G}✓${N} aider         $(aider --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd grok && echo -e "    ${G}✓${N} grok          $(grok --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd vibe && echo -e "    ${G}✓${N} vibe          $(vibe --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd cursor && echo -e "    ${G}✓${N} cursor        $(cursor --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd windsurf && echo -e "    ${G}✓${N} windsurf      $(windsurf --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
+    has_cmd q && echo -e "    ${G}✓${N} amazon-q      $(q --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
     [[ $cli_found -eq 0 ]] && echo -e "    ${DM}(none detected)${N}"
 
     echo ""
@@ -507,14 +513,18 @@ extras() {
     has_cmd gemini || ((missing++))
     has_cmd codex || ((missing++))
     has_cmd dev || ((missing++))
+    has_cmd aider || ((missing++))
+    has_cmd grok || ((missing++))
 
     if [[ $missing -gt 0 ]]; then
         echo ""
-        echo -e "    ${BD}install ai agents:${N}"
-        has_cmd dev || echo -e "    ${C}cargo install hanzo-dev${N}               # Hanzo Dev (recommended)"
+        echo -e "    ${BD}install ai coding tools:${N}"
+        has_cmd dev || echo -e "    ${C}npm i -g @hanzo/dev${N}                   # Hanzo Dev"
         has_cmd claude || echo -e "    ${C}npm i -g @anthropic-ai/claude-code${N}   # Claude Code (free)"
         has_cmd gemini || echo -e "    ${C}npm i -g @google/gemini-cli${N}          # Gemini CLI (free)"
-        has_cmd codex || echo -e "    ${C}npm i -g @openai/codex${N}                # OpenAI Codex"
+        has_cmd codex || echo -e "    ${C}npm i -g @openai/codex${N}                # OpenAI Codex (free)"
+        has_cmd grok || echo -e "    ${C}npm i -g grok-cli${N}                     # Grok CLI (free)"
+        has_cmd aider || echo -e "    ${C}pip install aider-chat${N}                # Aider (free)"
     fi
 
     echo ""

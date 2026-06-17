@@ -1,4 +1,4 @@
-# LLM.md - Hanzo Hanzo.Sh
+# Hanzo Hanzo.Sh
 
 ## Overview
 **URL**: https://hanzo.app/projects/dedf1346-02b9-4baa-9273-6df78b702788/improve

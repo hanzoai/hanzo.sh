@@ -63,7 +63,7 @@ const Hero = () => {
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
               <code className="text-white/90">curl</code>{" "}
-              <span className="bg-gradient-to-r from-[#fd4444] to-[#ff6b6b] bg-clip-text text-transparent">hanzo.sh</span>
+              <span className="bg-gradient-to-r from-[#d81c33] to-[#f0506a] bg-clip-text text-transparent">hanzo.sh</span>
             </h1>
             <p className="text-lg text-white/50 max-w-xl mx-auto">
               Install the Hanzo AI toolkit. CLI, MCP server, agents, SDKs.
@@ -243,14 +243,14 @@ const Hero = () => {
                   key={bundle.name}
                   className={`p-3 rounded-lg text-left ${
                     bundle.highlight
-                      ? "bg-[#fd4444]/10 border border-[#fd4444]/30"
+                      ? "bg-[#d81c33]/10 border border-[#d81c33]/30"
                       : "bg-white/[0.02] border border-white/10"
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <code className="text-white text-sm font-medium">{bundle.name}</code>
                     {bundle.default && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">default</span>}
-                    {bundle.highlight && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#fd4444]/20 text-[#fd4444]">recommended</span>}
+                    {bundle.highlight && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#d81c33]/20 text-[#d81c33]">recommended</span>}
                   </div>
                   <p className="text-xs text-white/40">{bundle.desc}</p>
                 </div>

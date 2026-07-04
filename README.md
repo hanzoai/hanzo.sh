@@ -1,5 +1,7 @@
 # hanzo.sh
 
+[![Deploy on Hanzo](https://hanzo.app/deploy-badge.svg)](https://hanzo.app/new?template=https://github.com/hanzoai/hanzo.sh)
+
 ## Welcome to your Hanzo project
 
 ## Project info

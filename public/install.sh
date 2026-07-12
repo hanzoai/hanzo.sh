@@ -62,7 +62,8 @@ options:
   -b, --bundle NAME    installation bundle (default: default)
                          default  - cli + mcp
                          minimal  - cli only
-                         full     - cli + mcp + agents + node
+                         bot      - personal AI bot (hanzo.bot)
+                         full     - cli + mcp + agents + node + bot
   -d, --dir PATH       install directory (default: ~/.local/bin)
   -u, --upgrade        upgrade existing installations
   -f, --force          force reinstall
@@ -74,6 +75,8 @@ shortcuts:
   curl hanzo.sh/cli | bash       # cli only
   curl hanzo.sh/mcp | bash       # mcp only
   curl hanzo.sh/agents | bash    # agents
+  curl hanzo.sh/bot | bash       # personal AI bot (hanzo.bot)
+  curl hanzo.sh/node | bash      # compute node (hanzod)
   curl hanzo.sh/full | bash      # everything
 
 extras (shown after install):
@@ -341,6 +344,21 @@ doctor() {
     echo ""
 }
 
+install_bot() {
+    # canonical installer lives at hanzo.bot/install.sh (npm @hanzo/bot);
+    # delegate so bot install logic exists in exactly one place.
+    if has_cmd hanzo-bot && [[ "$HANZO_FORCE" != "1" && "$HANZO_UPGRADE" != "1" ]]; then
+        SKIPPED+=("hanzo-bot $(hanzo-bot --version 2>/dev/null | head -1)"); skip "hanzo-bot"
+        return 0
+    fi
+    log "installing hanzo-bot (via hanzo.bot/install.sh)..."
+    if curl -fsSL https://hanzo.bot/install.sh | bash -s -- --no-onboard; then
+        INSTALLED+=("hanzo-bot"); ok "hanzo-bot"
+    else
+        FAILED+=("hanzo-bot"); fail "hanzo-bot"
+    fi
+}
+
 install_bundle() {
     local bundle="$1"
     echo ""
@@ -364,6 +382,9 @@ install_bundle() {
             install_tool "hanzo-node" "hanzo-node"
             # hanzo-node install handled by the package
             ;;
+        bot)
+            install_bot
+            ;;
         dev)
             install_tool "hanzo" "hanzo"
             install_tool "hanzo-mcp" "hanzo-mcp"
@@ -373,6 +394,7 @@ install_bundle() {
             install_tool "hanzo-mcp" "hanzo-mcp"
             install_tool "hanzo-agents" "hanzo-agents"
             install_tool "hanzo-node" "hanzo-node"
+            install_bot
             ;;
         *)
             die "unknown bundle: $bundle"
@@ -415,6 +437,7 @@ finish() {
         echo -e "    ${C}hanzo --help${N}        # see all commands"
         echo -e "    ${C}hanzo dev${N}           # start dev cli (auto-installs)"
         echo -e "    ${C}hanzo net${N}           # start compute node (auto-installs)"
+        has_cmd hanzo-bot && echo -e "    ${C}hanzo-bot${N}           # personal AI bot (gateway + channels)"
         has_uv_tool "hanzo-mcp" && echo -e "    ${C}hanzo mcp serve${N}    # start mcp server"
         echo ""
         echo "  docs: https://docs.hanzo.ai"

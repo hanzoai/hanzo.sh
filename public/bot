@@ -1,0 +1,10 @@
+#!/bin/bash
+# Hanzo Bot - personal AI bot (gateway + CLI)
+# Usage: curl -fsSL hanzo.sh/bot | bash
+#
+# Thin delegator: the canonical bot installer lives at hanzo.bot/install.sh
+# (npm package @hanzo/bot). All flags pass through, e.g.:
+#   curl -fsSL hanzo.sh/bot | bash -s -- --beta
+set -e
+
+exec bash -c "$(curl -fsSL https://hanzo.bot/install.sh)" -- "$@"

@@ -1,0 +1,11 @@
+# hanzo.sh — assets-only Worker (CF Pages project limit reached; 7stars precedent)
+# deploy: pnpm build && npx wrangler@3 deploy
+name = "hanzo-sh"
+compatibility_date = "2026-07-01"
+
+[assets]
+directory = "dist"
+
+routes = [
+  { pattern = "hanzo.sh", custom_domain = true }
+]

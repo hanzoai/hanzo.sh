@@ -1,9 +1,13 @@
+@import url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.css');
+@import url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.css');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
  
 @layer base {
+  html { font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; }
+  code, pre, kbd, samp { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, monospace; }
   :root {
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;

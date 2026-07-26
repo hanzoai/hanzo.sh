@@ -1,7 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Terminal, Copy, Check, Code, ExternalLink, Package, Cpu, Globe, Github, BookOpen, Zap } from "lucide-react";
+import { Terminal, Copy, Check, Code, Cpu, Globe, Github, BookOpen, Zap } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { Toaster, toast } from "sonner";
 
 const HanzoLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
   <svg viewBox="0 0 67 67" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -15,7 +14,7 @@ const HanzoLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
   </svg>
 );
 
-const Hero = () => {
+const Install = () => {
   const [copied, setCopied] = useState<string | null>(null);
 
   const handleCopy = async (text: string, id: string) => {
@@ -326,8 +325,10 @@ const Hero = () => {
           </div>
         </div>
       </footer>
+
+      <Toaster theme="dark" position="top-center" />
     </div>
   );
 };
 
-export default Hero;
+export default Install;

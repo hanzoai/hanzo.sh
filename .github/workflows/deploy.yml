@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy
 
 on:
   push:
@@ -7,15 +7,14 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: deploy
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
+    # hanzo.sh is served by the assets Worker declared in wrangler.toml.
     runs-on: hanzo-build-linux-amd64
     steps:
       - name: Checkout
@@ -37,21 +36,17 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Assert the bundle carries the faces it names
+        run: |
+          css=$(ls dist/assets/*.css)
+          grep -q '@font-face' "$css" || { echo "no @font-face in $css"; exit 1; }
+          grep -q 'Geist' "$css" || { echo "no Geist in $css"; exit 1; }
+          ls dist/assets/*.woff2 >/dev/null || { echo "no woff2 emitted"; exit 1; }
+          grep -q '@import[^;]*http' "$css" && { echo "remote @import in $css"; exit 1; }
+          echo "$css: $(grep -o '@font-face' "$css" | wc -l) @font-face rules, fonts bundled"
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: hanzo-deploy-linux-amd64
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy
+        run: npx wrangler@3 deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

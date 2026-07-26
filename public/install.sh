@@ -426,6 +426,36 @@ summary() {
     fi
 }
 
+check_shadowing() {
+    # A stale binary earlier on PATH permanently masks what we just installed,
+    # and the failure is silent: the install reports success, `hanzo --version`
+    # prints whatever the old copy says, and re-running the installer never
+    # fixes it because it writes to a DIFFERENT directory.
+    #
+    # Real case: ~/.local/bin/hanzo held a retired Go build while the canonical
+    # Rust CLI installs to ~/.cargo/bin. uv also installs tools into
+    # ~/.local/bin, so a Python `hanzo` shadows it the same way. We do NOT
+    # delete anything — the user's files are theirs — but staying quiet about it
+    # is how someone ends up debugging a CLI they are not running.
+    local resolved expected
+    for bin in hanzo mcp dev hanzod; do
+        has_cmd "$bin" || continue
+        resolved="$(command -v "$bin" 2>/dev/null)"
+
+        expected=""
+        [[ -x "$HOME/.cargo/bin/$bin" ]] && expected="$HOME/.cargo/bin/$bin"
+        [[ -z "$expected" && -x "$HANZO_DIR/$bin" ]] && expected="$HANZO_DIR/$bin"
+        [[ -z "$expected" ]] && continue
+
+        if [[ "$resolved" != "$expected" ]]; then
+            warn "$bin resolves to $resolved, shadowing $expected"
+            echo -e "    ${DM}the copy on your PATH is not the one just installed.${N}"
+            echo -e "    ${DM}remove or rename it, or put its directory later on PATH:${N}"
+            echo "      mv $resolved $resolved.old"
+        fi
+    done
+}
+
 finish() {
     echo ""
 
@@ -449,6 +479,8 @@ finish() {
         echo "  to upgrade: curl -fsSL hanzo.sh | bash -s -- -u"
         echo ""
     fi
+
+    check_shadowing
 
     if [[ ":$PATH:" != *":$HANZO_DIR:"* ]] && [[ ${#INSTALLED[@]} -gt 0 ]]; then
         echo -e "  ${Y}add to path:${N}"

@@ -15,7 +15,10 @@ concurrency:
 jobs:
   deploy:
     # hanzo.sh is served by the assets Worker declared in wrangler.toml.
-    runs-on: hanzo-build-linux-amd64
+    # This repo lives in the hanzo-apps org, whose runners are their own scale
+    # set. ARC matches runs-on against the scale-set name, so the hanzoai pool
+    # cannot serve these jobs (see universe infra/k8s/arc).
+    runs-on: hanzo-apps-build-linux-amd64
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -45,9 +45,10 @@ served from an ordinary static server at all. It runs WITHOUT `-spa`: this app h
 exactly one route, so a mistyped path must 404 rather than return the installer.
 
 `HANZO_STATIC_CSP` in the CR is a response header only; it cannot touch the body.
-It sets `script-src 'self'`, which also means the third-party
-`the scaffold generator's injected script` tag still sitting in `index.html` does not load —
-that is intended, and the app does not depend on it.
+It sets `script-src 'self'`, which the page now satisfies outright: the
+third-party `the scaffold generator's injected script` tag is gone from `index.html` (it was
+a build-tool artifact the CSP was already blocking and nothing depended on), and
+so is the CDN font `@import`.
 
 ## Not live from here yet
 

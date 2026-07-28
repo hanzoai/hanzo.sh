@@ -58,12 +58,12 @@ promoted; deleting it first would strand the live host.
 
 Two things must be reconciled BEFORE anyone pins a tag in the CR:
 
-1. **The live bytes are not on `main`.** The running Worker was published from
-   commit `340fd8f`, which lives on `origin/rescue/main-local`, not on `main`.
-   `main` still `@import`s Geist from `cdn.jsdelivr.net` (`src/index.css` lines
-   1-2) where `rescue/main-local` self-hosts it. The CR's CSP therefore allows
-   `cdn.jsdelivr.net` for styles and fonts; land the self-hosting commit on
-   `main` and both entries come out, leaving the policy same-origin.
+1. **The CSP can come down to same-origin.** `main` used to `@import` Geist from
+   `cdn.jsdelivr.net`, which is why the CR's CSP allows that host for styles and
+   fonts. It does not any more: `@hanzo/design` ships both Geist faces as
+   `woff2` inside the package and the build emits them into `dist/assets/`, so
+   the page makes no third-party request at all. Drop `cdn.jsdelivr.net` from
+   `HANZO_STATIC_CSP` when the image is promoted.
 2. **Promotion order.** publish an image -> set `spec.image.tag` in
    `crs/hanzo-sh.yaml` -> add `- hanzo-sh.yaml` to `crs/kustomization.yaml` ->
    confirm the pod is Running and that `curl <pod>/ | bash -s -- --help` prints
@@ -76,15 +76,65 @@ alone.
 
 ## Stack
 
-Vite 5 + React 19 + Tailwind 4, one route (`src/pages/Index.tsx`). pnpm 9;
-`pnpm-lock.yaml` is what the build resolves (`--frozen-lockfile`).
+Vite 5 + React 19 on **@hanzo/ui** over the **@hanzo/gui** backend. One route
+(`src/pages/Index.tsx`), no router — `hanzoai/static` runs without `-spa`, so the
+routing decision is already made and a client-side router would only pretend to
+make it again. pnpm 9; `pnpm-lock.yaml` is what the build resolves
+(`--frozen-lockfile`).
 
 ```bash
 pnpm install
-pnpm dev      # vite, :8080
-pnpm build    # -> dist/, including the polyglot rewrite
+pnpm dev        # vite, :8080
+pnpm build      # -> dist/, including the polyglot rewrite
+pnpm typecheck
 pnpm lint
 ```
 
 `scripts/polyglot.sh` is an unwired duplicate of `scripts/build-polyglot.js`;
 only the `.js` is in `pnpm build`.
+
+### Where the page comes from
+
+There is no Tailwind, no shadcn and no Radix; the 48 generated `components/ui/*`
+files and the 27 Radix packages behind them are gone.
+
+- **@hanzo/products** — the header's launcher and the whole footer index. The
+  content of both is settled once for the estate; hanzo.sh only declares its own
+  four nav links and its one call-to-action (`src/site.ts`), because
+  `@hanzo/products@0.2.0` has no `hanzo.sh` `SiteId` yet. When it does, `HEADER`
+  collapses to `HEADERS['hanzo.sh']`.
+- **@hanzo/ui/product** — `SiteNav`, `SiteFooter`, `BrandMark`, `Panel`,
+  `StatusTag`, `ToastProvider`. The page used to draw two headers and two footers
+  (a `Navbar` above a `Hero` that carried its own header, and a hand-written
+  footer of `href="#"` links below the real one); these are the components that
+  end that.
+- **@hanzo/gui** — every primitive under it (`YStack`/`XStack`/`Text`/`Anchor`/
+  `Separator`), on the shared scale from `@hanzo/ui/gui-config`.
+- **@hanzo/design** — the token layer: monochrome, dark by default, Geist Sans
+  and Geist Mono self-hosted in the package. `src/index.css` imports it and does
+  nothing else.
+- **@hanzo/logo** — the mark, through `BrandMark`.
+
+`src/site.ts` is the page as data; `src/components/` renders it. Responsiveness
+is `flexWrap` + `minW`, not breakpoints: the same tree reflows from 390px to
+1280px with one media prop in the whole app.
+
+### Two workarounds, both with a delete condition
+
+`@hanzo/ui@8.0.26` has two defects this app has to route around. Both are marked
+in place; remove them when the package is fixed.
+
+1. `src/shims/hanzogui-next-theme.ts` — `@hanzo/ui/product` statically imports
+   `@hanzogui/next-theme` (an *optional* peer whose entry imports `next/script`),
+   because tsup put `ThemeToggle` and `ThemeToggleNext` in one chunk. No Vite app
+   can resolve it. `vite.config.ts` aliases the specifier to a stub; nothing here
+   renders a theme toggle.
+2. `src/gui.config.ts` — `SiteNav` writes `$sm` meaning "phone", but v5 defines
+   `sm` as `minWidth: 640`, so on the stock scale a phone gets the desktop link
+   row and a desktop gets a hamburger. This app redefines that ONE key as
+   `maxWidth: 639.98`; nothing else it renders reads `sm`.
+
+Also unusable in 8.0.26: `@hanzo/ui/core`, `/tokens`, `/gui`, `/shadcn`,
+`/components`, `/models`, `/primitives` — the exports map points them at `src/`,
+which `files: ["dist"]` does not publish. `src/mono.ts` reaches the mono family
+through `@hanzo/design` instead.

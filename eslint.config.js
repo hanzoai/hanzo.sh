@@ -10,7 +10,7 @@ export default tseslint.config(
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022,
       globals: globals.browser,
     },
     plugins: {
@@ -25,5 +25,12 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-unused-vars": "off",
     },
+  },
+  {
+    // Declaration merging registers @hanzo/gui's config with the type system, and
+    // the interface it merges into is empty BY CONSTRUCTION — the body comes from
+    // the module it extends. There is nothing to declare and nothing to lint.
+    files: ["**/*.d.ts"],
+    rules: { "@typescript-eslint/no-empty-object-type": "off" },
   }
 );

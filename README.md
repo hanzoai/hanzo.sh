@@ -1,74 +1,24 @@
 # hanzo.sh
 
-## Welcome to your Hanzo project
+The install surface. `curl hanzo.sh | bash` installs the Hanzo AI toolkit;
+opening hanzo.sh in a browser renders the landing page. They are the same file —
+see `LLM.md` for the polyglot, the installer and the serving chain.
 
-## Project info
+## Stack
 
-**URL**: https://hanzo.app/projects/dedf1346-02b9-4baa-9273-6df78b702788/improve
+Vite + React 19 on **@hanzo/ui** over the **@hanzo/gui** backend, with
+**@hanzo/design** tokens (monochrome, dark-default, self-hosted Geist),
+**@hanzo/logo** marks via `BrandMark`, and the header/footer content from
+**@hanzo/products** so this property cannot drift from the rest of the estate.
+No Tailwind, no shadcn, no Radix. One route.
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Hanzo App**
-
-Simply visit Hanzo App at [hanzo.app](https://hanzo.app) and start prompting.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push
-changes. Pushed changes will also be reflected in the Hanzo App.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+pnpm install
+pnpm dev        # vite, :8080
+pnpm build      # -> dist/, including the polyglot rewrite
+pnpm typecheck
+pnpm lint
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with Hanzo and these open source projects:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-All Hanzo projects can be deployed directly via Hanzo App and the Hanzo
-Platform.
-
-Simply visit your project at [Hanzo App](https://hanzo.app/projects/dedf1346-02b9-4baa-9273-6df78b702788/improve) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-Yes we do. Please deploy with Hanzo Platform for this advanced functionality.
-
+`src/site.ts` is the page as data (install commands, bundles, per-language
+packages); everything in `src/components/` renders it.

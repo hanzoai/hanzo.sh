@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@hanzo/brand':
-        specifier: ^1.4.5
-        version: 1.4.5(react@19.2.8)
       '@hanzo/data':
         specifier: ^1.2.2
         version: 1.2.2(@hanzo/gui@7.3.0(expo@57.0.8)(react-dom@19.2.8(react@19.2.8))(react-native-web@0.21.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.8))(react@19.2.8)(sf-symbols-typescript@2.2.0))(react@19.2.8)
@@ -20,9 +17,6 @@ importers:
       '@hanzo/gui':
         specifier: 7.3.0
         version: 7.3.0(expo@57.0.8)(react-dom@19.2.8(react@19.2.8))(react-native-web@0.21.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.8))(react@19.2.8)(sf-symbols-typescript@2.2.0)
-      '@hanzo/logo':
-        specifier: ^1.0.14
-        version: 1.0.14(react@19.2.8)
       '@hanzo/products':
         specifier: ^0.2.0
         version: 0.2.0(@hanzogui/lucide-icons-2@7.3.0(expo@57.0.8)(react-dom@19.2.8(react@19.2.8))(react-native-svg@15.15.5(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.8))(react@19.2.8))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.8))(react@19.2.8)(sf-symbols-typescript@2.2.0))(react@19.2.8)
@@ -848,15 +842,6 @@ packages:
 
   '@floating-ui/utils@0.2.9':
     resolution: {integrity: sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==}
-
-  '@hanzo/brand@1.4.5':
-    resolution: {integrity: sha512-1LKhN0WTSJePoF5auPbOIGJjnFNRl2ozGE0yHlUfytEKgqae2XDkd3aFJJPPWnL3Fsl205R+ZI/UU/U/5nya9w==}
-    hasBin: true
-    peerDependencies:
-      react: '>=18'
-    peerDependenciesMeta:
-      react:
-        optional: true
 
   '@hanzo/data@1.2.2':
     resolution: {integrity: sha512-hgLGGnsfZqyBmSzCPL2nsnON6jXbUKVNKDnzeIAPCJEkF5SXw4lzCTEtJRHYmrRb01lU0LlQfZxZXrvBd85ZMA==}
@@ -5481,12 +5466,6 @@ snapshots:
   '@floating-ui/utils@0.2.12': {}
 
   '@floating-ui/utils@0.2.9': {}
-
-  '@hanzo/brand@1.4.5(react@19.2.8)':
-    dependencies:
-      '@hanzo/logo': 1.0.14(react@19.2.8)
-    optionalDependencies:
-      react: 19.2.8
 
   '@hanzo/data@1.2.2(@hanzo/gui@7.3.0(expo@57.0.8)(react-dom@19.2.8(react@19.2.8))(react-native-web@0.21.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-native@0.86.2(@babel/core@7.29.7)(@react-native/metro-config@0.86.2(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.8))(react@19.2.8)(sf-symbols-typescript@2.2.0))(react@19.2.8)':
     dependencies:

@@ -113,7 +113,11 @@ files and the 27 Radix packages behind them are gone.
 - **@hanzo/design** — the token layer: monochrome, dark by default, Geist Sans
   and Geist Mono self-hosted in the package. `src/index.css` imports it and does
   nothing else.
-- **@hanzo/logo** — the mark, through `BrandMark`.
+- **@hanzo/logo** — the mark, through `BrandMark`. Not a direct dependency:
+  `@hanzo/ui` already depends on it, and declaring a package nothing here imports
+  is how a dependency list starts lying. `@hanzo/brand` is deliberately absent
+  too — it is the MULTI-brand registry, and hanzo.sh is one brand. Reaching for
+  it here is how a Lux or Zoo mark ends up on a Hanzo surface.
 
 `src/site.ts` is the page as data; `src/components/` renders it. Responsiveness
 is `flexWrap` + `minW`, not breakpoints: the same tree reflows from 390px to

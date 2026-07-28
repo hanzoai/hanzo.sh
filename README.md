@@ -8,7 +8,7 @@ see `LLM.md` for the polyglot, the installer and the serving chain.
 
 Vite + React 19 on **@hanzo/ui** over the **@hanzo/gui** backend, with
 **@hanzo/design** tokens (monochrome, dark-default, self-hosted Geist),
-**@hanzo/logo** marks via `BrandMark`, and the header/footer content from
+the **@hanzo/logo** mark via `BrandMark`, and the header/footer content from
 **@hanzo/products** so this property cannot drift from the rest of the estate.
 No Tailwind, no shadcn, no Radix. One route.
 

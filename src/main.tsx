@@ -1,6 +1,9 @@
 import { createRoot } from 'react-dom/client'
 
 import './index.css'
+// The gui base sheet as a static asset (scripts/gen-gui-css.mjs); the provider
+// renders with disableInjectCSS so this import is the one source of gui styles.
+import './gui.css'
 import { App } from './App'
 
 /**

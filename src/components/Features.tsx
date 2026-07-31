@@ -3,10 +3,7 @@
  * page, with its copy unchanged and its markup moved onto the design system.
  */
 import { H2, Text, XStack, YStack } from '@hanzo/gui'
-import { Bot } from '@hanzogui/lucide-icons-2/icons/Bot'
-import { Code } from '@hanzogui/lucide-icons-2/icons/Code'
-import { Database } from '@hanzogui/lucide-icons-2/icons/Database'
-import { Share2 } from '@hanzogui/lucide-icons-2/icons/Share2'
+import { Bot, Code, Database, Share2 } from '@hanzogui/lucide-icons-2'
 
 import { FEATURES, FEATURES_BLURB, FEATURES_TITLE, type Feature } from '../site'
 

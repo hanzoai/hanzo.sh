@@ -77,11 +77,34 @@ alone.
 
 ## Stack
 
-Vite 5 + React 19 on **@hanzo/ui** over the **@hanzo/gui** backend. One route
-(`src/pages/Index.tsx`), no router — `hanzoai/static` runs without `-spa`, so the
-routing decision is already made and a client-side router would only pretend to
-make it again. pnpm 9; `pnpm-lock.yaml` is what the build resolves
-(`--frozen-lockfile`).
+Vite 5 + React 19 on **@hanzo/ui 8.0.38** over the **@hanzo/gui 8.0.0** backend
+(whole `@hanzogui/*` graph at 8.0.0). One route (`src/pages/Index.tsx`), no
+router — `hanzoai/static` runs without `-spa`, so the routing decision is
+already made and a client-side router would only pretend to make it again.
+pnpm 9; `pnpm-lock.yaml` is what the build resolves (`--frozen-lockfile`).
+
+TypeScript is **7.0.2** (the native compiler) and `pnpm typecheck` runs it
+directly. typescript-eslint supports only the TS 6 API, so `.pnpmfile.cjs`
+gives the `@typescript-eslint/*` packages `typescript@6.0.3` as their OWN
+dependency — the documented side-by-side arrangement — while everything else
+sees 7.0.2. Delete that file when typescript-eslint supports TS >= 7.1
+(typescript-eslint#10940).
+
+The gui base sheet is a REAL stylesheet, not runtime injection:
+`scripts/gen-gui-css.mjs` (first step of `pnpm build`) bundles
+`src/gui.config.ts` with esbuild and writes `config.getCSS()` to `src/gui.css`,
+`main.tsx` imports it, and `GuiProvider` renders with `disableInjectCSS`. Vite
+fingerprints the sheet (~1.37 MB raw, ~43 kB gzip) so the browser caches it
+once. The generated file is committed so dev/typecheck work without a build.
+
+Icons import from the `@hanzogui/lucide-icons-2` package ROOT, not
+`/icons/<Name>` subpaths: 8.0.0's per-icon exports entries carry no `types`
+condition (the `.d.ts` files exist under `types/icons/` but are unreachable),
+so subpath imports typecheck as `any`. The root export is typed, and
+`sideEffects: false` means Vite tree-shakes it to the same bytes — measured,
+the JS bundle SHRANK 647 kB -> 531 kB moving to 8.0.0 + root imports.
+`react-native-svg` is declared directly because `@hanzogui/lucide-icons-2@8.0.0`
+imports it without declaring the peer.
 
 ```bash
 pnpm install
@@ -126,20 +149,19 @@ is `flexWrap` + `minW`, not breakpoints: the same tree reflows from 390px to
 
 ### Two workarounds, both with a delete condition
 
-`@hanzo/ui@8.0.26` has two defects this app has to route around. Both are marked
-in place; remove them when the package is fixed.
+`@hanzo/ui@8.0.38` still has two defects this app has to route around. Both are
+marked in place; remove them when the package is fixed.
 
-1. `src/shims/hanzogui-next-theme.ts` — `@hanzo/ui/product` statically imports
-   `@hanzogui/next-theme` (an *optional* peer whose entry imports `next/script`),
-   because tsup put `ThemeToggle` and `ThemeToggleNext` in one chunk. No Vite app
-   can resolve it. `vite.config.ts` aliases the specifier to a stub; nothing here
-   renders a theme toggle.
-2. `src/gui.config.ts` — `SiteNav` writes `$sm` meaning "phone", but v5 defines
-   `sm` as `minWidth: 640`, so on the stock scale a phone gets the desktop link
-   row and a desktop gets a hamburger. This app redefines that ONE key as
+1. `src/shims/hanzogui-next-theme.ts` — 8.0.38 improved on 8.0.26: `ThemeToggle`
+   now lazily code-splits `ThemeToggleNext` behind an error boundary instead of
+   importing it statically. But Rollup still follows the dynamic import at build
+   time, and `ThemeToggleNext` statically imports `@hanzogui/next-theme` (an
+   *optional* peer) — without the alias the build fails on `"useThemeSetting"
+   is not exported by "__vite-optional-peer-dep:..."` (measured). So
+   `vite.config.ts` keeps aliasing the specifier to a stub; nothing here renders
+   a theme toggle. Delete when a Vite build passes without it.
+2. `src/gui.config.ts` — `SiteNav` still writes `$sm` meaning "phone" in 8.0.38
+   (verified in `dist/product/SiteNav.js`), but v5 defines `sm` as
+   `minWidth: 640`, so on the stock scale a phone gets the desktop link row and
+   a desktop gets a hamburger. This app redefines that ONE key as
    `maxWidth: 639.98`; nothing else it renders reads `sm`.
-
-Also unusable in 8.0.26: `@hanzo/ui/core`, `/tokens`, `/gui`, `/shadcn`,
-`/components`, `/models`, `/primitives` — the exports map points them at `src/`,
-which `files: ["dist"]` does not publish. `src/mono.ts` reaches the mono family
-through `@hanzo/design` instead.

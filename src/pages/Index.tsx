@@ -11,7 +11,7 @@
 import { Separator, YStack } from '@hanzo/gui'
 import { BrandMark, SiteFooter, SiteNav } from '@hanzo/ui/product'
 import { FOOTER } from '@hanzo/products'
-import { Github } from '@hanzogui/lucide-icons-2/icons/Github'
+import { Github } from '@hanzogui/lucide-icons-2'
 
 import { AfterInstall } from '../components/AfterInstall'
 import { Bundles } from '../components/Bundles'

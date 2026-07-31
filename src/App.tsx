@@ -16,7 +16,7 @@ import { Index } from './pages/Index'
 
 export function App() {
   return (
-    <GuiProvider config={guiConfig} defaultTheme="dark">
+    <GuiProvider config={guiConfig} defaultTheme="dark" disableInjectCSS>
       <ToastProvider>
         <Index />
       </ToastProvider>

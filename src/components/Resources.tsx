@@ -5,9 +5,7 @@
  */
 import { Anchor, Text, XStack } from '@hanzo/gui'
 import { TAP } from '@hanzo/ui/framework'
-import { BookOpen } from '@hanzogui/lucide-icons-2/icons/BookOpen'
-import { Github } from '@hanzogui/lucide-icons-2/icons/Github'
-import { Zap } from '@hanzogui/lucide-icons-2/icons/Zap'
+import { BookOpen, Github, Zap } from '@hanzogui/lucide-icons-2'
 
 import { RESOURCES, type Resource } from '../site'
 

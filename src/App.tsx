@@ -1,24 +1,25 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+/**
+ * The app shell: the ONE Hanzo scale (`@hanzo/ui/gui-config`, the same config the
+ * console and hanzo.sites render against, so this property cannot drift from
+ * them), dark by default, and the toast host `Copyable` reports into.
+ *
+ * There is no router. This app has exactly one route — `hanzoai/static` serves it
+ * WITHOUT `-spa` precisely so a mistyped path 404s instead of handing back the
+ * installer — so a client-side router would only be a dependency pretending to
+ * make a decision that has already been made.
+ */
+import { GuiProvider } from '@hanzo/gui'
+import guiConfig from './gui.config'
+import { ToastProvider } from '@hanzo/ui/product'
 
-const queryClient = new QueryClient();
+import { Index } from './pages/Index'
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-export default App;
+export function App() {
+  return (
+    <GuiProvider config={guiConfig} defaultTheme="dark">
+      <ToastProvider>
+        <Index />
+      </ToastProvider>
+    </GuiProvider>
+  )
+}

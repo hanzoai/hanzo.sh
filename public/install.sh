@@ -1,668 +1,313 @@
-#!/bin/bash
+#!/bin/sh
 # hanzo installer
-# usage: curl -fsSL hanzo.sh | bash
+#
+#   curl -fsSL hanzo.sh | sh
+#   curl -fsSL hanzo.sh | bash
 #
 # copyright (c) 2024-2026 hanzo ai inc.
 # https://hanzo.ai
+#
+# Downloads one prebuilt native binary per tool, verifies its sha256, and puts it
+# on PATH. That is the whole design. Nothing is built here, no package manager is
+# involved, and there is no runtime to install first.
+#
+# POSIX sh on purpose. The site published `| bash` and llms.txt published `| sh`,
+# and the script was bash-only — so every reader who copied the `sh` form (every
+# agent reading llms.txt) got `set: Illegal option -o pipefail` from dash and
+# nothing installed. Rather than pick a winner and leave the other broken, this
+# runs under both: no arrays, no [[ ]], no <<<, no echo -e, no pipefail. The
+# polyglot the site serves already declares #!/bin/sh, so this also makes that
+# shebang honest.
+#
+# It does NOT re-implement downloading. hanzoai/cli/install.sh is the one
+# implementation of "fetch a Hanzo binary" — platform detection, asset naming,
+# checksum verification and the second-name symlink all live there, once. This
+# fetches it and drives it once per tool. Two copies of platform detection would
+# be the same class of bug as two copies of a route table.
+#
+# Every tool below is a published, public, checksummed native binary. A tool that
+# is not one is NOT installed by some other mechanism to pad the list — it is
+# named, with the reason. An installer that quietly reaches for a package manager
+# to look complete is the defect this file exists to remove.
 
-set -euo pipefail
+set -eu
 
-# config
 HANZO_DIR="${HANZO_INSTALL_DIR:-$HOME/.local/bin}"
-HANZO_BUNDLE="${HANZO_BUNDLE:-default}"
-HANZO_FORCE="${HANZO_FORCE:-0}"
-HANZO_UPGRADE="${HANZO_UPGRADE:-0}"
 HANZO_QUIET="${HANZO_QUIET:-0}"
+CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 
-# colors
-if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
-    R='\033[0;31m' G='\033[0;32m' Y='\033[0;33m' B='\033[0;34m' C='\033[0;36m'
-    N='\033[0m' BD='\033[1m' DM='\033[2m' HR='\033[38;5;196m'
-else
-    R='' G='' Y='' B='' C='' N='' BD='' DM='' HR=''
-fi
+# The complete set of Hanzo tools that ship as a public, checksummed, native
+# binary today, as <name>:<repo>:<binary>:<second-name>.
+#
+# The binary is also the asset prefix and the name inside the tarball — the
+# convention hanzoai/cli/install.sh relies on. Adding a tool is one line, the day
+# its repo is public and publishes <binary>-<os>-<arch>.tar.gz.sha256.
+TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-node
+mcp:hanzoai/mcp:hanzo-mcp:mcp'
 
-# tracking
-declare -a INSTALLED=() SKIPPED=() UPGRADED=() FAILED=()
-
-banner() {
-    [[ "$HANZO_QUIET" == "1" ]] && return
-    local W=$'\033[38;5;255m' D=$'\033[38;5;238m' L=$'\033[38;5;250m' M=$'\033[38;5;246m' K=$'\033[38;5;242m'
-    echo -e "${L}    ${W}__${N}                          "
-    echo -e "${M}   / /${W}_${M}  ${W}____${M} ${W}_____${M}  ${W}____${M}  ${W}____${M} "
-    echo -e "${K}  / ${W}__${K} \\/ ${W}__${K} \`/ ${W}__${K} \\/${W}_${K}  / / ${W}__${K} \\"
-    echo -e "${D} / / / / /${W}_${D}/ / / / / / /${W}_${D}/ /${W}_${D}/ /"
-    echo -e "${D}/${W}_${D}/ /${W}_${D}/\\${W}__${D},${W}_${D}/${W}_${D}/ /${W}_${D}/ /${W}___${D}/\\${W}____${D}/${N}"
-    echo ""
+# Named, not silently skipped, and never substituted with something else.
+#
+# `dev` matters most: it is the agent `hanzo code` runs by default, so until its
+# source is public `hanzo code` cannot run its own default backend. Saying that
+# here beats letting someone discover it at the first `hanzo code`.
+unavailable_rows() {
+    cat <<'ROWS'
+dev|the agent `hanzo code` runs by default — source is not public yet
+node|source is not public yet
+desktop|`hanzo desktop` is in the CLI; the standalone app is not public yet
+bot|`hanzo bot` is in the CLI; the standalone node is not native yet
+ROWS
 }
 
-log() { [[ "$HANZO_QUIET" != "1" ]] && echo -e "  $1"; }
-ok() { echo -e "  ${G}✓${N} $1"; }
-skip() { echo -e "  ${DM}○ $1${N}"; }
-warn() { echo -e "  ${Y}! $1${N}"; }
-fail() { echo -e "  ${R}✗ $1${N}"; }
-die() { fail "$1"; exit 1; }
+if [ -t 1 ] && [ "${TERM:-}" != dumb ]; then
+    R=$(printf '\033[0;31m'); G=$(printf '\033[0;32m'); Y=$(printf '\033[0;33m')
+    C=$(printf '\033[0;36m'); N=$(printf '\033[0m');    BD=$(printf '\033[1m')
+    DM=$(printf '\033[2m')
+else
+    R=''; G=''; Y=''; C=''; N=''; BD=''; DM=''
+fi
 
-parse_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --bundle|-b) HANZO_BUNDLE="$2"; shift 2 ;;
-            --dir|-d) HANZO_DIR="$2"; shift 2 ;;
-            --force|-f) HANZO_FORCE=1; shift ;;
-            --upgrade|-u) HANZO_UPGRADE=1; shift ;;
-            --quiet|-q) HANZO_QUIET=1; shift ;;
-            --help|-h)
-                cat << 'EOF'
+INSTALLED_N=0
+FAILED_N=0
+FAILED_LIST=''
+
+log()  { [ "$HANZO_QUIET" = 1 ] || printf '  %s\n' "$1"; }
+ok()   { printf '  %s✓%s %s\n' "$G" "$N" "$1"; }
+warn() { printf '  %s!%s %s\n' "$Y" "$N" "$1"; }
+fail() { printf '  %s✗%s %s\n' "$R" "$N" "$1"; }
+die()  { fail "$1"; exit 1; }
+
+banner() {
+    [ "$HANZO_QUIET" = 1 ] && return 0
+    printf '%s' "$DM"
+    cat <<'ART'
+    __
+   / /_  ____ _____  ____  ____
+  / __ \/ __ `/ __ \/_  / / __ \
+ / / / / /_/ / / / / / /_/ /_/ /
+/_/ /_/\__,_/_/ /_/ /___/\____/
+ART
+    printf '%s\n' "$N"
+}
+
+usage() {
+    cat <<'EOF'
 hanzo installer
 
-usage: curl -fsSL hanzo.sh | bash
-       curl -fsSL hanzo.sh | bash -s -- [options]
+usage: curl -fsSL hanzo.sh | sh
+       curl -fsSL hanzo.sh | sh -s -- [options] [tool...]
+
+Downloads one prebuilt native binary per tool and verifies its checksum.
+With no tool named, installs every tool that ships as a public native binary.
+
+tools:
+  hanzo    the Hanzo CLI    (also installed as hanzo-node, the same build)
+  mcp      the MCP server   (also installed as hanzo-mcp, the same build)
 
 options:
-  -b, --bundle NAME    installation bundle (default: default)
-                         default  - cli + mcp
-                         minimal  - cli only
-                         bot      - personal AI bot (hanzo.bot)
-                         full     - cli + mcp + agents + node + bot
   -d, --dir PATH       install directory (default: ~/.local/bin)
-  -u, --upgrade        upgrade existing installations
-  -f, --force          force reinstall
-  -q, --quiet          minimal output (skip extras suggestions)
+      --version TAG    pin the CLI release (default: latest)
+  -q, --quiet          less output
   -h, --help           show this help
 
 shortcuts:
-  curl hanzo.sh | bash           # default (cli + mcp)
-  curl hanzo.sh/cli | bash       # cli only
-  curl hanzo.sh/mcp | bash       # mcp only
-  curl hanzo.sh/agents | bash    # agents
-  curl hanzo.sh/bot | bash       # personal AI bot (hanzo.bot)
-  curl hanzo.sh/node | bash      # compute node (hanzod)
-  curl hanzo.sh/full | bash      # everything
+  curl -fsSL hanzo.sh | sh           # every installable tool
+  curl -fsSL hanzo.sh/cli | sh       # the CLI only
+  curl -fsSL hanzo.sh/mcp | sh       # the MCP server only
 
-extras (shown after install):
-  - VS Code / Cursor extensions
-  - Browser extensions (Chrome, Firefox)
-  - Shell completions (zsh, bash, fish)
-  - Claude Desktop MCP integration
-  - Other AI tools (claude-code, aider)
-
-examples:
-  curl -fsSL hanzo.sh | bash
-  curl -fsSL hanzo.sh | bash -s -- --upgrade
-  curl -fsSL hanzo.sh | bash -s -- --bundle full
-
+Re-run any time to upgrade; installing is just downloading the current build.
 EOF
-                exit 0 ;;
-            -*) warn "unknown option: $1"; shift ;;
-            *) HANZO_BUNDLE="$1"; shift ;;
+    exit 0
+}
+
+WANT=''
+parse_args() {
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --dir|-d)   HANZO_DIR="$2"; shift 2 ;;
+            --version)  HANZO_VERSION="$2"; export HANZO_VERSION; shift 2 ;;
+            --quiet|-q) HANZO_QUIET=1; shift ;;
+            --help|-h)  usage ;;
+            # Retired flags. Installing IS upgrading — there is one path and it
+            # always fetches the current build — so these mean nothing now.
+            # Accept and ignore rather than failing an install someone scripted.
+            --upgrade|-u|--force|-f) shift ;;
+            --bundle|-b) WANT="$WANT $2"; shift 2 ;;
+            -*)          warn "ignoring unknown option: $1"; shift ;;
+            *)           WANT="$WANT $1"; shift ;;
         esac
     done
 }
 
-detect_platform() {
-    OS="$(uname -s)"
-    ARCH="$(uname -m)"
-
-    case "$OS" in
-        Darwin) PLATFORM="macos" ;;
-        Linux) PLATFORM="linux" ;;
-        MINGW*|MSYS*|CYGWIN*) PLATFORM="windows" ;;
-        *) die "unsupported os: $OS" ;;
-    esac
-
-    case "$ARCH" in
-        x86_64|amd64) ARCH="x64" ;;
-        arm64|aarch64) ARCH="arm64" ;;
-        armv7*) ARCH="arm" ;;
-        *) die "unsupported arch: $ARCH" ;;
-    esac
-
-    log "${PLATFORM}-${ARCH}"
-}
-
-has_cmd() { command -v "$1" >/dev/null 2>&1; }
-has_uv_tool() { uv tool list 2>/dev/null | grep -q "^${1} " 2>/dev/null; }
-get_uv_version() { uv tool list 2>/dev/null | grep "^${1} " | awk '{print $2}' | tr -d 'v'; }
-
-install_uv() {
-    if has_cmd uv; then
-        ok "uv $(uv --version 2>/dev/null | awk '{print $2}')"
-        return 0
-    fi
-
-    log "installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-
-    has_cmd uv && ok "uv installed" || die "failed to install uv"
-}
-
-install_tool() {
-    local tool="$1" name="${2:-$1}"
-
-    if has_uv_tool "$tool"; then
-        local ver=$(get_uv_version "$tool")
-        local path=$(command -v "$name" 2>/dev/null || echo "~/.local/bin/$name")
-
-        if [[ "$HANZO_FORCE" == "1" ]]; then
-            log "reinstalling $name..."
-            uv tool install "$tool" --force 2>/dev/null && { INSTALLED+=("$name $ver"); ok "$name $ver"; } || { FAILED+=("$name"); fail "$name"; }
-        elif [[ "$HANZO_UPGRADE" == "1" ]]; then
-            log "upgrading $name..."
-            uv tool upgrade "$tool" 2>/dev/null
-            local new_ver=$(get_uv_version "$tool")
-            [[ "$ver" != "$new_ver" ]] && { UPGRADED+=("$name $ver → $new_ver"); ok "$name $ver → $new_ver"; } || { SKIPPED+=("$name $ver @ $path"); skip "$name $ver"; }
-        else
-            SKIPPED+=("$name $ver @ $path"); skip "$name $ver"
-        fi
-        return 0
-    fi
-
-    log "installing $name..."
-    uv tool install "$tool" 2>/dev/null && {
-        local ver=$(get_uv_version "$tool")
-        INSTALLED+=("$name $ver"); ok "$name $ver";
-    } || { FAILED+=("$name"); fail "$name"; return 1; }
-}
-
-has_bin() { [[ -x "$HANZO_DIR/$1" ]] || has_cmd "$1"; }
-get_bin_version() {
-    local p="$HANZO_DIR/$1"
-    [[ -x "$p" ]] || p="$(command -v "$1" 2>/dev/null)"
-    [[ -n "$p" ]] && "$p" --version 2>/dev/null | head -1 || echo "?"
-}
-
-install_release() {
-    local repo="$1" bin="$2" name="${3:-$2}"
-
-    if has_bin "$bin"; then
-        local ver=$(get_bin_version "$bin")
-        if [[ "$HANZO_FORCE" != "1" ]]; then
-            SKIPPED+=("$name"); skip "$name ($ver)"
-            return 0
-        fi
-        log "reinstalling $name..."
-    else
-        log "installing $name..."
-    fi
-
-    local api="https://api.github.com/repos/${repo}/releases/latest"
-    local pat=""
-    case "$PLATFORM-$ARCH" in
-        macos-arm64)  pat="darwin.*arm64\|macos.*arm64\|apple.*arm64" ;;
-        macos-x64)    pat="darwin.*x64\|darwin.*amd64\|macos.*x64" ;;
-        linux-x64)    pat="linux.*x64\|linux.*amd64" ;;
-        linux-arm64)  pat="linux.*arm64\|linux.*aarch64" ;;
-        *) warn "no binary for $PLATFORM-$ARCH"; return 1 ;;
-    esac
-
-    local info url
-    info=$(curl -sL "$api" 2>/dev/null) || { FAILED+=("$name"); fail "$name"; return 1; }
-    url=$(echo "$info" | grep "browser_download_url" | grep -iE "$pat" | head -1 | cut -d '"' -f 4)
-    [[ -z "$url" ]] && { warn "no release for $repo"; FAILED+=("$name"); return 1; }
-
-    mkdir -p "$HANZO_DIR"
-    local tmp="/tmp/${bin}-$$"
-    curl -sL "$url" -o "$tmp" || { FAILED+=("$name"); rm -f "$tmp"; return 1; }
-
-    if [[ "$url" == *.tar.gz ]] || [[ "$url" == *.tgz ]]; then
-        tar -xzf "$tmp" -C "$HANZO_DIR" 2>/dev/null || {
-            local d="/tmp/${bin}-ext-$$"; mkdir -p "$d"
-            tar -xzf "$tmp" -C "$d"
-            find "$d" -name "$bin" -type f -exec mv {} "$HANZO_DIR/$bin" \;
-            rm -rf "$d"
-        }
-    elif [[ "$url" == *.zip ]]; then
-        unzip -o "$tmp" -d "$HANZO_DIR" 2>/dev/null || {
-            local d="/tmp/${bin}-ext-$$"; mkdir -p "$d"
-            unzip -o "$tmp" -d "$d"
-            find "$d" -name "$bin" -type f -exec mv {} "$HANZO_DIR/$bin" \;
-            rm -rf "$d"
-        }
-    else
-        mv "$tmp" "$HANZO_DIR/$bin"
-    fi
-
-    chmod +x "$HANZO_DIR/$bin" 2>/dev/null || true
-    rm -f "$tmp"
-    INSTALLED+=("$name"); ok "$name"
-}
-
-doctor() {
-    # Naming strategy:
-    # Python (uv):  hanzo, hanzo-mcp, hanzo-dev, hanzo-node, hanzo-agents (full names)
-    # Rust (cargo): hanzo, mcp, dev, hanzod (short names)
-    # Node (npm):   hanzo, mcp, dev, hanzod, agents (short names)
-    # Go:           hanzo, hanzod, dev (short names)
-    # Homebrew:     hanzo, hanzo-mcp, hanzo-dev, hanzo-node (formula names)
-
-    # python (uv tool) - keeps full hanzo-* names
-    echo -e "  ${BD}python (uv):${N}"
-    local py_found=0
-    if has_cmd uv; then
-        local uv_list=$(uv tool list 2>/dev/null || true)
-        for pkg in hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents; do
-            local info=$(echo "$uv_list" | grep -E "^${pkg} " || true)
-            if [[ -n "$info" ]]; then
-                local ver=$(echo "$info" | awk '{print $2}')
-                local path=$(command -v "$pkg" 2>/dev/null || echo "~/.local/bin/$pkg")
-                printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
-                py_found=1
-            fi
-        done
-    fi
-    [[ $py_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    # rust (cargo) - short binary names
-    echo -e "  ${BD}rust (cargo):${N}"
-    local rs_found=0
-    if has_cmd cargo; then
-        local cargo_list=$(cargo install --list 2>/dev/null || true)
-        for pair in "hanzo-cli:hanzo" "hanzo-mcp:mcp" "hanzo-dev:dev" "hanzo-node:hanzod"; do
-            local crate="${pair%%:*}" bin="${pair##*:}"
-            local info=$(echo "$cargo_list" | grep -E "^${crate} " || true)
-            if [[ -n "$info" ]]; then
-                local ver=$(echo "$info" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "?")
-                local path=$(command -v "$bin" 2>/dev/null || echo "~/.cargo/bin/$bin")
-                printf "    ${G}✓${N} %-16s %-10s %s\n" "$crate" "$ver" "$path"
-                rs_found=1
-            fi
-        done
-    fi
-    [[ $rs_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    # node (npm/pnpm) - @hanzo/* packages with short binary names
-    echo -e "  ${BD}node (npm/pnpm):${N}"
-    local ts_found=0
-    for pair in "@hanzo/cli:hanzo" "@hanzo/mcp:mcp" "@hanzo/dev:dev" "@hanzo/node:hanzod" "@hanzo/agents:agents"; do
-        local pkg="${pair%%:*}" bin="${pair##*:}"
-        local path=$(command -v "$bin" 2>/dev/null || true)
-        [[ -z "$path" ]] && continue
-        # skip if python version (full names like hanzo-mcp)
-        [[ "$path" == *".local/bin"* ]] && continue
-        # skip if cargo version
-        [[ "$path" == *".cargo/bin"* ]] && continue
-        if [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* || "$path" == *"fnm"* || "$path" == *"nvm"* ]]; then
-            local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
-            printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
-            ts_found=1
-        fi
+# wanted <name> <binary> — did the caller ask for this tool?
+# `default`, `full` and `all` named the old bundles. They meant "everything",
+# which is what naming nothing means, so they map to that rather than failing an
+# install someone already scripted.
+wanted() {
+    for w in $WANT; do
+        case $w in
+            "$1"|"$2"|default|full|all) return 0 ;;
+        esac
     done
-    [[ $ts_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    # go (go install) - short binary names
-    echo -e "  ${BD}go (go install):${N}"
-    local go_found=0
-    local gobin="${GOBIN:-${GOPATH:-$HOME/go}/bin}"
-    for pair in "hanzo-cli:hanzo" "hanzo-node:hanzod" "hanzo-dev:dev"; do
-        local pkg="${pair%%:*}" bin="${pair##*:}"
-        local path="$gobin/$bin"
-        if [[ -x "$path" ]]; then
-            local ver=$("$path" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
-            printf "    ${G}✓${N} %-16s %-10s %s\n" "$pkg" "$ver" "$path"
-            go_found=1
-        fi
-    done
-    [[ $go_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    # homebrew - formula:binary mappings
-    echo -e "  ${BD}homebrew:${N}"
-    local brew_found=0
-    if has_cmd brew; then
-        local brew_list=$(brew list --formula 2>/dev/null || true)
-        for pair in "hanzo:hanzo" "hanzo-mcp:hanzo-mcp" "hanzo-dev:hanzo-dev" "hanzo-node:hanzo-node" "hanzo-agents:hanzo-agents"; do
-            local formula="${pair%%:*}" bin="${pair##*:}"
-            if echo "$brew_list" | grep -q "^${formula}$"; then
-                local path=$(brew --prefix "$formula" 2>/dev/null)/bin/$bin
-                [[ ! -x "$path" ]] && path=$(command -v "$bin" 2>/dev/null || echo "?")
-                local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
-                printf "    ${G}✓${N} %-16s %-10s %s\n" "$formula" "$ver" "$path"
-                brew_found=1
-            fi
-        done
-    fi
-    [[ $brew_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    # other binaries (manual installs, /usr/local/bin, etc)
-    echo -e "  ${BD}other:${N}"
-    local other_found=0
-    for bin in hanzo hanzo-mcp hanzo-dev hanzo-node hanzo-agents hanzod mcp dev agents; do
-        local path=$(command -v "$bin" 2>/dev/null || true)
-        [[ -z "$path" ]] && continue
-        # skip if found in known ecosystems
-        [[ "$path" == *".local/bin"* ]] && continue
-        [[ "$path" == *".cargo/bin"* ]] && continue
-        [[ "$path" == *"node_modules"* || "$path" == *"npm"* || "$path" == *"pnpm"* ]] && continue
-        [[ "$path" == *"/go/bin"* ]] && continue
-        [[ "$path" == *"homebrew"* || "$path" == *"Cellar"* ]] && continue
-        local ver=$("$bin" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "?")
-        printf "    ${G}✓${N} %-16s %-10s %s\n" "$bin" "$ver" "$path"
-        other_found=1
-    done
-    [[ $other_found -eq 0 ]] && echo -e "    ${DM}(none)${N}"
-
-    echo ""
+    return 1
 }
 
-install_bot() {
-    # canonical installer lives at hanzo.bot/install.sh (npm @hanzo/bot);
-    # delegate so bot install logic exists in exactly one place.
-    if has_cmd hanzo-bot && [[ "$HANZO_FORCE" != "1" && "$HANZO_UPGRADE" != "1" ]]; then
-        SKIPPED+=("hanzo-bot $(hanzo-bot --version 2>/dev/null | head -1)"); skip "hanzo-bot"
-        return 0
-    fi
-    log "installing hanzo-bot (via hanzo.bot/install.sh)..."
-    if curl -fsSL https://hanzo.bot/install.sh | bash -s -- --no-onboard; then
-        INSTALLED+=("hanzo-bot"); ok "hanzo-bot"
-    else
-        FAILED+=("hanzo-bot"); fail "hanzo-bot"
-    fi
-}
-
-# The `hanzo` command is the Rust CLI from hanzoai/cli. It is NOT the PyPI
-# project that happens to share the name — that is a different program, and
-# installing it here is what put the wrong `hanzo` on people's PATH.
+# hanzoai/cli/install.sh, fetched once and reused for every tool.
 #
-# We do not re-implement the download: hanzoai/cli ships the installer that
-# knows its own asset naming, verifies the sha256 before unpacking, and installs
-# BOTH names (`hanzo` and the `hanzo-node` delegate) from that one build. One
-# way to do everything — this calls it.
-CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
-
-# Fetch that installer from the API rather than raw.githubusercontent: the API
-# serves the CURRENT file and honours a token, while raw is CDN-cached and will
-# happily hand back a copy from some minutes ago. Serving a stale script is the
-# same class of bug this whole change exists to remove, so do not risk it — but
-# still fall back to raw if the API is unreachable.
-fetch_cli_installer() {
-    local dest="$1"
-    local api="https://api.github.com/repos/${CLI_REPO}/contents/install.sh?ref=main"
-    local token="${HANZO_INSTALL_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
-    [[ -z "$token" ]] && has_cmd gh && token="$(gh auth token 2>/dev/null || true)"
+# Prefer the API with an explicit raw Accept: it serves the CURRENT file, while
+# raw.githubusercontent sits behind a CDN that hands back a copy from some
+# minutes ago. Serving a stale script is the exact bug this rewrite removes, so
+# do not risk it — but fall back to raw when the API is unreachable or has
+# rate-limited an anonymous caller, because a rate limit must not stop an install.
+ONE_INSTALLER=''
+fetch_one_installer() {
+    api="https://api.github.com/repos/${CLI_REPO}/contents/install.sh?ref=main"
+    token="${HANZO_INSTALL_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
 
     # Never interpolate a token into an unquoted argument list; branch instead.
-    if [[ -n "$token" ]]; then
+    if [ -n "$token" ]; then
         curl -fsSL -H "Accept: application/vnd.github.raw" \
-             -H "Authorization: Bearer $token" "$api" -o "$dest" 2>/dev/null && return 0
+             -H "Authorization: Bearer $token" "$api" -o "$1" 2>/dev/null && return 0
     else
-        curl -fsSL -H "Accept: application/vnd.github.raw" "$api" -o "$dest" 2>/dev/null && return 0
+        curl -fsSL -H "Accept: application/vnd.github.raw" "$api" -o "$1" 2>/dev/null && return 0
     fi
-    curl -fsSL "https://raw.githubusercontent.com/${CLI_REPO}/main/install.sh" -o "$dest" 2>/dev/null
+    curl -fsSL "https://raw.githubusercontent.com/${CLI_REPO}/main/install.sh" -o "$1" 2>/dev/null
 }
 
-install_cli() {
-    log "installing hanzo (Rust CLI)..."
+# install <repo> <binary> <second-name>
+install_tool() {
+    i_repo="$1"; i_bin="$2"; i_alias="$3"
 
-    local tmp="/tmp/hanzo-cli-install-$$.sh"
-    if ! fetch_cli_installer "$tmp"; then
-        FAILED+=("hanzo"); fail "hanzo (could not fetch the CLI installer)"; rm -f "$tmp"; return 1
-    fi
+    # HANZO_VERSION names a CLI release. Passing it to anything else would pin a
+    # tag that repo has never published, so it reaches exactly one tool.
+    i_pin=''
+    if [ "$i_repo" = "$CLI_REPO" ]; then i_pin="${HANZO_VERSION:-}"; fi
 
-    # hanzoai/cli's own installer needs a token only while the repo is private.
-    local token="${HANZO_INSTALL_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
-    [[ -z "$token" ]] && has_cmd gh && token="$(gh auth token 2>/dev/null || true)"
-
-    if HANZO_INSTALL_PREFIX="$HANZO_DIR" GH_TOKEN="$token" sh "$tmp"; then
-        rm -f "$tmp"
-        local ver
-        ver=$("$HANZO_DIR/hanzo" --version 2>/dev/null | awk '{print $NF}')
-        # Both names, or it is not a finished install: the delegate is what
-        # cloud's control binary execs, and a missing one silently falls through
-        # to whatever older `hanzo-node` is already on the box.
-        if [[ ! -e "$HANZO_DIR/hanzo-node" ]]; then
-            FAILED+=("hanzo-node"); fail "hanzo-node was not installed alongside hanzo"; return 1
-        fi
-        INSTALLED+=("hanzo ${ver:-?}"); ok "hanzo ${ver:-?} (+ hanzo-node, same build)"
+    if i_out=$(HANZO_INSTALL_PREFIX="$HANZO_DIR" \
+               HANZO_INSTALL_REPO="$i_repo" \
+               HANZO_INSTALL_BIN="$i_bin" \
+               HANZO_INSTALL_ALIAS="$i_alias" \
+               HANZO_VERSION="$i_pin" \
+               sh "$ONE_INSTALLER" 2>&1); then
+        # Surface the installer's own warnings (PATH shadowing, PATH missing).
+        # They are the difference between an install that worked and one the user
+        # will never actually run — so carry the CONTINUATION lines too. The
+        # shadow warning's second line is the half that says what to do about it,
+        # and a filter that keeps only the alarm and drops the remedy is worse
+        # than not warning at all.
+        printf '%s\n' "$i_out" \
+          | grep -E 'WARNING|Remove it, or put|not on PATH|export PATH' \
+          | sed 's/^/    /' || true
     else
-        rm -f "$tmp"; FAILED+=("hanzo"); fail "hanzo"; return 1
-    fi
-}
-
-install_bundle() {
-    local bundle="$1"
-    echo ""
-
-    case "$bundle" in
-        default)
-            # default: cli + mcp
-            install_cli
-            install_tool "hanzo-mcp" "hanzo-mcp"
-            ;;
-        minimal|cli)
-            install_cli
-            ;;
-        mcp)
-            install_tool "hanzo-mcp" "hanzo-mcp"
-            ;;
-        agents)
-            install_tool "hanzo-agents" "hanzo-agents"
-            ;;
-        node)
-            install_tool "hanzo-node" "hanzo-node"
-            # hanzo-node install handled by the package
-            ;;
-        bot)
-            install_bot
-            ;;
-        dev)
-            install_cli
-            install_tool "hanzo-mcp" "hanzo-mcp"
-            ;;
-        full|all)
-            install_cli
-            install_tool "hanzo-mcp" "hanzo-mcp"
-            install_tool "hanzo-agents" "hanzo-agents"
-            install_tool "hanzo-node" "hanzo-node"
-            install_bot
-            ;;
-        *)
-            die "unknown bundle: $bundle"
-            ;;
-    esac
-}
-
-summary() {
-    echo ""
-
-    if [[ ${#INSTALLED[@]} -gt 0 ]]; then
-        echo -e "  ${G}${BD}installed:${N}"
-        for i in "${INSTALLED[@]}"; do echo -e "    ${G}✓${N} $i"; done
+        printf '%s\n' "$i_out" | sed 's/^/    /'
+        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_bin"
+        fail "$i_bin"; return 1
     fi
 
-    if [[ ${#UPGRADED[@]} -gt 0 ]]; then
-        echo -e "  ${C}${BD}upgraded:${N}"
-        for i in "${UPGRADED[@]}"; do echo -e "    ${C}↑${N} $i"; done
+    # Trust the artifact, not the log line: ask the binary that is now on disk.
+    if [ ! -x "$HANZO_DIR/$i_bin" ]; then
+        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_bin"
+        fail "$i_bin (nothing at $HANZO_DIR/$i_bin)"; return 1
     fi
+    i_ver=$("$HANZO_DIR/$i_bin" --version 2>/dev/null | head -1 | awk '{print $NF}')
+    [ -n "${i_ver:-}" ] || i_ver='?'
 
-    if [[ ${#SKIPPED[@]} -gt 0 ]] && [[ "$HANZO_QUIET" != "1" ]]; then
-        echo -e "  ${DM}skipped:${N}"
-        for i in "${SKIPPED[@]}"; do echo -e "    ${DM}○ $i${N}"; done
-    fi
-
-    if [[ ${#FAILED[@]} -gt 0 ]]; then
-        echo -e "  ${R}${BD}failed:${N}"
-        for i in "${FAILED[@]}"; do echo -e "    ${R}✗${N} $i"; done
-    fi
-}
-
-check_shadowing() {
-    # A stale binary earlier on PATH permanently masks what we just installed,
-    # and the failure is silent: the install reports success, `hanzo --version`
-    # prints whatever the old copy says, and re-running the installer never
-    # fixes it because it writes to a DIFFERENT directory.
-    #
-    # Real case: ~/.local/bin/hanzo held a retired Go build while the canonical
-    # Rust CLI installs to ~/.cargo/bin. uv also installs tools into
-    # ~/.local/bin, so a Python `hanzo` shadows it the same way. We do NOT
-    # delete anything — the user's files are theirs — but staying quiet about it
-    # is how someone ends up debugging a CLI they are not running.
-    local resolved expected
-    for bin in hanzo mcp dev hanzod; do
-        has_cmd "$bin" || continue
-        resolved="$(command -v "$bin" 2>/dev/null)"
-
-        expected=""
-        [[ -x "$HOME/.cargo/bin/$bin" ]] && expected="$HOME/.cargo/bin/$bin"
-        [[ -z "$expected" && -x "$HANZO_DIR/$bin" ]] && expected="$HANZO_DIR/$bin"
-        [[ -z "$expected" ]] && continue
-
-        if [[ "$resolved" != "$expected" ]]; then
-            warn "$bin resolves to $resolved, shadowing $expected"
-            echo -e "    ${DM}the copy on your PATH is not the one just installed.${N}"
-            echo -e "    ${DM}remove or rename it, or put its directory later on PATH:${N}"
-            echo "      mv $resolved $resolved.old"
+    if [ -n "$i_alias" ]; then
+        # Both names or it is not a finished install. A missing second name falls
+        # through to whatever older copy is already on the box, silently.
+        if [ ! -e "$HANZO_DIR/$i_alias" ]; then
+            FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_alias"
+            fail "$i_alias was not installed alongside $i_bin"; return 1
         fi
+        ok "$i_bin $i_ver ${DM}(+ $i_alias, same build)${N}"
+    else
+        ok "$i_bin $i_ver"
+    fi
+    INSTALLED_N=$((INSTALLED_N + 1))
+}
+
+show_unavailable() {
+    [ "$HANZO_QUIET" = 1 ] && return 0
+    printf '\n  %snot included:%s\n' "$BD" "$N"
+    unavailable_rows | while IFS='|' read -r u_name u_why; do
+        printf '    %s○ %-8s %s%s\n' "$DM" "$u_name" "$u_why" "$N"
     done
 }
 
 finish() {
-    echo ""
+    printf '\n'
+    if [ "$INSTALLED_N" -eq 0 ]; then die "nothing was installed"; fi
 
-    if [[ ${#INSTALLED[@]} -gt 0 ]] || [[ ${#UPGRADED[@]} -gt 0 ]]; then
-        echo -e "  ${G}ready!${N}"
-        echo ""
-        echo "  quick start:"
-        echo -e "    ${C}hanzo login${N}         # authenticate with hanzo"
-        echo -e "    ${C}hanzo --help${N}        # see all commands"
-        echo -e "    ${C}hanzo code${N}          # start a coding session"
-        echo -e "    ${C}hanzo desktop${N}       # point an agent at the browser"
-        has_cmd hanzo-bot && echo -e "    ${C}hanzo-bot${N}           # personal AI bot (gateway + channels)"
-        has_uv_tool "hanzo-mcp" && echo -e "    ${C}hanzo mcp serve${N}    # start mcp server"
-        echo ""
-        echo "  docs: https://docs.hanzo.ai"
-        echo ""
-    elif [[ ${#SKIPPED[@]} -gt 0 ]]; then
-        echo -e "  ${G}already up to date${N}"
-        echo ""
-        doctor
-        echo "  to upgrade: curl -fsSL hanzo.sh | bash -s -- -u"
-        echo ""
+    # Never say "ready" over a failure. A partial install that reads as success
+    # is how someone spends an afternoon on a tool that was never there.
+    if [ "$FAILED_N" -gt 0 ]; then
+        printf '  %s%sincomplete%s — did not install:%s\n' "$R" "$BD" "$N" "$N"
+        for f in $FAILED_LIST; do printf '    %s✗%s %s\n' "$R" "$N" "$f"; done
+        printf '\n'
+        return 0
     fi
 
-    check_shadowing
-
-    if [[ ":$PATH:" != *":$HANZO_DIR:"* ]] && [[ ${#INSTALLED[@]} -gt 0 ]]; then
-        echo -e "  ${Y}add to path:${N}"
-        echo "    export PATH=\"$HANZO_DIR:\$PATH\""
-        echo ""
+    printf '  %sready%s %s→ %s%s\n\n' "$G" "$N" "$DM" "$HANZO_DIR" "$N"
+    printf '  quick start:\n'
+    printf '    %shanzo auth login%s     # authenticate\n' "$C" "$N"
+    printf '    %shanzo code%s           # start a coding session\n' "$C" "$N"
+    printf '    %shanzo --help%s         # every command\n' "$C" "$N"
+    if [ -x "$HANZO_DIR/hanzo-mcp" ]; then
+        printf '    %shanzo-mcp --help%s     # the MCP server\n' "$C" "$N"
     fi
-}
-
-extras() {
-    [[ "$HANZO_QUIET" == "1" ]] && return
-
-    echo -e "  ${BD}environment:${N}"
-    echo ""
-
-    # Detect API keys
-    local api_keys_found=0
-    echo -e "    ${BD}api keys:${N}"
-    [[ -n "${ANTHROPIC_API_KEY:-}" ]] && echo -e "    ${G}✓${N} ANTHROPIC_API_KEY" && ((api_keys_found++))
-    [[ -n "${OPENAI_API_KEY:-}" ]] && echo -e "    ${G}✓${N} OPENAI_API_KEY" && ((api_keys_found++))
-    [[ -n "${GOOGLE_API_KEY:-}" ]] && echo -e "    ${G}✓${N} GOOGLE_API_KEY" && ((api_keys_found++))
-    [[ -n "${GEMINI_API_KEY:-}" ]] && echo -e "    ${G}✓${N} GEMINI_API_KEY" && ((api_keys_found++))
-    [[ -n "${XAI_API_KEY:-}" ]] && echo -e "    ${G}✓${N} XAI_API_KEY" && ((api_keys_found++))
-    [[ -n "${GROQ_API_KEY:-}" ]] && echo -e "    ${G}✓${N} GROQ_API_KEY" && ((api_keys_found++))
-    [[ -n "${TOGETHER_API_KEY:-}" ]] && echo -e "    ${G}✓${N} TOGETHER_API_KEY" && ((api_keys_found++))
-    [[ -n "${MISTRAL_API_KEY:-}" ]] && echo -e "    ${G}✓${N} MISTRAL_API_KEY" && ((api_keys_found++))
-    [[ -n "${COHERE_API_KEY:-}" ]] && echo -e "    ${G}✓${N} COHERE_API_KEY" && ((api_keys_found++))
-    [[ -n "${REPLICATE_API_TOKEN:-}" ]] && echo -e "    ${G}✓${N} REPLICATE_API_TOKEN" && ((api_keys_found++))
-    [[ -n "${HUGGING_FACE_HUB_TOKEN:-}" ]] && echo -e "    ${G}✓${N} HUGGING_FACE_HUB_TOKEN" && ((api_keys_found++))
-    [[ -n "${HF_TOKEN:-}" ]] && echo -e "    ${G}✓${N} HF_TOKEN" && ((api_keys_found++))
-    [[ -n "${GITHUB_TOKEN:-}" ]] && echo -e "    ${G}✓${N} GITHUB_TOKEN" && ((api_keys_found++))
-    [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] && echo -e "    ${G}✓${N} CLOUDFLARE_API_TOKEN" && ((api_keys_found++))
-    [[ -n "${AWS_ACCESS_KEY_ID:-}" ]] && echo -e "    ${G}✓${N} AWS_ACCESS_KEY_ID" && ((api_keys_found++))
-    [[ $api_keys_found -eq 0 ]] && echo -e "    ${DM}(none detected)${N}"
-    echo ""
-
-    # Detect AI CLI tools
-    echo -e "    ${BD}ai cli tools:${N}"
-    local cli_found=0
-    has_cmd claude && echo -e "    ${G}✓${N} claude        $(claude --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd dev && echo -e "    ${G}✓${N} dev           $(dev --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd gemini && echo -e "    ${G}✓${N} gemini        $(gemini --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd codex && echo -e "    ${G}✓${N} codex         $(codex --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd aider && echo -e "    ${G}✓${N} aider         $(aider --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd grok && echo -e "    ${G}✓${N} grok          $(grok --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd vibe && echo -e "    ${G}✓${N} vibe          $(vibe --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd cursor && echo -e "    ${G}✓${N} cursor        $(cursor --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd windsurf && echo -e "    ${G}✓${N} windsurf      $(windsurf --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    has_cmd q && echo -e "    ${G}✓${N} amazon-q      $(q --version 2>/dev/null | head -1 || echo '')" && ((cli_found++))
-    [[ $cli_found -eq 0 ]] && echo -e "    ${DM}(none detected)${N}"
-
-    echo ""
-    echo -e "  ${BD}optional extras:${N}"
-    echo ""
-
-    # Editor extensions (coming soon)
-    if has_cmd code || has_cmd cursor; then
-        echo -e "    ${BD}editor extensions:${N} ${DM}(coming soon)${N}"
-        echo -e "    ${DM}code --install-extension hanzo-ai.hanzo${N}"
-        echo ""
-    fi
-
-    # Shell completions
-    echo -e "    ${BD}shell completions:${N}"
-    if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == *"zsh"* ]]; then
-        echo -e "    ${C}hanzo completion zsh > ~/.zsh/completions/_hanzo${N}"
-    fi
-    if [[ -n "${BASH_VERSION:-}" ]] || [[ "$SHELL" == *"bash"* ]]; then
-        echo -e "    ${C}hanzo completion bash > ~/.bash_completion.d/hanzo${N}"
-    fi
-    if [[ "$SHELL" == *"fish"* ]]; then
-        echo -e "    ${C}hanzo completion fish > ~/.config/fish/completions/hanzo.fish${N}"
-    fi
-
-    # Claude Desktop MCP
-    if [[ -d "$HOME/Library/Application Support/Claude" ]] || [[ -d "$HOME/.config/claude" ]]; then
-        echo ""
-        echo -e "    ${BD}claude desktop mcp:${N}"
-        echo -e "    ${C}hanzo-mcp install claude${N}"
-        echo -e "      └─ Add Hanzo MCP to Claude Desktop"
-    fi
-
-    # AI CLI tools - only show missing ones
-    local missing=0
-    has_cmd claude || ((missing++))
-    has_cmd gemini || ((missing++))
-    has_cmd codex || ((missing++))
-    has_cmd dev || ((missing++))
-    has_cmd aider || ((missing++))
-    has_cmd grok || ((missing++))
-
-    if [[ $missing -gt 0 ]]; then
-        echo ""
-        echo -e "    ${BD}install ai coding tools:${N}"
-        has_cmd dev || echo -e "    ${C}npm i -g @hanzo/dev${N}                   # Hanzo Dev"
-        has_cmd claude || echo -e "    ${C}npm i -g @anthropic-ai/claude-code${N}   # Claude Code (free)"
-        has_cmd gemini || echo -e "    ${C}npm i -g @google/gemini-cli${N}          # Gemini CLI (free)"
-        has_cmd codex || echo -e "    ${C}npm i -g @openai/codex${N}                # OpenAI Codex (free)"
-        has_cmd grok || echo -e "    ${C}npm i -g grok-cli${N}                     # Grok CLI (free)"
-        has_cmd aider || echo -e "    ${C}pip install aider-chat${N}                # Aider (free)"
-    fi
-
-    echo ""
+    printf '\n  docs: https://docs.hanzo.ai\n\n'
 }
 
 main() {
     parse_args "$@"
     banner
 
-    log "bundle: $HANZO_BUNDLE"
-    [[ "$HANZO_UPGRADE" == "1" ]] && log "mode: upgrade"
-    [[ "$HANZO_FORCE" == "1" ]] && log "mode: force"
-    echo ""
+    command -v curl >/dev/null 2>&1 || die "need curl on PATH"
 
-    detect_platform
-    install_uv
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    ONE_INSTALLER="$tmp/install.sh"
+    fetch_one_installer "$ONE_INSTALLER" \
+        || die "could not fetch the installer from ${CLI_REPO}"
+    [ -s "$ONE_INSTALLER" ] || die "the installer fetched from ${CLI_REPO} is empty"
 
-    install_bundle "$HANZO_BUNDLE"
+    mkdir -p "$HANZO_DIR"
 
-    summary
+    selected=0
+    for row in $TOOLS; do
+        t_name=${row%%:*};  rest=${row#*:}
+        t_repo=${rest%%:*}; rest=${rest#*:}
+        t_bin=${rest%%:*};  t_alias=${rest#*:}
+        if [ -n "$WANT" ] && ! wanted "$t_name" "$t_bin"; then continue; fi
+        selected=1
+        install_tool "$t_repo" "$t_bin" "$t_alias" || true
+    done
+
+    if [ "$selected" -eq 0 ]; then
+        # Asked for something real that we publish no binary for. Answer with the
+        # reason from the one place that holds it, rather than a "no such tool"
+        # that reads like a typo. Non-zero: they asked for an install and did not
+        # get one.
+        for w in $WANT; do
+            why=$(unavailable_rows | while IFS='|' read -r u_name u_why; do
+                      if [ "$u_name" = "$w" ]; then printf '%s' "$u_why"; fi
+                  done)
+            if [ -n "$why" ]; then
+                fail "$w — $why"
+                printf '  %sinstallable today: hanzo mcp%s\n' "$DM" "$N"
+                exit 1
+            fi
+        done
+        die "no such tool:$WANT — installable today: hanzo mcp"
+    fi
+
+    if [ -z "$WANT" ]; then show_unavailable; fi
     finish
-    extras
 
-    [[ ${#FAILED[@]} -gt 0 ]] && exit 1
+    # A failed download or a missing second name is a failed install, and the
+    # exit code has to say so — a half-install discovered days later is worse
+    # than one that stopped here.
+    if [ "$FAILED_N" -gt 0 ]; then exit 1; fi
     exit 0
 }
 

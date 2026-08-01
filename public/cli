@@ -1,14 +1,7 @@
-#!/bin/bash
-# Hanzo CLI Installer
-# Usage: curl -fsSL hanzo.sh/cli | bash
-set -e
-echo "Installing Hanzo CLI..."
-if command -v uv >/dev/null 2>&1; then
-    uv tool install hanzo
-else
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
-    uv tool install hanzo
-fi
-echo "✓ hanzo CLI installed"
-echo "Run: hanzo --help"
+#!/bin/sh
+# The Hanzo CLI only.
+#   curl -fsSL hanzo.sh/cli | sh
+#
+# Routing only. The installer is the one place that knows which tools ship as a
+# native binary and what to say about the ones that do not.
+exec sh -c "$(curl -fsSL https://hanzo.sh)" -- hanzo "$@"

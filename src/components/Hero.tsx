@@ -25,10 +25,13 @@ const Hero = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  // One install path. `| sh` because the installer is POSIX and the served
+  // polyglot declares #!/bin/sh — the page and llms.txt used to disagree, and
+  // the `sh` half died on dash before anything was downloaded.
   const installCommands = [
-    { id: "curl", label: "Default", cmd: "curl -fsSL hanzo.sh | bash" },
-    { id: "curl-full", label: "Full", cmd: "curl -fsSL hanzo.sh | bash -s -- --bundle full" },
-    { id: "curl-rust", label: "Rust", cmd: "curl -fsSL hanzo.sh | bash -s -- --bundle rust" },
+    { id: "curl", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
+    { id: "curl-cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
+    { id: "curl-mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
   ];
 
   const [activeInstall, setActiveInstall] = useState("curl");
@@ -111,15 +114,12 @@ const Hero = () => {
           {/* Quick shortcuts */}
           <div className="flex flex-wrap justify-center gap-2 text-sm">
             {[
-              { path: "/dev", label: "Dev Agent" },
-              { path: "/mcp", label: "MCP Server" },
               { path: "/cli", label: "CLI Only" },
-              { path: "/python", label: "Python Bundle" },
-              { path: "/rust", label: "Rust Bundle" },
+              { path: "/mcp", label: "MCP Server" },
             ].map((shortcut) => (
               <button
                 key={shortcut.path}
-                onClick={() => handleCopy(`curl -fsSL hanzo.sh${shortcut.path} | bash`, shortcut.path)}
+                onClick={() => handleCopy(`curl -fsSL hanzo.sh${shortcut.path} | sh`, shortcut.path)}
                 className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-colors font-mono text-xs"
               >
                 hanzo.sh{shortcut.path}

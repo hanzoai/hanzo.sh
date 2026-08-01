@@ -18,11 +18,17 @@ COPY . .
 RUN pnpm build
 
 # Both halves, or there is no image. A shell that cannot parse index.html breaks
-# `curl hanzo.sh | bash`; a document that does not open with <!DOCTYPE html>
-# breaks the browser. bash, not sh — the installer uses bash arrays, which is
-# why the documented contract pipes into bash explicitly.
+# `curl hanzo.sh | sh`; a document that does not open with <!DOCTYPE html>
+# breaks the browser.
+#
+# Checked under dash AND bash, because both are published: the page says `| sh`
+# and readers type `| bash` anyway. The installer used to be bash-only while the
+# file declared #!/bin/sh, so the `sh` half died on dash at `set -o pipefail`
+# before anything downloaded — and a bash-only assert could never have caught it.
+# dash is the strict one; bash proves the other published form still parses.
 RUN head -1 dist/index.html | grep -qx '#!/bin/sh' \
  && grep -qx '<!DOCTYPE html>' dist/index.html \
+ && dash -n dist/index.html \
  && bash -n dist/index.html
 
 # hanzoai/static defaults to -port 3000 -root /public, so it needs no arguments.

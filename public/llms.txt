@@ -1,46 +1,71 @@
 # Hanzo CLI
 
-> Command-line tools for the Hanzo AI platform.
+> Command-line tools for the Hanzo cloud.
 
 ## About
-Hanzo CLI (hanzo.sh) provides command-line tools for installing, configuring, deploying, and managing AI models and services on the Hanzo AI platform. It supports model deployment, cloud resource management, blockchain node operations, and CI/CD integration from the terminal.
+`hanzo` is the Hanzo cloud CLI: authentication, billing, coding sessions, and
+every product of the Hanzo cloud from the terminal. It is a native binary — one
+download per tool, checksum-verified, no runtime and no package manager.
 
-## Key Features
-- Install with a single command: `curl -fsSL https://hanzo.sh | sh`
-- Deploy and manage AI models from the terminal
-- Cloud resource provisioning and management
-- Blockchain node and wallet operations
-- API key and secrets management
-- CI/CD pipeline integration
-- Multi-environment configuration (dev, staging, production)
-- Shell completions for bash, zsh, and fish
-- Plugin system for extending functionality
+## Install
+A single command, and it is the only one:
+
+```sh
+curl -fsSL https://hanzo.sh | sh
+```
+
+That installs every Hanzo tool published as a public native binary:
+
+- `hanzo` — the CLI (also installed as `hanzo-node`, the same build)
+- `hanzo-mcp` — the MCP server (also installed as `mcp`, the same build)
+
+One tool at a time:
+
+```sh
+curl -fsSL https://hanzo.sh/cli | sh    # the CLI only
+curl -fsSL https://hanzo.sh/mcp | sh    # the MCP server only
+```
+
+Binaries land in `~/.local/bin`. Re-run to upgrade — installing is just
+downloading the current build. Published for linux and macOS on amd64 and arm64,
+and windows on amd64.
 
 ## Usage
-```bash
-# Install
-curl -fsSL https://hanzo.sh | sh
+Every command below exists in the shipped binary; `hanzo --help` lists them all.
 
-# Login
-hanzo login
+```sh
+# Sign in (through Hanzo IAM). Note: `hanzo auth login`, not `hanzo login`.
+hanzo auth login
+hanzo auth show
 
-# Deploy a model
-hanzo deploy --model zen-qwen3-8b
+# Start a coding session on the current repo
+hanzo code
+hanzo code "fix the failing test"
 
-# Manage cloud resources
+# Point an agent at the desktop and browser instead of the repo
+hanzo desktop
+
+# Serve a model locally on an OpenAI-compatible endpoint
+hanzo engine serve enso
+
+# Money and metering
+hanzo billing balance
+hanzo usage
+
+# Bring your own cloud
 hanzo cloud list
-hanzo cloud create --gpu a100 --count 4
+hanzo cloud accounts
 
-# Blockchain operations
-hanzo node start --chain ethereum
+# Run the MCP server
+hanzo-mcp
 ```
 
 ## Links
 - [Website](https://hanzo.sh)
-- [Installation Guide](https://docs.hanzo.ai/cli)
 - [Documentation](https://docs.hanzo.ai)
-- [GitHub](https://github.com/hanzoai/cli)
+- [CLI source](https://github.com/hanzoai/cli)
+- [MCP source](https://github.com/hanzoai/mcp)
 
 ## Contact
 - Support: support@hanzo.ai
-- GitHub Issues: https://github.com/hanzoai/cli/issues
+- Issues: https://github.com/hanzoai/cli/issues

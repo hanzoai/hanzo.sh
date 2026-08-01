@@ -1,5 +1,10 @@
 # hanzo.sh — assets-only Worker (CF Pages project limit reached; 7stars precedent)
-# deploy: pnpm build && npx wrangler@3 deploy
+#
+# Deploying is .github/workflows/deploy.yml, which also re-fetches hanzo.sh and
+# fails unless the live bytes are the ones it just built. Do not publish this by
+# hand: hand-publishing is why the site served an installer months older than
+# main. `npx wrangler@3 deploy` still works locally for a break-glass, but then
+# main and the live host are two different states again — check afterwards.
 name = "hanzo-sh"
 compatibility_date = "2026-07-01"
 

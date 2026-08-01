@@ -128,6 +128,27 @@ hanzo.sh is served today by a Cloudflare assets Worker named `hanzo-sh`
 `pnpm build && npx wrangler@3 deploy`. `wrangler.toml` stays until the image is
 promoted; deleting it first would strand the live host.
 
+`.github/workflows/deploy.yml` now does that publish and then re-fetches
+https://hanzo.sh, failing unless the live md5 equals the file it just built.
+
+**Open, and it matters: `on: push` does not fire on this repo.** Measured
+2026-08-01 — four consecutive pushes to `main` (`db9c4d8`, `fdc08d5`, `85c7e11`,
+`6214745`) created zero workflow runs and zero PushEvents, while `repos/.../
+pushed_at` advanced each time, so GitHub received them. `workflow_dispatch` on
+the identical file works every time. Not the cause: Actions is enabled
+(`allowed_actions: all`), the workflow is `active`, the file is on `main` with
+`branches: [main]`, there are no rulesets, the repo is public (so Actions minutes
+do not apply), and pushing via the canonical `hanzo-apps/hanzo.sh` remote rather
+than the `hanzoai/hanzo.sh` redirect changed nothing. The last push-triggered run
+here was 2026-07-27. Other repos in the org do have push runs, so it is not an
+org-wide block.
+
+Until that is understood, **a merge is not a deploy** — dispatch it:
+
+```sh
+gh workflow run deploy.yml -R hanzo-apps/hanzo.sh --ref main
+```
+
 **A hand-published host is why a fix can be merged and still not reach anyone.**
 The live bytes lagged `main` by weeks — long enough that a correct fix sat in the
 repo while `curl hanzo.sh | bash` kept installing the old thing. Anyone changing

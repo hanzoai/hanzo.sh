@@ -359,6 +359,65 @@ install_bot() {
     fi
 }
 
+# The `hanzo` command is the Rust CLI from hanzoai/cli. It is NOT the PyPI
+# project that happens to share the name — that is a different program, and
+# installing it here is what put the wrong `hanzo` on people's PATH.
+#
+# We do not re-implement the download: hanzoai/cli ships the installer that
+# knows its own asset naming, verifies the sha256 before unpacking, and installs
+# BOTH names (`hanzo` and the `hanzo-node` delegate) from that one build. One
+# way to do everything — this calls it.
+CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
+
+# Fetch that installer from the API rather than raw.githubusercontent: the API
+# serves the CURRENT file and honours a token, while raw is CDN-cached and will
+# happily hand back a copy from some minutes ago. Serving a stale script is the
+# same class of bug this whole change exists to remove, so do not risk it — but
+# still fall back to raw if the API is unreachable.
+fetch_cli_installer() {
+    local dest="$1"
+    local api="https://api.github.com/repos/${CLI_REPO}/contents/install.sh?ref=main"
+    local token="${HANZO_INSTALL_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
+    [[ -z "$token" ]] && has_cmd gh && token="$(gh auth token 2>/dev/null || true)"
+
+    # Never interpolate a token into an unquoted argument list; branch instead.
+    if [[ -n "$token" ]]; then
+        curl -fsSL -H "Accept: application/vnd.github.raw" \
+             -H "Authorization: Bearer $token" "$api" -o "$dest" 2>/dev/null && return 0
+    else
+        curl -fsSL -H "Accept: application/vnd.github.raw" "$api" -o "$dest" 2>/dev/null && return 0
+    fi
+    curl -fsSL "https://raw.githubusercontent.com/${CLI_REPO}/main/install.sh" -o "$dest" 2>/dev/null
+}
+
+install_cli() {
+    log "installing hanzo (Rust CLI)..."
+
+    local tmp="/tmp/hanzo-cli-install-$$.sh"
+    if ! fetch_cli_installer "$tmp"; then
+        FAILED+=("hanzo"); fail "hanzo (could not fetch the CLI installer)"; rm -f "$tmp"; return 1
+    fi
+
+    # hanzoai/cli's own installer needs a token only while the repo is private.
+    local token="${HANZO_INSTALL_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
+    [[ -z "$token" ]] && has_cmd gh && token="$(gh auth token 2>/dev/null || true)"
+
+    if HANZO_INSTALL_PREFIX="$HANZO_DIR" GH_TOKEN="$token" sh "$tmp"; then
+        rm -f "$tmp"
+        local ver
+        ver=$("$HANZO_DIR/hanzo" --version 2>/dev/null | awk '{print $NF}')
+        # Both names, or it is not a finished install: the delegate is what
+        # cloud's control binary execs, and a missing one silently falls through
+        # to whatever older `hanzo-node` is already on the box.
+        if [[ ! -e "$HANZO_DIR/hanzo-node" ]]; then
+            FAILED+=("hanzo-node"); fail "hanzo-node was not installed alongside hanzo"; return 1
+        fi
+        INSTALLED+=("hanzo ${ver:-?}"); ok "hanzo ${ver:-?} (+ hanzo-node, same build)"
+    else
+        rm -f "$tmp"; FAILED+=("hanzo"); fail "hanzo"; return 1
+    fi
+}
+
 install_bundle() {
     local bundle="$1"
     echo ""
@@ -366,11 +425,11 @@ install_bundle() {
     case "$bundle" in
         default)
             # default: cli + mcp
-            install_tool "hanzo" "hanzo"
+            install_cli
             install_tool "hanzo-mcp" "hanzo-mcp"
             ;;
         minimal|cli)
-            install_tool "hanzo" "hanzo"
+            install_cli
             ;;
         mcp)
             install_tool "hanzo-mcp" "hanzo-mcp"
@@ -386,11 +445,11 @@ install_bundle() {
             install_bot
             ;;
         dev)
-            install_tool "hanzo" "hanzo"
+            install_cli
             install_tool "hanzo-mcp" "hanzo-mcp"
             ;;
         full|all)
-            install_tool "hanzo" "hanzo"
+            install_cli
             install_tool "hanzo-mcp" "hanzo-mcp"
             install_tool "hanzo-agents" "hanzo-agents"
             install_tool "hanzo-node" "hanzo-node"
@@ -465,8 +524,8 @@ finish() {
         echo "  quick start:"
         echo -e "    ${C}hanzo login${N}         # authenticate with hanzo"
         echo -e "    ${C}hanzo --help${N}        # see all commands"
-        echo -e "    ${C}hanzo dev${N}           # start dev cli (auto-installs)"
-        echo -e "    ${C}hanzo net${N}           # start compute node (auto-installs)"
+        echo -e "    ${C}hanzo code${N}          # start a coding session"
+        echo -e "    ${C}hanzo desktop${N}       # point an agent at the browser"
         has_cmd hanzo-bot && echo -e "    ${C}hanzo-bot${N}           # personal AI bot (gateway + channels)"
         has_uv_tool "hanzo-mcp" && echo -e "    ${C}hanzo mcp serve${N}    # start mcp server"
         echo ""

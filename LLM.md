@@ -17,6 +17,11 @@ It installs, and this list is the whole list:
 |---|---|---|---|
 | `hanzo` | hanzoai/cli | `hanzo` | `hanzo-node` |
 | `mcp` | hanzoai/mcp | `hanzo-mcp` | `mcp` |
+| `dev` | hanzoai/dev | `dev` | — |
+
+`dev` takes no second name. cli/install.sh defaults the alias to `hanzo-node`,
+which the CLI already owns; giving it to `dev` too would leave the delegate name
+pointing at a different program.
 
 Both names of a pair are ONE build — a symlink, so they cannot drift. That
 property is load-bearing for the CLI: cloud's control binary resolves
@@ -48,15 +53,9 @@ Named in the output rather than quietly substituted. An installer that reaches
 for a package manager so the list looks complete is the exact defect this file
 was rewritten to remove.
 
-- **`dev`** — `hanzoai/dev` is private, so an anonymous `curl | sh` gets 404. It
-  also publishes no per-asset checksums. This is the one that hurts: `dev` is the
-  agent `hanzo code` runs by default, so a public install produces a CLI whose
-  headline command cannot run its own default backend (`hanzo code claude` and
-  `hanzo code codex` name other backends). Making that repo public and adding
-  `.sha256` siblings is all that is needed — then it is one row in `TOOLS`.
-- **`node`** — `hanzoai/node` is private; same 404, no checksums. Its asset is
-  also a ~277 MB zip with vendored runtimes rather than a lone binary, so it does
-  not fit the one convention yet.
+- **`node`** — `hanzoai/node` is private; a 404 to an anonymous fetch, and no
+  per-asset checksums. Its asset is also a ~277 MB zip with vendored runtimes
+  rather than a lone binary, so it does not fit the one convention yet.
 - **`desktop`** — `hanzoai/desktop` is private, and its latest release is
   linux-amd64 only with an orphaned macOS signature. `hanzo desktop` (a CLI verb)
   is unaffected and works; the standalone Tauri app is what is unavailable.
@@ -182,6 +181,19 @@ Two things must still be reconciled BEFORE anyone pins a tag in the CR:
 The CR is committed INERT (empty tag, absent from `kustomization.yaml`).
 Promoting an App with no image tag takes the host down instead of leaving it
 alone.
+
+## The page
+
+`src/pages/Index.tsx` renders `Hero` and nothing else. `Hero` is the whole page
+— it carries its own header and its own footer — so any sibling rendered beside
+it is a second header and a second footer on the same screen. That is what
+shipped for months: a leftover scaffold-template `Navbar`, `Features` and
+`Footer` rendered under the real page, adding a competing fixed nav, four
+invented feature cards, sixteen `href="#"` links, a "Simplifying application
+development and deployment with innovative container solutions" strapline for a
+company that does not sell containers, and a `© 2024` ten pixels below the real
+`© 2016–2026`. All five leftover components are deleted; do not reintroduce a
+component that renders chrome.
 
 ## Stack
 

@@ -42,17 +42,25 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 # The binary is also the asset prefix and the name inside the tarball — the
 # convention hanzoai/cli/install.sh relies on. Adding a tool is one line, the day
 # its repo is public and publishes <binary>-<os>-<arch>.tar.gz.sha256.
+#
+# `dev` takes no second name on purpose. cli/install.sh defaults the alias to
+# `hanzo-node`, which the CLI already owns — giving it to `dev` too would point
+# the delegate name at a different program.
 TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-node
-mcp:hanzoai/mcp:hanzo-mcp:mcp'
+mcp:hanzoai/mcp:hanzo-mcp:mcp
+dev:hanzoai/dev:dev:'
+
+# The installable names, read off TOOLS so no message can name a different set
+# than the loop installs.
+tool_names() {
+    printf '%s\n' "$TOOLS" | while IFS= read -r n_row; do
+        printf ' %s' "${n_row%%:*}"
+    done
+}
 
 # Named, not silently skipped, and never substituted with something else.
-#
-# `dev` matters most: it is the agent `hanzo code` runs by default, so until its
-# source is public `hanzo code` cannot run its own default backend. Saying that
-# here beats letting someone discover it at the first `hanzo code`.
 unavailable_rows() {
     cat <<'ROWS'
-dev|the agent `hanzo code` runs by default — source is not public yet
 node|source is not public yet
 desktop|`hanzo desktop` is in the CLI; the standalone app is not public yet
 bot|`hanzo bot` is in the CLI; the standalone node is not native yet
@@ -103,6 +111,7 @@ With no tool named, installs every tool that ships as a public native binary.
 tools:
   hanzo    the Hanzo CLI    (also installed as hanzo-node, the same build)
   mcp      the MCP server   (also installed as hanzo-mcp, the same build)
+  dev      Hanzo Dev, the coding agent `hanzo code` runs by default
 
 options:
   -d, --dir PATH       install directory (default: ~/.local/bin)
@@ -209,7 +218,12 @@ install_tool() {
         FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_bin"
         fail "$i_bin (nothing at $HANZO_DIR/$i_bin)"; return 1
     fi
-    i_ver=$("$HANZO_DIR/$i_bin" --version 2>/dev/null | head -1 | awk '{print $NF}')
+    # The first token that looks like a version, not the last token on the line:
+    # `--version` output is not one shape across tools (`hanzo 1.9.18` ends on
+    # the version, `hanzo dev 0.6.91 (sha) 2026-04-01` ends on a date), and
+    # printing a build date where a version belongs is its own small lie.
+    i_ver=$("$HANZO_DIR/$i_bin" --version 2>/dev/null | head -1 \
+            | tr ' ' '\n' | grep -m1 -E '^v?[0-9]+\.[0-9]+' | sed 's/^v//')
     [ -n "${i_ver:-}" ] || i_ver='?'
 
     if [ -n "$i_alias" ]; then
@@ -294,11 +308,11 @@ main() {
                   done)
             if [ -n "$why" ]; then
                 fail "$w — $why"
-                printf '  %sinstallable today: hanzo mcp%s\n' "$DM" "$N"
+                printf '  %sinstallable today:%s%s\n' "$DM" "$(tool_names)" "$N"
                 exit 1
             fi
         done
-        die "no such tool:$WANT — installable today: hanzo mcp"
+        die "no such tool:$WANT — installable today:$(tool_names)"
     fi
 
     if [ -z "$WANT" ]; then show_unavailable; fi

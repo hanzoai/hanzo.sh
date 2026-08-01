@@ -32,6 +32,7 @@ const Hero = () => {
     { id: "curl", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
     { id: "curl-cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
     { id: "curl-mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
+    { id: "curl-dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
   ];
 
   const [activeInstall, setActiveInstall] = useState("curl");
@@ -69,8 +70,8 @@ const Hero = () => {
               <span className="bg-gradient-to-r from-[#d81c33] to-[#f0506a] bg-clip-text text-transparent">hanzo.sh</span>
             </h1>
             <p className="text-lg text-white/50 max-w-xl mx-auto">
-              The Hanzo CLI and MCP server, as native binaries. One command,
-              nothing to build.
+              The Hanzo CLI, the MCP server and the coding agent, as native
+              binaries. One command, nothing to build.
             </p>
           </div>
 
@@ -118,6 +119,7 @@ const Hero = () => {
             {[
               { path: "/cli", label: "CLI Only" },
               { path: "/mcp", label: "MCP Server" },
+              { path: "/dev", label: "Dev Agent" },
             ].map((shortcut) => (
               <button
                 key={shortcut.path}
@@ -149,6 +151,14 @@ const Hero = () => {
                 icon: <Code className="w-4 h-4 text-green-400" />,
                 tint: "bg-green-500/10",
               },
+              {
+                bin: "dev",
+                also: null,
+                desc: "Hanzo Dev \u2014 the coding agent `hanzo code` runs by default.",
+                href: "https://github.com/hanzoai/dev",
+                icon: <Terminal className="w-4 h-4 text-sky-400" />,
+                tint: "bg-sky-500/10",
+              },
             ].map((t) => (
               <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
                 <div className="flex items-center gap-2.5 mb-3">
@@ -157,23 +167,24 @@ const Hero = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-white text-sm font-mono">{t.bin}</h3>
-                    <a href={t.href} className="text-xs text-white/40 hover:text-white/60">source \u2192</a>
+                    <a href={t.href} className="text-xs text-white/40 hover:text-white/60">source →</a>
                   </div>
                 </div>
                 <p className="text-xs text-white/50 mb-3">{t.desc}</p>
-                <p className="text-[11px] text-white/30">
-                  also installed as <code className="text-white/50">{t.also}</code> \u2014 the same build, symlinked
-                </p>
+                {t.also && (
+                  <p className="text-[11px] text-white/30">
+                    also installed as <code className="text-white/50">{t.also}</code> — the same build, symlinked
+                  </p>
+                )}
               </div>
             ))}
           </div>
 
-          {/* Not included \u2014 say so rather than let someone find out */}
+          {/* Not included — say so rather than let someone find out */}
           <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
             <h2 className="text-sm font-medium text-white/60 mb-3">Not included yet</h2>
             <ul className="space-y-1.5 text-xs">
               {[
-                { bin: "dev", why: "the agent `hanzo code` runs by default \u2014 source is not public yet" },
                 { bin: "node", why: "source is not public yet" },
                 { bin: "desktop", why: "`hanzo desktop` is in the CLI; the standalone app is not public yet" },
                 { bin: "bot", why: "`hanzo bot` is in the CLI; the standalone node is not native yet" },

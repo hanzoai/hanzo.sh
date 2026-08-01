@@ -18,12 +18,14 @@ That installs every Hanzo tool published as a public native binary:
 
 - `hanzo` — the CLI (also installed as `hanzo-node`, the same build)
 - `hanzo-mcp` — the MCP server (also installed as `mcp`, the same build)
+- `dev` — Hanzo Dev, the coding agent `hanzo code` runs by default
 
 One tool at a time:
 
 ```sh
 curl -fsSL https://hanzo.sh/cli | sh    # the CLI only
 curl -fsSL https://hanzo.sh/mcp | sh    # the MCP server only
+curl -fsSL https://hanzo.sh/dev | sh    # the coding agent only
 ```
 
 Binaries land in `~/.local/bin`. Re-run to upgrade — installing is just
@@ -45,12 +47,9 @@ hanzo code "fix the failing test"
 # Point an agent at the desktop and browser instead of the repo
 hanzo desktop
 
-# Serve a model locally on an OpenAI-compatible endpoint
-hanzo engine serve enso
-
 # Money and metering
 hanzo billing balance
-hanzo usage
+hanzo usage summary
 
 # Bring your own cloud
 hanzo cloud list
@@ -60,11 +59,30 @@ hanzo cloud accounts
 hanzo-mcp
 ```
 
+A group name is not a command on its own: `hanzo usage` and `hanzo auth` print
+their subcommands and stop. A first word the CLI does not recognise is read as a
+task for the coding agent, so `hanzo login` starts a session about the word
+"login" instead of signing you in.
+
+`hanzo engine serve <model>` runs a model locally on an OpenAI-compatible
+endpoint. It needs the Hanzo engine binary, which this installer does not ship;
+with no `hanzo-engine` on PATH and no `HANZO_ENGINE_BIN` set it exits saying so.
+
+## Models
+Hanzo's own families, and the ids these tools take: `enso`, `enso-flash`,
+`enso-ultra`, and `zen5`, `zen5-pro`, `zen5-coder`, `zen5-flash`, `zen5-mini`,
+plus the single-purpose `zen-embedding`, `zen-rerank`, `zen-guard`, `zen-vl`,
+`zen-image`, `zen-video`, `zen-voice`, `zen-music`, `zen-foley`. The live list is
+`https://catalog.hanzo.ai/v1/models`, and the gateway is the sole authority on
+it. `https://api.hanzo.ai/v1/models` answers the same question for a signed-in
+caller and returns 401 without a bearer token.
+
 ## Links
 - [Website](https://hanzo.sh)
 - [Documentation](https://docs.hanzo.ai)
 - [CLI source](https://github.com/hanzoai/cli)
 - [MCP source](https://github.com/hanzoai/mcp)
+- [Dev source](https://github.com/hanzoai/dev)
 
 ## Contact
 - Support: support@hanzo.ai

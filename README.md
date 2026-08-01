@@ -51,11 +51,22 @@ curl -fsSL http://127.0.0.1:8791 | bash
 
 ## Deploying
 
-Automatic: `.github/workflows/deploy.yml` builds and publishes the Cloudflare
-Worker on every push to `main`, then re-fetches https://hanzo.sh and **fails if
-the live bytes are not the bytes it just built**. This host was hand-published
-for a long time, which is how a merged fix sat unseen for weeks while
-`curl hanzo.sh | sh` kept handing out the old installer — so verifying the live
-URL is part of deploying, not a follow-up.
+`.github/workflows/deploy.yml` builds, publishes the Cloudflare Worker, then
+re-fetches https://hanzo.sh and **fails if the live bytes are not the bytes it
+just built**. This host was hand-published for a long time, which is how a merged
+fix sat unseen for weeks while `curl hanzo.sh | sh` kept handing out the old
+installer — so verifying the live URL is part of deploying, not a follow-up.
+
+```sh
+gh workflow run deploy.yml -R hanzo-apps/hanzo.sh --ref main
+```
+
+Run it explicitly. The workflow declares `on: push` too, but pushes to this repo
+are **not** currently creating runs — measured, cause not established; see
+`LLM.md`. Until that is fixed, a merge is not a deploy, so check:
+
+```sh
+curl -sS https://hanzo.sh | md5sum
+```
 
 `LLM.md` has the details, including the unfinished migration to `hanzoai/static`.

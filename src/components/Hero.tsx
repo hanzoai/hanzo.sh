@@ -69,7 +69,8 @@ const Hero = () => {
               <span className="bg-gradient-to-r from-[#d81c33] to-[#f0506a] bg-clip-text text-transparent">hanzo.sh</span>
             </h1>
             <p className="text-lg text-white/50 max-w-xl mx-auto">
-              Install the Hanzo AI toolkit. CLI, MCP server, agents, SDKs.
+              The Hanzo CLI and MCP server, as native binaries. One command,
+              nothing to build.
             </p>
           </div>
 
@@ -107,7 +108,8 @@ const Hero = () => {
             </div>
 
             <p className="text-center text-white/40 text-xs">
-              Requires bash. Installs <a href="https://docs.astral.sh/uv/" className="text-white/60 hover:text-white underline underline-offset-2">uv</a> if missing.
+              One prebuilt native binary per tool, checksum-verified. No runtime,
+              no package manager, no build step. Re-run to upgrade.
             </p>
           </div>
 
@@ -128,134 +130,60 @@ const Hero = () => {
             ))}
           </div>
 
-          {/* Alternative installs */}
-          <div className="border-t border-white/10 pt-8">
-            <p className="text-center text-white/40 text-sm mb-4">Or install via package manager:</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-2xl mx-auto">
-              {[
-                { id: "pip", cmd: "pip install hanzo" },
-                { id: "uvx", cmd: "uvx hanzo" },
-                { id: "cargo", cmd: "cargo install hanzo-dev" },
-                { id: "npm", cmd: "npm i -g @hanzoai/cli" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleCopy(item.cmd, item.id)}
-                  className="p-2.5 rounded-lg bg-white/[0.02] border border-white/10 hover:border-white/20 text-left transition-colors group"
-                >
-                  <code className="text-white/70 font-mono text-xs block truncate">{item.cmd}</code>
-                  {copied === item.id && <span className="text-green-400 text-xs">Copied!</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Packages */}
-          <div className="grid md:grid-cols-3 gap-3">
-            {/* Python */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <Code className="w-4 h-4 text-green-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-white text-sm">Python</h3>
-                  <a href="https://pypi.org/project/hanzo/" className="text-xs text-white/40 hover:text-white/60">PyPI →</a>
-                </div>
-              </div>
-              <ul className="space-y-1.5 text-xs">
-                {[
-                  { pkg: "hanzo", desc: "CLI & cloud" },
-                  { pkg: "hanzo-mcp", desc: "MCP server" },
-                  { pkg: "hanzo-agents", desc: "Multi-agent framework" },
-                  { pkg: "hanzoai", desc: "API client SDK" },
-                ].map((item) => (
-                  <li key={item.pkg} className="flex items-center justify-between text-white/60">
-                    <code className="text-white/80">{item.pkg}</code>
-                    <span className="text-white/40">{item.desc}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Rust */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                  <Cpu className="w-4 h-4 text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-white text-sm">Rust</h3>
-                  <a href="https://github.com/hanzoai/node" className="text-xs text-white/40 hover:text-white/60">GitHub →</a>
-                </div>
-              </div>
-              <ul className="space-y-1.5 text-xs">
-                {[
-                  { pkg: "hanzo-node", desc: "Compute node" },
-                  { pkg: "hanzo-dev", desc: "Coding agent" },
-                  { pkg: "hanzo-mcp", desc: "Fast MCP" },
-                ].map((item) => (
-                  <li key={item.pkg} className="flex items-center justify-between text-white/60">
-                    <code className="text-white/80">{item.pkg}</code>
-                    <span className="text-white/40">{item.desc}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* JavaScript */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                  <Globe className="w-4 h-4 text-yellow-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-white text-sm">JavaScript</h3>
-                  <a href="https://www.npmjs.com/org/hanzoai" className="text-xs text-white/40 hover:text-white/60">npm →</a>
-                </div>
-              </div>
-              <ul className="space-y-1.5 text-xs">
-                {[
-                  { pkg: "@hanzoai/cli", desc: "CLI" },
-                  { pkg: "@hanzoai/sdk", desc: "API client" },
-                  { pkg: "@hanzoai/mcp", desc: "MCP client" },
-                ].map((item) => (
-                  <li key={item.pkg} className="flex items-center justify-between text-white/60">
-                    <code className="text-white/80">{item.pkg}</code>
-                    <span className="text-white/40">{item.desc}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Bundles */}
-          <div>
-            <h2 className="text-sm font-medium text-white/60 mb-3 text-center">Installation Bundles</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {[
-                { name: "minimal", desc: "CLI only", flag: "--bundle minimal", default: true },
-                { name: "python", desc: "CLI + MCP + agents", flag: "--bundle python" },
-                { name: "rust", desc: "High-perf binaries", flag: "--bundle rust" },
-                { name: "full", desc: "Everything", flag: "--bundle full", highlight: true },
-              ].map((bundle) => (
-                <div
-                  key={bundle.name}
-                  className={`p-3 rounded-lg text-left ${
-                    bundle.highlight
-                      ? "bg-[#d81c33]/10 border border-[#d81c33]/30"
-                      : "bg-white/[0.02] border border-white/10"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <code className="text-white text-sm font-medium">{bundle.name}</code>
-                    {bundle.default && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50">default</span>}
-                    {bundle.highlight && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#d81c33]/20 text-[#d81c33]">recommended</span>}
+          {/* What gets installed */}
+          <div className="grid md:grid-cols-2 gap-3">
+            {[
+              {
+                bin: "hanzo",
+                also: "hanzo-node",
+                desc: "The Hanzo CLI \u2014 auth, billing, coding sessions, and every product of the Hanzo cloud.",
+                href: "https://github.com/hanzoai/cli",
+                icon: <Cpu className="w-4 h-4 text-orange-400" />,
+                tint: "bg-orange-500/10",
+              },
+              {
+                bin: "hanzo-mcp",
+                also: "mcp",
+                desc: "The MCP server \u2014 the Hanzo toolset, for any MCP client.",
+                href: "https://github.com/hanzoai/mcp",
+                icon: <Code className="w-4 h-4 text-green-400" />,
+                tint: "bg-green-500/10",
+              },
+            ].map((t) => (
+              <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className={`w-8 h-8 rounded-lg ${t.tint} flex items-center justify-center`}>
+                    {t.icon}
                   </div>
-                  <p className="text-xs text-white/40">{bundle.desc}</p>
+                  <div>
+                    <h3 className="font-medium text-white text-sm font-mono">{t.bin}</h3>
+                    <a href={t.href} className="text-xs text-white/40 hover:text-white/60">source \u2192</a>
+                  </div>
                 </div>
+                <p className="text-xs text-white/50 mb-3">{t.desc}</p>
+                <p className="text-[11px] text-white/30">
+                  also installed as <code className="text-white/50">{t.also}</code> \u2014 the same build, symlinked
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Not included \u2014 say so rather than let someone find out */}
+          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
+            <h2 className="text-sm font-medium text-white/60 mb-3">Not included yet</h2>
+            <ul className="space-y-1.5 text-xs">
+              {[
+                { bin: "dev", why: "the agent `hanzo code` runs by default \u2014 source is not public yet" },
+                { bin: "node", why: "source is not public yet" },
+                { bin: "desktop", why: "`hanzo desktop` is in the CLI; the standalone app is not public yet" },
+                { bin: "bot", why: "`hanzo bot` is in the CLI; the standalone node is not native yet" },
+              ].map((item) => (
+                <li key={item.bin} className="flex items-start justify-between gap-4 text-white/50">
+                  <code className="text-white/70 shrink-0">{item.bin}</code>
+                  <span className="text-white/35 text-right">{item.why}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
           {/* After install */}
@@ -263,10 +191,10 @@ const Hero = () => {
             <h2 className="text-sm font-medium text-white/60 mb-3">After install</h2>
             <div className="font-mono text-sm space-y-2">
               {[
-                { cmd: "hanzo --help", desc: "Show all commands" },
-                { cmd: "hanzo auth login", desc: "Authenticate with Hanzo Cloud" },
-                { cmd: "hanzo dev", desc: "Start AI coding session" },
-                { cmd: "hanzo-mcp", desc: "Run MCP server for Claude/IDEs" },
+                { cmd: "hanzo auth login", desc: "Sign in through Hanzo IAM" },
+                { cmd: "hanzo code", desc: "Start a coding session" },
+                { cmd: "hanzo --help", desc: "Every command" },
+                { cmd: "hanzo-mcp", desc: "Run the MCP server" },
               ].map((line, i) => (
                 <div key={i} className="flex items-center gap-3 text-[#e6edf3]">
                   <span className="text-white/30 select-none w-4">$</span>

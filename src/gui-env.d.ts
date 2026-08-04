@@ -5,7 +5,8 @@
  *
  * The v5 config sets `onlyShorthandStyleProps`, so the shorthands ARE the API —
  * without this augmentation TypeScript sees only the base React Native props and
- * every one of them reads as an unknown prop. Ambient + type-only.
+ * every one of them reads as an unknown prop (`hoverStyle={{ bg }}` is the first
+ * to fail). Ambient + type-only. Same file, same form, as hanzo/sites.
  */
 import type { createGui } from '@hanzo/gui'
 import type { defaultConfig } from '@hanzogui/config/v5'

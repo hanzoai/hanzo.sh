@@ -8,9 +8,14 @@
  *
  * Why not `fontFamily="$mono"`: `@hanzo/ui/gui-config` defines only `body` and
  * `heading` families, so `$mono` is not a token — it resolves to nothing and the
- * shell commands quietly render in Geist Sans. Why not `@hanzo/ui/core`'s
- * `fontMono`: that subpath is unresolvable in @hanzo/ui@8.0.26 (its exports map
- * points at `src/`, which `files: ["dist"]` does not publish).
+ * shell commands quietly render in Geist Sans.
+ *
+ * Why not `@hanzo/ui/core`'s `fontMono` (resolvable since 8.0.27, and the same
+ * idea): it reads `--font-geist-mono`, which `@hanzo/ui/theme.css` declares. This
+ * page's token layer is `@hanzo/design`, which declares `--font-mono` and ships
+ * the face it names. Importing both stylesheets to reach one family would be two
+ * token layers on one page, which is how a surface ends up with two answers for
+ * a colour.
  */
 import type { TextProps } from '@hanzo/gui'
 import { cssVar } from '@hanzo/design'

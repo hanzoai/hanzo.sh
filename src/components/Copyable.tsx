@@ -10,8 +10,7 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import type { XStackProps } from '@hanzo/gui'
 import { useToast } from '@hanzo/ui/product'
-import { Check } from '@hanzogui/lucide-icons-2/icons/Check'
-import { Copy } from '@hanzogui/lucide-icons-2/icons/Copy'
+import { Check, Copy } from '@hanzogui/lucide-icons-2'
 
 import { Pressable } from './Pressable'
 

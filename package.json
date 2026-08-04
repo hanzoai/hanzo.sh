@@ -21,6 +21,7 @@
     "@hanzogui/lucide-icons-2": "8.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-native-svg": "^15.15.5",
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {

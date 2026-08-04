@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Post-build script to create polyglot index.html
- * Makes the site work with: curl hanzo.sh | bash
+ * Makes the site work with: curl hanzo.sh | sh
  */
 
 import { readFileSync, writeFileSync } from 'fs';
@@ -35,5 +35,5 @@ ${scriptContent}
 
 writeFileSync(indexPath, polyglot);
 console.log('✓ Created polyglot index.html');
-console.log('  curl hanzo.sh | bash  →  runs installer');
+console.log('  curl hanzo.sh | sh    →  runs installer');
 console.log('  open hanzo.sh         →  shows landing page');

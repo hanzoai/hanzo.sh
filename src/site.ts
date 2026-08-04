@@ -3,9 +3,13 @@
  *
  * The ecosystem's shared surfaces (the launcher, the footer index) come from
  * `@hanzo/products`, which is where the whole estate settles what Hanzo offers.
- * Only this property's own delta lives here: the install commands, the bundles
- * and the packages each language ships — facts that belong to the installer
- * (`public/install.sh`) and to nothing else.
+ * Only this property's own delta lives here.
+ *
+ * Every fact below belongs to `public/install.sh` and is copied from it: the
+ * `TOOLS` rows, the `unavailable_rows` list, and the one command. If the
+ * installer changes, this file changes with it — a page that advertises a tool
+ * the installer does not fetch is the defect that installer was rewritten to
+ * remove.
  */
 import { MEET_HANZO_MENU, type SiteHeader } from '@hanzo/products'
 
@@ -29,127 +33,78 @@ export const HEADER: SiteHeader = {
 
 export const LAUNCHER = MEET_HANZO_MENU
 
-/** The three headline pipes, the tab strip over the one command row. */
+/**
+ * The command, and the three narrower ways to say it. `| sh`, not `| bash`: the
+ * installer is POSIX and the served polyglot declares `#!/bin/sh`, so `sh` is
+ * the form that is true everywhere.
+ *
+ * Each `path` is a real routing shim in `public/`; the default has none because
+ * it IS the host.
+ */
 export const INSTALLS = [
-  { id: 'curl', label: 'Default', cmd: 'curl -fsSL hanzo.sh | bash' },
-  { id: 'curl-full', label: 'Full', cmd: 'curl -fsSL hanzo.sh | bash -s -- --bundle full' },
-  { id: 'curl-rust', label: 'Rust', cmd: 'curl -fsSL hanzo.sh | bash -s -- --bundle rust' },
+  { id: 'all', label: 'Everything', path: '', cmd: 'curl -fsSL hanzo.sh | sh' },
+  { id: 'cli', label: 'CLI', path: '/cli', cmd: 'curl -fsSL hanzo.sh/cli | sh' },
+  { id: 'mcp', label: 'MCP', path: '/mcp', cmd: 'curl -fsSL hanzo.sh/mcp | sh' },
+  { id: 'dev', label: 'Dev', path: '/dev', cmd: 'curl -fsSL hanzo.sh/dev | sh' },
 ] as const
 
-/** The per-bundle shims served out of `public/` — each is a real path on this host. */
-export const SHORTCUTS = [
-  { path: '/dev', label: 'Dev Agent' },
-  { path: '/mcp', label: 'MCP Server' },
-  { path: '/cli', label: 'CLI Only' },
-  { path: '/python', label: 'Python Bundle' },
-  { path: '/rust', label: 'Rust Bundle' },
-] as const
+/** The shortcut row: every install except the default, which is already the hero. */
+export const SHORTCUTS = INSTALLS.filter((i) => i.path !== '')
 
-export const PACKAGE_MANAGERS = [
-  { id: 'pip', cmd: 'pip install hanzo' },
-  { id: 'uvx', cmd: 'uvx hanzo' },
-  { id: 'cargo', cmd: 'cargo install hanzo-dev' },
-  { id: 'npm', cmd: 'npm i -g @hanzoai/cli' },
-] as const
+export const INSTALL_NOTE =
+  'One prebuilt native binary per tool, checksum-verified. No runtime, no package manager, no build step. Re-run to upgrade.'
 
-export type Language = {
-  id: string
-  name: string
-  icon: 'Code' | 'Cpu' | 'Globe'
-  registry: { label: string; href: string }
-  packages: { pkg: string; desc: string }[]
-}
-
-export const LANGUAGES: Language[] = [
-  {
-    id: 'python',
-    name: 'Python',
-    icon: 'Code',
-    registry: { label: 'PyPI', href: 'https://pypi.org/project/hanzo/' },
-    packages: [
-      { pkg: 'hanzo', desc: 'CLI & cloud' },
-      { pkg: 'hanzo-mcp', desc: 'MCP server' },
-      { pkg: 'hanzo-agents', desc: 'Multi-agent framework' },
-      { pkg: 'hanzoai', desc: 'API client SDK' },
-    ],
-  },
-  {
-    id: 'rust',
-    name: 'Rust',
-    icon: 'Cpu',
-    registry: { label: 'GitHub', href: 'https://github.com/hanzoai/node' },
-    packages: [
-      { pkg: 'hanzo-node', desc: 'Compute node' },
-      { pkg: 'hanzo-dev', desc: 'Coding agent' },
-      { pkg: 'hanzo-mcp', desc: 'Fast MCP' },
-    ],
-  },
-  {
-    id: 'javascript',
-    name: 'JavaScript',
-    icon: 'Globe',
-    registry: { label: 'npm', href: 'https://www.npmjs.com/org/hanzoai' },
-    packages: [
-      { pkg: '@hanzoai/cli', desc: 'CLI' },
-      { pkg: '@hanzoai/sdk', desc: 'API client' },
-      { pkg: '@hanzoai/mcp', desc: 'MCP client' },
-    ],
-  },
-]
-
-export type Bundle = {
-  /** The `--bundle` value. */
-  name: string
+export type Tool = {
+  /** The binary's name on PATH — also the asset prefix the installer resolves. */
+  bin: string
+  icon: 'Cpu' | 'Code' | 'Terminal'
   desc: string
-  /** Pill beside the name: which one is the default, which one is advised. */
-  note?: string
-  /** Draw the card's border brighter — one bundle at most. */
-  emphasis?: boolean
+  href: string
+  /** The symlinked second name, where the tool has one. */
+  also?: string
 }
 
-export const BUNDLES: Bundle[] = [
-  { name: 'minimal', desc: 'CLI only', note: 'default' },
-  { name: 'python', desc: 'CLI + MCP + agents' },
-  { name: 'rust', desc: 'High-perf binaries' },
-  { name: 'full', desc: 'Everything', note: 'recommended', emphasis: true },
+/** `TOOLS` in `public/install.sh`, in the order the installer walks it. */
+export const TOOLS: Tool[] = [
+  {
+    bin: 'hanzo',
+    also: 'hanzo-node',
+    icon: 'Cpu',
+    desc: 'The Hanzo CLI — auth, billing, coding sessions, and every product of the Hanzo cloud.',
+    href: 'https://github.com/hanzoai/cli',
+  },
+  {
+    bin: 'hanzo-mcp',
+    also: 'mcp',
+    icon: 'Code',
+    desc: 'The MCP server — the Hanzo toolset, for any MCP client.',
+    href: 'https://github.com/hanzoai/mcp',
+  },
+  {
+    bin: 'dev',
+    icon: 'Terminal',
+    desc: 'Hanzo Dev — the coding agent `hanzo code` runs by default.',
+    href: 'https://github.com/hanzoai/dev',
+  },
 ]
+
+/**
+ * `unavailable_rows` in `public/install.sh`. Said out loud rather than left for
+ * someone to discover: an installer that quietly substitutes a package manager
+ * so its list looks complete is the thing this page refuses to do.
+ */
+export const UNAVAILABLE = [
+  { bin: 'node', why: 'source is not public yet' },
+  { bin: 'desktop', why: '`hanzo desktop` is in the CLI; the standalone app is not public yet' },
+  { bin: 'bot', why: '`hanzo bot` is in the CLI; the standalone node is not native yet' },
+] as const
 
 export const AFTER_INSTALL = [
-  { cmd: 'hanzo --help', desc: 'Show all commands' },
-  { cmd: 'hanzo auth login', desc: 'Authenticate with Hanzo Cloud' },
-  { cmd: 'hanzo dev', desc: 'Start AI coding session' },
-  { cmd: 'hanzo-mcp', desc: 'Run MCP server for Claude/IDEs' },
+  { cmd: 'hanzo auth login', desc: 'Sign in through Hanzo IAM' },
+  { cmd: 'hanzo code', desc: 'Start a coding session' },
+  { cmd: 'hanzo --help', desc: 'Every command' },
+  { cmd: 'hanzo-mcp', desc: 'Run the MCP server' },
 ] as const
-
-export type Feature = { icon: 'Code' | 'Database' | 'Bot' | 'Share2'; title: string; description: string }
-
-export const FEATURES_TITLE = 'Accelerate Development with AI'
-
-export const FEATURES_BLURB =
-  "Integrate powerful AI tools into your development workflow. From smart code suggestions to automated testing, Hanzo's AI-powered platform helps you build better applications faster."
-
-export const FEATURES: Feature[] = [
-  {
-    icon: 'Code',
-    title: 'Hanzo Code & App Builder',
-    description: 'Build applications faster with our AI-powered code editor and visual app builder',
-  },
-  {
-    icon: 'Database',
-    title: 'Hanzo Analytics & Base',
-    description: 'Enterprise-ready infrastructure with real-time analytics and monitoring',
-  },
-  {
-    icon: 'Bot',
-    title: 'Hanzo Dev AI Team',
-    description: 'Your AI development team that helps write, review, and optimize code',
-  },
-  {
-    icon: 'Share2',
-    title: 'Open Source & Extensible',
-    description: 'Built on open source technologies and designed for unlimited customization',
-  },
-]
 
 export type Resource = {
   id: string
@@ -168,4 +123,4 @@ export const RESOURCES: Resource[] = [
 ]
 
 export const FOOTER_TAGLINE =
-  'One command installs the Hanzo AI toolkit — CLI, MCP server, agents and SDKs, in Python, Rust or JavaScript.'
+  'One command installs the Hanzo CLI, the MCP server and the coding agent as native binaries — checksum-verified, nothing to build.'

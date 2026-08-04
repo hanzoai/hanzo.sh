@@ -1,4 +1,6 @@
-#!/bin/bash
-# Hanzo Full Bundle Installer
-# Usage: curl -fsSL hanzo.sh/full | bash
-curl -fsSL https://hanzo.sh/install | bash -s -- --bundle full
+#!/bin/sh
+# Every Hanzo tool that ships as a public native binary — which is what
+#   curl -fsSL hanzo.sh | sh
+# already installs. Kept so an existing hanzo.sh/full keeps working; there is
+# one install path, not two.
+exec sh -c "$(curl -fsSL https://hanzo.sh)" -- "$@"

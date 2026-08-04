@@ -1,4 +1,7 @@
-#!/bin/bash
-# Hanzo Dev - AI Coding Agent Installer
-# Usage: curl -fsSL hanzo.sh/dev | bash
-curl -fsSL https://hanzo.sh/install | bash -s -- --bundle dev
+#!/bin/sh
+# Hanzo dev.
+#   curl -fsSL hanzo.sh/dev | sh
+#
+# Routing only. The installer is the one place that knows which tools ship as a
+# native binary and what to say about the ones that do not.
+exec sh -c "$(curl -fsSL https://hanzo.sh)" -- dev "$@"

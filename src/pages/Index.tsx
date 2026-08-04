@@ -7,6 +7,11 @@
  * above a section that drew its own header, and a hand-written footer of
  * `href="#"` links below the real one) — which is the drift those two components
  * exist to end.
+ *
+ * The sections below say exactly what `public/install.sh` does and nothing more:
+ * the one command, the three tools it installs, the three it does not, and what
+ * to run afterwards. A "Features" section of invented product claims used to sit
+ * here; it was template filler and it is gone.
  */
 import { Separator, YStack } from '@hanzo/gui'
 import { BrandMark, SiteFooter, SiteNav } from '@hanzo/ui/product'
@@ -14,11 +19,10 @@ import { FOOTER } from '@hanzo/products'
 import { Github } from '@hanzogui/lucide-icons-2/icons/Github'
 
 import { AfterInstall } from '../components/AfterInstall'
-import { Bundles } from '../components/Bundles'
-import { Features } from '../components/Features'
 import { Install } from '../components/Install'
-import { Packages } from '../components/Packages'
 import { Resources } from '../components/Resources'
+import { Tools } from '../components/Tools'
+import { Unavailable } from '../components/Unavailable'
 import { barLink, link } from '../components/link'
 import { FOOTER_TAGLINE, HEADER, LAUNCHER } from '../site'
 
@@ -38,11 +42,10 @@ export function Index() {
       <YStack items="center" px="$4" py="$6" width="100%">
         <YStack width="100%" maxW={960} gap="$7">
           <Install />
-          <Packages />
-          <Bundles />
+          <Tools />
+          <Unavailable />
           <AfterInstall />
           <Separator />
-          <Features />
           <Resources />
         </YStack>
       </YStack>

@@ -95,11 +95,20 @@ AND `bash -n`) and fails the build if any is lost — nothing downstream can cat
 it, because everything downstream is bytes. `dash` is the strict one; a bash-only
 assert is what let the pipefail break ship in the first place.
 
-`public/install.sh` is also served at `/install.sh` for anyone who wants the
-installer alone. `public/{cli,mcp,dev,node,bot,desktop,full}` are routing shims —
-they only `exec sh -c "$(curl -fsSL https://hanzo.sh)" -- <tool>`, so the one
-installer stays the single place that knows which tools exist and what to say
-about the ones that do not.
+The same step writes `dist/install`, the installer under its extensionless name —
+the path `hanzo.ai/install.sh`'s one-liner fetches, where a 404 is SILENT (`curl
+-f` writes nothing and exits 22, and `sh` reading an empty script exits 0, so the
+documented command reports success and installs nothing). It is generated from
+`public/install.sh`, not committed a second time; it was a byte-identical copy in
+`public/` with a comment saying the two must stay identical, which is a contract
+with no enforcement. The Dockerfile now `cmp`s them.
+
+So `public/install.sh` is the ONE installer, published under three names —
+`/`, `/install.sh`, `/install` — all read from that file by the build.
+`public/{cli,mcp,dev,node,bot,desktop,full}` are routing shims: they only
+`exec sh -c "$(curl -fsSL https://hanzo.sh)" -- <tool>`, so the one installer
+stays the single place that knows which tools exist and what to say about the
+ones that do not.
 
 ## Serving chain
 
@@ -270,6 +279,10 @@ files and the 27 Radix packages behind them are gone.
   is how a dependency list starts lying. `@hanzo/brand` is deliberately absent
   too — it is the MULTI-brand registry, and hanzo.sh is one brand. Reaching for
   it here is how a Lux or Zoo mark ends up on a Hanzo surface.
+- **@hanzo/data** — the one dependency nothing in `src/` imports, and it is not a
+  mistake: it is a PEER of `@hanzo/ui`, whose `product` barrel imports it, and a
+  peer is the app's to provide. Under pnpm's strict layout, dropping it does not
+  shrink anything — it breaks resolution at build time.
 
 `src/site.ts` is the page as data; `src/components/` renders it. Responsiveness
 is `flexWrap` + `minW`, not breakpoints: the same tree reflows from 390px to

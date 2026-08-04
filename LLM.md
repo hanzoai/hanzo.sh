@@ -156,7 +156,7 @@ gh workflow run deploy.yml -R hanzo-apps/hanzo.sh --ref main
 
 **A hand-published host is why a fix can be merged and still not reach anyone.**
 The live bytes lagged `main` by weeks — long enough that a correct fix sat in the
-repo while `curl hanzo.sh | bash` kept installing the old thing. Anyone changing
+repo while `curl hanzo.sh | sh` kept installing the old thing. Anyone changing
 `public/install.sh` must therefore treat deploying as part of the change, and
 verify against the live URL, not the repo:
 
@@ -215,9 +215,16 @@ make it again. pnpm 9; `pnpm-lock.yaml` is what the build resolves
 pnpm install
 pnpm dev        # vite, :8080
 pnpm build      # -> dist/, including the polyglot rewrite
-pnpm typecheck
+pnpm typecheck  # tsgo
 pnpm lint
 ```
+
+`typecheck` runs **tsgo**, the native (Go) TypeScript 7 compiler, from
+`@typescript/native-preview`. It accepts this project's config as-is — no
+`baseUrl`, `moduleResolution: bundler` — and reports the same errors `tsc` 5.9
+does, which is how the one workaround in `App.tsx` was confirmed to be an
+upstream type break rather than a compiler difference. `typescript` 5 stays
+installed because `typescript-eslint` parses with it; nothing else uses it.
 
 Verify an installer change without deploying by serving `dist/` and piping it to
 BOTH shells — the polyglot must run under each:
@@ -239,12 +246,22 @@ files and the 27 Radix packages behind them are gone.
   `@hanzo/products@0.2.0` has no `hanzo.sh` `SiteId` yet. When it does, `HEADER`
   collapses to `HEADERS['hanzo.sh']`.
 - **@hanzo/ui/product** — `SiteNav`, `SiteFooter`, `BrandMark`, `Panel`,
-  `StatusTag`, `ToastProvider`. The page used to draw two headers and two footers
-  (a `Navbar` above a `Hero` that carried its own header, and a hand-written
-  footer of `href="#"` links below the real one); these are the components that
-  end that.
+  `ToastProvider`. The page used to draw two headers and two footers (a `Navbar`
+  above a `Hero` that carried its own header, and a hand-written footer of
+  `href="#"` links below the real one); these are the components that end that.
 - **@hanzo/gui** — every primitive under it (`YStack`/`XStack`/`Text`/`Anchor`/
-  `Separator`), on the shared scale from `@hanzo/ui/gui-config`.
+  `Separator`), on the shared scale from `@hanzo/ui/gui-config`, imported
+  UNMODIFIED. `src/gui.config.ts` used to re-create it to redefine `sm`, because
+  `@hanzogui/config@7`'s `sm` was `minWidth: 640` while `SiteNav` writes `$sm`
+  meaning "phone" — a phone got the desktop link row and a desktop got the
+  hamburger. `@hanzogui/config@8` defines `sm` as `maxWidth: 800`; the override
+  is deleted.
+- **@hanzogui/lucide-icons-2** — icons, from the package ROOT
+  (`import { Terminal } from '@hanzogui/lucide-icons-2'`), never the
+  `./icons/<Name>` subpath. The subpath exports carry no `types` condition in
+  8.0.1, so every deep import is an implicit `any` under `noImplicitAny`. The
+  root barrel is typed and the package is `sideEffects: false`, so Rollup drops
+  the ~1750 icons this page does not render — verified in `dist/`.
 - **@hanzo/design** — the token layer: monochrome, dark by default, Geist Sans
   and Geist Mono self-hosted in the package. `src/index.css` imports it and does
   nothing else.
@@ -260,20 +277,25 @@ is `flexWrap` + `minW`, not breakpoints: the same tree reflows from 390px to
 
 ### Two workarounds, both with a delete condition
 
-`@hanzo/ui@8.0.26` has two defects this app has to route around. Both are marked
-in place; remove them when the package is fixed.
+`@hanzo/ui@8.0.39` + `@hanzo/gui@8.0.1` leave two things this app routes around.
+Both are marked in place; remove them when the packages are fixed, and the fix
+belongs upstream in both cases.
 
-1. `src/shims/hanzogui-next-theme.ts` — `@hanzo/ui/product` statically imports
-   `@hanzogui/next-theme` (an *optional* peer whose entry imports `next/script`),
-   because tsup put `ThemeToggle` and `ThemeToggleNext` in one chunk. No Vite app
-   can resolve it. `vite.config.ts` aliases the specifier to a stub; nothing here
-   renders a theme toggle.
-2. `src/gui.config.ts` — `SiteNav` writes `$sm` meaning "phone", but v5 defines
-   `sm` as `minWidth: 640`, so on the stock scale a phone gets the desktop link
-   row and a desktop gets a hamburger. This app redefines that ONE key as
-   `maxWidth: 639.98`; nothing else it renders reads `sm`.
+1. `src/shims/hanzogui-next-theme.ts` — `@hanzo/ui/product`'s barrel statically
+   re-exports `ThemeToggleNext`, whose module imports `@hanzogui/next-theme`, an
+   *optional* peer whose own entry imports `next/script`. No Vite app can resolve
+   it. `vite.config.ts` aliases the specifier to a stub; nothing here renders a
+   theme toggle. (8.0.39 already split `ThemeToggleNext` into its own module —
+   what is left is the one re-export line.)
+2. The config cast in `src/App.tsx` — the type `@hanzo/ui/gui-config` publishes is
+   not assignable to the `config` prop `@hanzo/gui`'s `GuiProvider` declares, on
+   `animations` and on `defaultProps.View`. Declaration-level only; one object,
+   and neither field is set here. `tsc` 5.9 rejects it identically, so it is not
+   a tsgo difference. Re-creating the scale locally would silence it and fork the
+   scale, which is the thing `@hanzo/ui/gui-config` exists to prevent.
 
-Also unusable in 8.0.26: `@hanzo/ui/core`, `/tokens`, `/gui`, `/shadcn`,
-`/components`, `/models`, `/primitives` — the exports map points them at `src/`,
-which `files: ["dist"]` does not publish. `src/mono.ts` reaches the mono family
-through `@hanzo/design` instead.
+The subpaths that were unresolvable in 8.0.26 — `@hanzo/ui/core`, `/tokens`,
+`/models`, `/primitives` — resolve now. `src/mono.ts` still reaches the mono
+family through `@hanzo/design` rather than `@hanzo/ui/core`'s `fontMono`: that
+one reads `--font-geist-mono` from `@hanzo/ui/theme.css`, and importing a second
+stylesheet to name one family would put two token layers on one page.

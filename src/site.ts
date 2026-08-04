@@ -83,7 +83,7 @@ export const TOOLS: Tool[] = [
   {
     bin: 'dev',
     icon: 'Terminal',
-    desc: 'Hanzo Dev — the coding agent `hanzo code` runs by default.',
+    desc: 'Hanzo Dev — the coding agent hanzo code runs by default.',
     href: 'https://github.com/hanzoai/dev',
   },
 ]
@@ -95,8 +95,8 @@ export const TOOLS: Tool[] = [
  */
 export const UNAVAILABLE = [
   { bin: 'node', why: 'source is not public yet' },
-  { bin: 'desktop', why: '`hanzo desktop` is in the CLI; the standalone app is not public yet' },
-  { bin: 'bot', why: '`hanzo bot` is in the CLI; the standalone node is not native yet' },
+  { bin: 'desktop', why: 'hanzo desktop is in the CLI; the standalone app is not public yet' },
+  { bin: 'bot', why: 'hanzo bot is in the CLI; the standalone node is not native yet' },
 ] as const
 
 export const AFTER_INSTALL = [

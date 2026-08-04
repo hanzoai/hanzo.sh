@@ -7,7 +7,7 @@
  */
 import { useState } from 'react'
 import { H1, Text, XStack, YStack } from '@hanzo/gui'
-import { Terminal } from '@hanzogui/lucide-icons-2/icons/Terminal'
+import { Terminal } from '@hanzogui/lucide-icons-2'
 import { mono } from '../mono'
 
 import { INSTALLS, INSTALL_NOTE, SHORTCUTS } from '../site'

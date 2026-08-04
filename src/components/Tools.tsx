@@ -6,9 +6,7 @@
 import { Anchor, Text, XStack, YStack } from '@hanzo/gui'
 import { Panel } from '@hanzo/ui/product'
 import { TAP } from '@hanzo/ui/framework'
-import { Code } from '@hanzogui/lucide-icons-2/icons/Code'
-import { Cpu } from '@hanzogui/lucide-icons-2/icons/Cpu'
-import { Terminal } from '@hanzogui/lucide-icons-2/icons/Terminal'
+import { Code, Cpu, Terminal } from '@hanzogui/lucide-icons-2'
 import { mono } from '../mono'
 
 import { TOOLS, type Tool } from '../site'

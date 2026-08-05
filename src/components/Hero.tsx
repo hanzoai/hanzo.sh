@@ -6,11 +6,11 @@ import { toast } from "sonner";
 const HanzoLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
   <svg viewBox="0 0 67 67" className={className} xmlns="http://www.w3.org/2000/svg">
     <path d="M22.21 67V44.6369H0V67H22.21Z" fill="currentColor"/>
-    <path d="M0 44.6369L22.21 46.8285V44.6369H0Z" fill="currentColor" opacity="0.7"/>
+    <path d="M0 44.6369L22.21 46.8285V44.6369H0Z" fill="currentColor" opacity="0.867"/>
     <path d="M66.7038 22.3184H22.2534L0.0878906 44.6367H44.4634L66.7038 22.3184Z" fill="currentColor"/>
     <path d="M22.21 0H0V22.3184H22.21V0Z" fill="currentColor"/>
     <path d="M66.7198 0H44.5098V22.3184H66.7198V0Z" fill="currentColor"/>
-    <path d="M66.6753 22.3185L44.5098 20.0822V22.3185H66.6753Z" fill="currentColor" opacity="0.7"/>
+    <path d="M66.6753 22.3185L44.5098 20.0822V22.3185H66.6753Z" fill="currentColor" opacity="0.867"/>
     <path d="M66.7198 67V44.6369H44.5098V67H66.7198Z" fill="currentColor"/>
   </svg>
 );
@@ -25,9 +25,9 @@ const Hero = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // One install path. `| sh` because the installer is POSIX and the served
-  // polyglot declares #!/bin/sh — the page and llms.txt used to disagree, and
-  // the `sh` half died on dash before anything was downloaded.
+  // One install path. `| sh` because the installer is POSIX and the file the
+  // site hands curl declares #!/bin/sh — the page and llms.txt used to
+  // disagree, and the `sh` half died on dash before anything was downloaded.
   const installCommands = [
     { id: "curl", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
     { id: "curl-cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
@@ -255,7 +255,7 @@ const Hero = () => {
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/40">
           <div className="flex items-center gap-2">
             <HanzoLogo className="w-4 h-4" />
-            <span>© 2016–{new Date().getFullYear()} Hanzo AI, Inc.</span>
+            <span>© {new Date().getFullYear()} Hanzo AI, Inc.</span>
           </div>
           <div className="flex items-center gap-4">
             <a href="https://hanzo.ai/privacy" className="hover:text-white transition-colors">Privacy</a>

@@ -4,16 +4,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="icon" type="image/png" href="/favicon.png" />
+
+  <!-- The estate icon set, byte-identical to hanzo.ai's: the five-path Hanzo
+       mark from hanzoai/brand (assets/logo/favicon.svg). The SVG is the one
+       browsers pick and it is theme-aware; the .ico is for legacy probes and
+       the two PNGs for anything that will not read either. -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" type="image/png" />
+
   <title>hanzo.sh — install the Hanzo CLI</title>
   <meta name="description" content="curl -fsSL hanzo.sh | sh — the Hanzo CLI and MCP server as native binaries. One prebuilt binary per tool, checksum-verified. No runtime, no package manager, no build step." />
-  <meta name="author" content="Hanzo AI Inc" />
+  <meta name="author" content="Hanzo AI, Inc." />
+
   <meta property="og:title" content="hanzo.sh — install the Hanzo CLI" />
   <meta property="og:description" content="One command. Native binaries, checksum-verified, nothing to build." />
-  <meta property="og:image" content="/og-image.svg" />
   <meta property="og:url" content="https://hanzo.sh" />
+  <!-- Absolute, and a PNG that exists. This pointed at /og-image.svg, which was
+       never in the repo: every social card resolved to a 404. -->
+  <meta property="og:image" content="https://hanzo.sh/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="hanzo.sh — curl -fsSL hanzo.sh | sh" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://hanzo.sh/og-image.png" />
 </head>
 
 <body>

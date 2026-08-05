@@ -4,7 +4,7 @@
 #   curl -fsSL hanzo.sh | sh
 #   curl -fsSL hanzo.sh | bash
 #
-# copyright (c) 2024-2026 hanzo ai inc.
+# copyright (c) Hanzo AI, Inc.
 # https://hanzo.ai
 #
 # Downloads one prebuilt native binary per tool, verifies its sha256, and puts it
@@ -15,9 +15,9 @@
 # and the script was bash-only — so every reader who copied the `sh` form (every
 # agent reading llms.txt) got `set: Illegal option -o pipefail` from dash and
 # nothing installed. Rather than pick a winner and leave the other broken, this
-# runs under both: no arrays, no [[ ]], no <<<, no echo -e, no pipefail. The
-# polyglot the site serves already declares #!/bin/sh, so this also makes that
-# shebang honest.
+# runs under both: no arrays, no [[ ]], no <<<, no echo -e, no pipefail. Line 1
+# of this file is what the site hands curl, and it says #!/bin/sh, so this also
+# makes that shebang honest.
 #
 # It does NOT re-implement downloading. hanzoai/cli/install.sh is the one
 # implementation of "fetch a Hanzo binary" — platform detection, asset naming,

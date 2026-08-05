@@ -24,9 +24,15 @@ curl -fsSL https://hanzo.sh/mcp | sh
 
 ## This repo
 
-`dist/index.html` is a **polyglot** — the same bytes are the landing page in a
-browser and the installer under `sh`. `public/install.sh` is the installer;
-`scripts/build-polyglot.js` wraps the built HTML in a heredoc and appends it.
+`/` is two resources, chosen by the `Accept` header in `worker.js`: the built
+document (`dist/page.html`) to a browser, `public/install.sh` to curl. It used to
+be one **polyglot** file that was both at once — HTML wrapped in a shell heredoc
+— which no browser can be handed honestly: bytes before `<!DOCTYPE html>` put the
+document in quirks mode and every `<head>` element ends up in `<body>`. A POSIX
+script cannot begin with `<!` either, so there was no arrangement that worked.
+`scripts/postbuild.js` moves the document off `index.html` (an asset at that name
+outranks the Worker, and curl would get HTML) and writes `/install` next to
+`/install.sh` from the same bytes.
 
 Downloading is NOT implemented here. `hanzoai/cli/install.sh` is the one
 implementation of "fetch a Hanzo binary" — platform detection, asset naming,
@@ -37,16 +43,18 @@ drift.
 ```sh
 pnpm install
 pnpm dev      # vite, :8080
-pnpm build    # -> dist/, including the polyglot rewrite
+pnpm build    # -> dist/, page.html + install.sh
 pnpm lint
 ```
 
-Test an installer change without deploying, under **both** published shells:
+Serve it exactly as Cloudflare will — same Worker, same asset rules — and test
+an installer change without deploying, under **both** published shells:
 
 ```sh
-cd dist && python3 -m http.server 8791 &
-curl -fsSL http://127.0.0.1:8791 | sh
-curl -fsSL http://127.0.0.1:8791 | bash
+pnpm build && npx wrangler@3 dev --local --port 8788
+curl -fsSL http://127.0.0.1:8788 | sh
+curl -fsSL http://127.0.0.1:8788 | bash
+curl -fsSL http://127.0.0.1:8788 -H 'Accept: text/html' | head -1   # <!DOCTYPE html>
 ```
 
 ## Deploying
@@ -57,16 +65,19 @@ just built**. This host was hand-published for a long time, which is how a merge
 fix sat unseen for weeks while `curl hanzo.sh | sh` kept handing out the old
 installer — so verifying the live URL is part of deploying, not a follow-up.
 
-```sh
-gh workflow run deploy.yml -R hanzo-apps/hanzo.sh --ref main
-```
-
-Run it explicitly. The workflow declares `on: push` too, but pushes to this repo
-are **not** currently creating runs — measured, cause not established; see
-`LLM.md`. Until that is fixed, a merge is not a deploy, so check:
+A push to `main` deploys — measured, not assumed (run 30823263229 published
+8a5d333). To republish without a commit:
 
 ```sh
-curl -sS https://hanzo.sh | md5sum
+gh workflow run deploy.yml -R hanzoai/hanzo.sh --ref main
 ```
 
-`LLM.md` has the details, including the unfinished migration to `hanzoai/static`.
+What the job asserts, after publishing, is what a stranger gets:
+
+```sh
+curl -sS https://hanzo.sh | md5sum                        # the installer
+curl -sS -H 'Accept: text/html' https://hanzo.sh | md5sum # the document
+```
+
+`LLM.md` has the details, including why the `hanzoai/static` image path is not a
+drop-in replacement for the Worker.

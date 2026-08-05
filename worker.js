@@ -33,10 +33,15 @@ export default {
 
     // One URL, two answers: no shared cache may keep one and hand it to the
     // other kind of client. Cloudflare only honours Vary on Accept-Encoding, so
-    // say it and also refuse storage outright.
+    // say it and also refuse storage outright. no-transform is the second half:
+    // the zone has Web Analytics auto-injection on, and it appends a
+    // static.cloudflareinsights.com beacon to HTML that a Worker returns (it
+    // leaves plain assets alone, which is why the page never carried one
+    // before). This host does not ship third-party script it did not write, and
+    // no-transform is the standard way to say so.
     const headers = new Headers(res.headers)
     headers.set('vary', 'accept')
-    headers.set('cache-control', 'no-store')
+    headers.set('cache-control', 'no-store, no-transform')
     return new Response(res.body, { status: res.status, headers })
   }
 }

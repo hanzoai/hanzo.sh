@@ -94,9 +94,13 @@ jobs:
           set -euo pipefail
           want_sh=$(md5sum dist/install.sh | cut -d' ' -f1)
           want_html=$(md5sum dist/page.html | cut -d' ' -f1)
+          # Content-hashed, so it changes whenever anything in the page does:
+          # the marker that says the live document is THIS build and not a
+          # cached older one.
+          stamp=$(basename dist/assets/index-*.css)
           for i in $(seq 1 30); do
             got_sh=$(curl -sS https://hanzo.sh | md5sum | cut -d' ' -f1)
-            got_html=$(curl -sS -H 'Accept: text/html' https://hanzo.sh | md5sum | cut -d' ' -f1)
+            got_html=$(curl -sS https://hanzo.sh/page.html | md5sum | cut -d' ' -f1)
             [ "$got_sh" = "$want_sh" ] && [ "$got_html" = "$want_html" ] && break
             sleep 10
           done
@@ -106,7 +110,17 @@ jobs:
           [ "$got_sh" = "$want_sh" ] || {
             echo "::error::curl hanzo.sh is not the installer that was just built"; exit 1; }
           [ "$got_html" = "$want_html" ] || {
-            echo "::error::a browser at hanzo.sh is not getting the page that was just built"; exit 1; }
+            echo "::error::hanzo.sh/page.html is not the document that was just built"; exit 1; }
+
+          # And what a browser is actually handed at `/` is that document. Not
+          # compared byte-for-byte: Cloudflare can still append its Web
+          # Analytics beacon to HTML a Worker returns, which the Worker asks it
+          # not to do with no-transform but does not control.
+          curl -sS -H 'Accept: text/html' https://hanzo.sh -o /tmp/live.html
+          [ "$(head -c 15 /tmp/live.html)" = '<!DOCTYPE html>' ] || {
+            echo "::error::a browser at hanzo.sh is not getting an HTML document"; exit 1; }
+          grep -q "$stamp" /tmp/live.html || {
+            echo "::error::a browser at hanzo.sh is getting a page older than $stamp"; exit 1; }
 
           # And it is still an installer, not just matching bytes.
           curl -sS https://hanzo.sh -o /tmp/live.sh

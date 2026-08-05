@@ -91,10 +91,23 @@ GET /            Accept contains text/html  ->  dist/page.html
 everything else                             ->  the matching asset, or 404
 ```
 
-`/` is sent `vary: accept` and `cache-control: no-store`, because Cloudflare only
-honours `Vary` on `Accept-Encoding` and a shared cache that keeps one
-representation and hands it to the other kind of client breaks either the page or
-`curl | sh`. The assets behind it cache normally.
+`/` is sent `vary: accept` and `cache-control: no-store, no-transform`.
+Cloudflare honours `Vary` only on `Accept-Encoding`, and a shared cache that
+keeps one representation and hands it to the other kind of client breaks either
+the page or `curl | sh`. `no-transform` is for a second edge behaviour: this zone
+has Web Analytics auto-injection on, and it appends a
+`static.cloudflareinsights.com` beacon to HTML that a **Worker** returns — it
+leaves plain assets alone, which is why the page carried no beacon while it was
+a static file and picked one up the moment `/` became a Worker response. This
+host does not ship third-party script it did not write. The assets behind `/`
+cache normally.
+
+That is also why the deploy gate compares the document at `/page.html` rather
+than at `/`: an edge injection the Worker asks for and does not control cannot be
+allowed to fail a deploy. What it asserts about `/` is that a browser gets a
+document whose first 15 bytes are `<!DOCTYPE html>` and that names this build's
+content-hashed stylesheet, which is the staleness question that actually
+matters.
 
 `pnpm build` is `vite build && node scripts/postbuild.js`. postbuild does two
 things Vite cannot know about: it moves the document to `dist/page.html` (Static
@@ -140,8 +153,8 @@ push to main
        pnpm build                   -> dist/page.html + dist/install.sh
        assert                       doctype at byte 0; dash -n AND bash -n
        npx wrangler@3 deploy        Worker `hanzo-sh` + its static assets
-       purge, then RE-FETCH         fails unless the live bytes, in BOTH
-                                    representations, are the ones just built
+       purge, then RE-FETCH         fails unless the live installer and the
+                                    live document are the ones just built
   -> hanzo.sh                       custom_domain route on the Worker
 ```
 
@@ -174,8 +187,9 @@ afterwards were that build. The earlier note in this file that `on: push` never
 fires here is obsolete — it was true while the workflow named a runner pool that
 this org does not register; it runs on `ubuntu-latest` now.
 
-The job then re-fetches https://hanzo.sh and fails unless the live bytes are the
-ones it just built, in both representations, and unless every path the head
+The job then re-fetches the live host and fails unless the installer at `/` and
+the document at `/page.html` are the ones it just built, unless what a browser
+gets at `/` names this build's stylesheet, and unless every path the head
 declares answers 200. **A hand-published host is why a fix can be merged and
 still not reach anyone**: the live bytes once lagged `main` by weeks, long enough
 that a correct fix sat in the repo while `curl hanzo.sh | bash` kept installing
@@ -183,9 +197,9 @@ the old thing. Anyone changing `public/install.sh` verifies against the live URL
 not the repo:
 
 ```sh
-curl -sS https://hanzo.sh | md5sum                        # the installer
-curl -sS -H 'Accept: text/html' https://hanzo.sh | md5sum # the document
-curl -sS https://hanzo.sh | grep -c astral                # must be 0
+curl -sS https://hanzo.sh | md5sum            # the installer, exactly
+curl -sS https://hanzo.sh/page.html | md5sum  # the document, exactly
+curl -sS https://hanzo.sh | grep -c astral    # must be 0
 ```
 
 ### Cloudflare is injecting a robots.txt this host cannot afford

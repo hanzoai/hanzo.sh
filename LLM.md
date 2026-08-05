@@ -181,11 +181,32 @@ the Worker is the honest answer, and `wrangler.toml` is not a placeholder.
 
 ## Deploying is the change, not a follow-up
 
-A push to `main` publishes. Measured, not assumed: run 30823263229 (push of
-`8a5d333`, 2026-08-03, 42s) built and published, and the bytes hanzo.sh served
-afterwards were that build. The earlier note in this file that `on: push` never
-fires here is obsolete — it was true while the workflow named a runner pool that
-this org does not register; it runs on `ubuntu-latest` now.
+**`on: push` fires here only sometimes, so dispatch and then check.** Measured,
+by commit:
+
+| push | run |
+|---|---|
+| `94931c7` 2026-08-01 | 30724256412 |
+| `8a5d333` 2026-08-03 | 30823263229 |
+| `0c0a52a` 2026-08-05 | none |
+| `4be78b6` 2026-08-05 | none |
+
+Same repo, same workflow, same pusher (`zeekay`, the identity that pushed
+`8a5d333`), no run either time. `workflow_dispatch` on the identical file has
+never failed to start. So the earlier note in this file — that push never fires
+— was too strong, and its replacement — that push always fires — was too
+generous. Both are wrong in the same way: **a merge is not evidence of a
+deploy.** After landing anything on `main`:
+
+```sh
+gh run list -R hanzoai/hanzo.sh -L 1        # a run for your sha, or
+gh workflow run deploy.yml -R hanzoai/hanzo.sh --ref main
+```
+
+Untested hypothesis worth someone's hour: this repo answers to two names —
+`hanzoai/hanzo.sh` redirects to `hanzo-apps/hanzo.sh` — and GitHub is known to
+drop workflow triggers for pushes that arrive over a rename redirect. The
+remote here is the redirecting one.
 
 The job then re-fetches the live host and fails unless the installer at `/` and
 the document at `/page.html` are the ones it just built, unless what a browser

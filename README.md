@@ -65,10 +65,13 @@ just built**. This host was hand-published for a long time, which is how a merge
 fix sat unseen for weeks while `curl hanzo.sh | sh` kept handing out the old
 installer — so verifying the live URL is part of deploying, not a follow-up.
 
-A push to `main` deploys — measured, not assumed (run 30823263229 published
-8a5d333). To republish without a commit:
+`on: push` fires here only sometimes — two pushes on 2026-08-01/03 started runs,
+two on 2026-08-05 did not, same workflow and same pusher (`LLM.md` has the
+table). So a merge is not evidence of a deploy. Check, and dispatch if nothing
+started:
 
 ```sh
+gh run list -R hanzoai/hanzo.sh -L 1
 gh workflow run deploy.yml -R hanzoai/hanzo.sh --ref main
 ```
 

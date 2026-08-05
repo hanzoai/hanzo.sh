@@ -1,16 +1,32 @@
-# hanzo.sh — assets-only Worker (CF Pages project limit reached; 7stars precedent)
+# hanzo.sh — a Worker over static assets (CF Pages project limit reached;
+# 7stars precedent).
 #
-# Deploying is .github/workflows/deploy.yml, which also re-fetches hanzo.sh and
-# fails unless the live bytes are the ones it just built. Do not publish this by
-# hand: hand-publishing is why the site served an installer months older than
-# main. `npx wrangler@3 deploy` still works locally for a break-glass, but then
-# main and the live host are two different states again — check afterwards.
+# The Worker exists for one rule: `/` is the installer to curl and the landing
+# page to a browser (worker.js). Every other path is a plain asset, matched
+# exactly — html_handling "none" so nothing is silently rewritten or redirected,
+# not_found_handling "none" so a mistyped path 404s instead of being handed an
+# installer under a name that promises something else.
+#
+# Deploying is .github/workflows/deploy.yml, which re-fetches hanzo.sh in both
+# representations and fails unless the live bytes are the ones it just built. Do
+# not publish this by hand: hand-publishing is why the site served an installer
+# months older than main. `npx wrangler@3 deploy` still works locally for a
+# break-glass, but then main and the live host are two different states again —
+# check afterwards.
 name = "hanzo-sh"
+main = "worker.js"
 compatibility_date = "2026-07-01"
 
-[assets]
-directory = "dist"
-
+# Above [assets], not below it: TOML puts every key after a table header inside
+# that table, so this used to parse as assets.routes and wrangler dropped it
+# with a warning ("Unexpected fields found in assets field"). The custom domain
+# survived only because it was attached out of band.
 routes = [
   { pattern = "hanzo.sh", custom_domain = true }
 ]
+
+[assets]
+directory = "dist"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "none"

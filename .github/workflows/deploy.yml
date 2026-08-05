@@ -1,20 +1,18 @@
 name: deploy
 
-# hanzo.sh is served by the Cloudflare assets Worker named `hanzo-sh`, and until
-# this file existed it was published BY HAND (`pnpm build && npx wrangler@3
-# deploy`). That is why a correct fix could sit merged on main for weeks while
-# `curl hanzo.sh | sh` kept handing out the old installer: the repo was right and
-# the bytes users got were not. A host that only updates when someone remembers
-# is a host that is stale by default.
+# hanzo.sh is served by the Cloudflare Worker named `hanzo-sh` over its own
+# static assets, and until this file existed it was published BY HAND (`pnpm
+# build && npx wrangler@3 deploy`). That is why a correct fix could sit merged on
+# main for weeks while `curl hanzo.sh | sh` kept handing out the old installer:
+# the repo was right and the bytes users got were not. A host that only updates
+# when someone remembers is a host that is stale by default.
 #
 # So: every push to main republishes, and the job REFUSES to pass unless the live
-# URL actually serves the new bytes. Deploying without checking is how you get a
-# green build over a stale site — the exact failure this replaces.
+# URL actually serves the new bytes — in BOTH representations, because `/` is two
+# resources: the installer to curl, the document to a browser.
 #
 # Runs on GitHub's runner: this org registers no self-hosted runner, and the only
-# copy of the Cloudflare credential lives in GitHub org secrets. It builds no
-# container image — the image path (Dockerfile -> hanzoai/static -> universe CR)
-# is a separate, unfinished migration documented in LLM.md.
+# copy of the Cloudflare credential lives in GitHub org secrets.
 
 on:
   push:
@@ -47,19 +45,23 @@ jobs:
 
       - run: pnpm build
 
-      # The same four asserts the Dockerfile makes. dist/index.html is a polyglot
-      # — an HTML document AND the installer — and both halves have to survive.
-      # dash as well as bash: the installer is POSIX and the page publishes
-      # `| sh`, and a bash-only check is what let `set -o pipefail` ship in a file
-      # whose first line says #!/bin/sh.
-      - name: the polyglot is still both things
+      # Two files, each whole. The document must open with <!DOCTYPE html> at
+      # byte 0 or the browser parses it in quirks mode and drops every <head>
+      # element into <body>; the installer must parse under dash AND bash,
+      # because the page publishes `| sh` and readers type `| bash` anyway — a
+      # bash-only check is what let `set -o pipefail` ship in a file whose first
+      # line says #!/bin/sh. dist/index.html must NOT exist: an asset at that
+      # name is served before the Worker runs, and curl would get the document.
+      - name: the page is a document and the installer is a script
         run: |
           set -euo pipefail
-          head -1 dist/index.html | grep -qx '#!/bin/sh'
-          grep -qx '<!DOCTYPE html>' dist/index.html
-          dash -n dist/index.html
-          bash -n dist/index.html
-          ! grep -qiE 'astral\.sh|uv tool install' dist/index.html
+          [ "$(head -c 15 dist/page.html)" = '<!DOCTYPE html>' ]
+          [ ! -e dist/index.html ]
+          head -1 dist/install.sh | grep -qx '#!/bin/sh'
+          dash -n dist/install.sh
+          bash -n dist/install.sh
+          cmp dist/install dist/install.sh
+          ! grep -qiE 'astral\.sh|uv tool install' dist/install.sh
 
       - name: publish
         env:
@@ -67,9 +69,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler@3 deploy
 
-      # Cloudflare answers this host with `cf-cache-status: HIT`, so a fresh
-      # deploy is not the same thing as a fresh response. Best-effort: the token
-      # may not carry Cache Purge, and the check below is what actually decides.
+      # `/` is now no-store, but the assets behind it are cached at the edge.
+      # Best-effort: the token may not carry Cache Purge, and the check below is
+      # what actually decides.
       - name: purge the edge
         continue-on-error: true
         env:
@@ -86,24 +88,40 @@ jobs:
                "https://api.cloudflare.com/client/v4/zones/$zone/purge_cache" | head -c 300
 
       # The only statement that matters: what does the live URL hand a stranger?
+      # Twice — curl asks for anything, a browser asks for text/html.
       - name: the live bytes are the new bytes
         run: |
           set -euo pipefail
-          want=$(md5sum dist/index.html | cut -d' ' -f1)
+          want_sh=$(md5sum dist/install.sh | cut -d' ' -f1)
+          want_html=$(md5sum dist/page.html | cut -d' ' -f1)
           for i in $(seq 1 30); do
-            got=$(curl -sS https://hanzo.sh | md5sum | cut -d' ' -f1)
-            [ "$got" = "$want" ] && break
+            got_sh=$(curl -sS https://hanzo.sh | md5sum | cut -d' ' -f1)
+            got_html=$(curl -sS -H 'Accept: text/html' https://hanzo.sh | md5sum | cut -d' ' -f1)
+            [ "$got_sh" = "$want_sh" ] && [ "$got_html" = "$want_html" ] && break
             sleep 10
           done
-          echo "before : ${{ steps.before.outputs.md5 }}"
-          echo "built  : $want"
-          echo "live   : $got"
-          [ "$got" = "$want" ] || {
-            echo "::error::hanzo.sh is still serving different bytes than were just built"
-            exit 1; }
+          echo "before        : ${{ steps.before.outputs.md5 }}"
+          echo "installer     : built $want_sh   live $got_sh"
+          echo "document      : built $want_html live $got_html"
+          [ "$got_sh" = "$want_sh" ] || {
+            echo "::error::curl hanzo.sh is not the installer that was just built"; exit 1; }
+          [ "$got_html" = "$want_html" ] || {
+            echo "::error::a browser at hanzo.sh is not getting the page that was just built"; exit 1; }
 
           # And it is still an installer, not just matching bytes.
           curl -sS https://hanzo.sh -o /tmp/live.sh
           dash -n /tmp/live.sh
           ! grep -qiE 'astral\.sh|uv tool install' /tmp/live.sh
+
+          # Every path the page or the HTML head names. og:image used to point at
+          # /og-image.svg, which was never in the repo — every social card was a
+          # 404 and nothing said so.
+          for p in /favicon.ico /favicon.svg /favicon-32x32.png /favicon-16x16.png \
+                   /apple-touch-icon.png /og-image.png /fonts/Geist-Variable.woff2 \
+                   /fonts/GeistMono-Variable.woff2 /install /install.sh /llms.txt \
+                   /cli /mcp /dev /full /bot /desktop /node; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "https://hanzo.sh$p")
+            [ "$code" = 200 ] || { echo "::error::hanzo.sh$p is $code"; exit 1; }
+          done
+
           echo "hanzo.sh serves the build from ${GITHUB_SHA:0:8}"

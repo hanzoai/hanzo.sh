@@ -1,8 +1,10 @@
 # hanzo.sh
 
-The install surface: one page that is also one installer. `curl hanzo.sh | sh`
-installs the Hanzo tools; opening hanzo.sh in a browser renders the landing page.
-Both are the same file.
+The install surface: one URL that answers with an installer or with a page,
+whichever the caller asked for. `curl hanzo.sh | sh` installs the Hanzo tools;
+opening hanzo.sh in a browser renders the landing page. Same URL, two
+representations, `Accept` decides — they used to be the same *file*, which is a
+different and worse thing (see below).
 
 ## What the installer does
 
@@ -76,111 +78,132 @@ The installer is POSIX sh: no arrays, no `[[ ]]`, no `<<<`, no `echo -e`, no
 They did not before. The page said `| bash` and `public/llms.txt` said `| sh`
 while the script was bash-only, so everyone who copied the `sh` form — including
 every agent reading llms.txt — got `set: Illegal option -o pipefail` out of dash
-and installed nothing. The polyglot already declares `#!/bin/sh`, so making the
-body POSIX also makes that shebang honest.
+and installed nothing. Line 1 of what `/` hands curl is `#!/bin/sh`, so making
+the body POSIX also makes that shebang honest.
 
-## The polyglot
+## One URL, two answers
 
-`pnpm build` is `vite build && node scripts/build-polyglot.js`. The second step
-rewrites `dist/index.html` into a file that is simultaneously:
+`worker.js` is the whole routing rule:
 
-- a shell script — line 1 is `#!/bin/sh`, line 2 opens a `<<\EOF` heredoc that
-  swallows the whole HTML document, and the installer (`public/install.sh`, minus
-  its own shebang) follows the closing `EOF`;
-- an HTML document — the heredoc content is the real page, and `</html>` is
-  rewritten to `</html><!--` so the shell half is an HTML comment.
+```
+GET /            Accept contains text/html  ->  dist/page.html
+                 anything else              ->  dist/install.sh
+everything else                             ->  the matching asset, or 404
+```
 
-The Dockerfile asserts all four properties (shebang, `<!DOCTYPE html>`, `dash -n`
-AND `bash -n`) and fails the build if any is lost — nothing downstream can catch
-it, because everything downstream is bytes. `dash` is the strict one; a bash-only
-assert is what let the pipefail break ship in the first place.
+`/` is sent `vary: accept` and `cache-control: no-store`, because Cloudflare only
+honours `Vary` on `Accept-Encoding` and a shared cache that keeps one
+representation and hands it to the other kind of client breaks either the page or
+`curl | sh`. The assets behind it cache normally.
 
-`public/install.sh` is also served at `/install.sh` for anyone who wants the
-installer alone. `public/{cli,mcp,dev,node,bot,desktop,full}` are routing shims —
-they only `exec sh -c "$(curl -fsSL https://hanzo.sh)" -- <tool>`, so the one
-installer stays the single place that knows which tools exist and what to say
-about the ones that do not.
+`pnpm build` is `vite build && node scripts/postbuild.js`. postbuild does two
+things Vite cannot know about: it moves the document to `dist/page.html` (Static
+Assets serve an exact path match BEFORE the Worker runs, so a file at
+`dist/index.html` would be handed to `curl hanzo.sh | sh` as HTML), and it copies
+`dist/install.sh` to `dist/install` — one file in git, two published names, made
+from the same bytes so they cannot drift.
+
+### Why not the polyglot it used to be
+
+`dist/index.html` used to be a single file that was both: `#!/bin/sh` on line 1,
+`<<\EOF` swallowing the whole document, the installer after the closing `EOF`.
+Both halves worked, and the browser half was never honest. Anything before
+`<!DOCTYPE html>` that is not whitespace or a comment puts the document in quirks
+mode, so a real Chromium reported, at 390 and 1280:
+
+- `document.compatMode === "BackCompat"`;
+- `document.head.children.length === 1` — all fifteen head elements (title, the
+  icons, viewport, description, every `og:` and `twitter:` tag) parsed into
+  `<body>`, where they do nothing;
+- `#!/bin/sh <<\EOF` as the first text node of the page, first string in
+  `document.body.innerText`, pushing `<main>` down 24px.
+
+There is no arrangement of those bytes that avoids it. Only whitespace and
+comments may precede a DOCTYPE, and an HTML comment starts `<!`, which the shell
+reads as a redirect from a file named `!--`; a POSIX script cannot begin with
+those two bytes at all. The trick was unfixable, not unlucky. Content
+negotiation is what HTTP has for this.
+
+`public/install.sh` is also served at `/install.sh` and `/install` for anyone who
+wants the installer alone. `public/{cli,mcp,dev,node,bot,desktop,full}` are
+routing shims — they only `exec sh -c "$(curl -fsSL https://hanzo.sh)" -- <tool>`,
+so the one installer stays the single place that knows which tools exist and what
+to say about the ones that do not. They are extensionless on purpose (the URL is
+the product), which is why they go out with no `Content-Type`; `curl` does not
+care and a browser sniffs.
 
 ## Serving chain
 
 ```
 push to main
-  -> .hanzo/workflows/deploy.yml    runs natively on the forge
-       docker build .               Dockerfile: pnpm build -> polyglot assert
-                                    -> FROM ghcr.io/hanzoai/static:v0.5.1
-       docker push                  ghcr.io/hanzoai/hanzo-sh:<short-sha>
-  -> hanzoai/universe               infra/k8s/operator/crs/hanzo-sh.yaml
-       spec.image.tag: <short-sha>  set by a human, never by the build
-  -> hanzoai/ingress                hanzo.sh -> Service hanzo-sh:80 -> :3000
+  -> .github/workflows/deploy.yml   ubuntu-latest (this org registers no runner)
+       pnpm build                   -> dist/page.html + dist/install.sh
+       assert                       doctype at byte 0; dash -n AND bash -n
+       npx wrangler@3 deploy        Worker `hanzo-sh` + its static assets
+       purge, then RE-FETCH         fails unless the live bytes, in BOTH
+                                    representations, are the ones just built
+  -> hanzo.sh                       custom_domain route on the Worker
 ```
 
-`hanzoai/static` is a Go binary on scratch. It defaults to `-port 3000 -root
-/public` and answers with `http.ServeContent`, so a file goes out byte-for-byte
-with no rewrite, minify or injection — which is the only reason a polyglot can be
-served from an ordinary static server at all. It runs WITHOUT `-spa`: this app has
-exactly one route, so a mistyped path must 404 rather than return the installer.
+Credentials are `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` from GitHub org
+secrets, not KMS — the one thing about this path that does not follow the house
+rule, and it stays that way until the host moves off Cloudflare.
 
-## Not live from here yet — and the staleness this causes
+`routes` lives ABOVE `[assets]` in `wrangler.toml`. TOML puts every key after a
+table header inside that table, so it used to parse as `assets.routes` and
+wrangler dropped it with a warning; the custom domain survived only because it
+was attached out of band.
 
-hanzo.sh is served today by a Cloudflare assets Worker named `hanzo-sh`
-(`wrangler.toml`, `custom_domain = true`), published BY HAND with
-`pnpm build && npx wrangler@3 deploy`. `wrangler.toml` stays until the image is
-promoted; deleting it first would strand the live host.
+### The hanzoai/static image path is not a drop-in, and no longer exists here
 
-`.github/workflows/deploy.yml` now does that publish and then re-fetches
-https://hanzo.sh, failing unless the live md5 equals the file it just built.
+`Dockerfile` and `.hanzo/workflows/deploy.yml` used to draft a move to
+`ghcr.io/hanzoai/static` behind `hanzoai/ingress`. Both are deleted. They had
+never produced an image (the forge job named a runner pool that does not exist,
+so it queued to the 24h timeout in silence), and with the polyglot gone they
+could not have produced a working one: `hanzoai/static` answers with
+`http.ServeContent` and has no way to choose a representation from `Accept`, so
+`/` would be either the page or the installer, never both. Moving this host into
+the canonical image lane needs that rule in `hanzoai/static` first. Until then
+the Worker is the honest answer, and `wrangler.toml` is not a placeholder.
 
-**Open, and it matters: `on: push` does not fire on this repo.** Measured
-2026-08-01 — four consecutive pushes to `main` (`db9c4d8`, `fdc08d5`, `85c7e11`,
-`6214745`) created zero workflow runs and zero PushEvents, while `repos/.../
-pushed_at` advanced each time, so GitHub received them. `workflow_dispatch` on
-the identical file works every time. Not the cause: Actions is enabled
-(`allowed_actions: all`), the workflow is `active`, the file is on `main` with
-`branches: [main]`, there are no rulesets, the repo is public (so Actions minutes
-do not apply), and pushing via the canonical `hanzo-apps/hanzo.sh` remote rather
-than the `hanzoai/hanzo.sh` redirect changed nothing. The last push-triggered run
-here was 2026-07-27. Other repos in the org do have push runs, so it is not an
-org-wide block.
+## Deploying is the change, not a follow-up
 
-Until that is understood, **a merge is not a deploy** — dispatch it:
+A push to `main` publishes. Measured, not assumed: run 30823263229 (push of
+`8a5d333`, 2026-08-03, 42s) built and published, and the bytes hanzo.sh served
+afterwards were that build. The earlier note in this file that `on: push` never
+fires here is obsolete — it was true while the workflow named a runner pool that
+this org does not register; it runs on `ubuntu-latest` now.
+
+The job then re-fetches https://hanzo.sh and fails unless the live bytes are the
+ones it just built, in both representations, and unless every path the head
+declares answers 200. **A hand-published host is why a fix can be merged and
+still not reach anyone**: the live bytes once lagged `main` by weeks, long enough
+that a correct fix sat in the repo while `curl hanzo.sh | bash` kept installing
+the old thing. Anyone changing `public/install.sh` verifies against the live URL,
+not the repo:
 
 ```sh
-gh workflow run deploy.yml -R hanzo-apps/hanzo.sh --ref main
+curl -sS https://hanzo.sh | md5sum                        # the installer
+curl -sS -H 'Accept: text/html' https://hanzo.sh | md5sum # the document
+curl -sS https://hanzo.sh | grep -c astral                # must be 0
 ```
 
-**A hand-published host is why a fix can be merged and still not reach anyone.**
-The live bytes lagged `main` by weeks — long enough that a correct fix sat in the
-repo while `curl hanzo.sh | bash` kept installing the old thing. Anyone changing
-`public/install.sh` must therefore treat deploying as part of the change, and
-verify against the live URL, not the repo:
+### Cloudflare is injecting a robots.txt this host cannot afford
 
-```sh
-curl -sS https://hanzo.sh | md5sum          # before
-# ... deploy ...
-curl -sS https://hanzo.sh | md5sum          # must differ
-curl -sS https://hanzo.sh | grep -c astral  # must be 0
-```
+`/robots.txt` is not in this repo. Cloudflare Managed Content synthesises one for
+the zone, and it carries `Disallow: /` for ClaudeBot, GPTBot, Google-Extended,
+CCBot, Bytespider, Amazonbot, Applebot-Extended and meta-externalagent, plus
+`Content-Signal: ai-train=no`. This is the one host whose stated job is to be
+read by agents: it publishes `/llms.txt` for exactly those readers and the
+installer header reasons about "every agent reading llms.txt". Publishing an
+agent manifest and then telling the agents to go away is one host contradicting
+itself.
 
-Cloudflare answers `cf-cache-status: HIT` with `max-age=0, must-revalidate`, so a
-purge is part of deploying too, not an afterthought.
-
-Two things must still be reconciled BEFORE anyone pins a tag in the CR:
-
-1. **The live bytes are not on `main`.** The running Worker was published from
-   commit `340fd8f`, which lives on `origin/rescue/main-local`, not on `main`.
-   `main` still `@import`s Geist from `cdn.jsdelivr.net` (`src/index.css` lines
-   1-2) where `rescue/main-local` self-hosts it. The CR's CSP therefore allows
-   `cdn.jsdelivr.net` for styles and fonts; land the self-hosting commit on
-   `main` and both entries come out, leaving the policy same-origin.
-2. **Promotion order.** publish an image -> set `spec.image.tag` in
-   `crs/hanzo-sh.yaml` -> add `- hanzo-sh.yaml` to `crs/kustomization.yaml` ->
-   confirm the pod is Running and that `curl <pod>/ | sh -s -- --help` prints the
-   installer usage -> only then repoint hanzo.sh DNS off the Worker -> then
-   delete `wrangler.toml`.
-
-The CR is committed INERT (empty tag, absent from `kustomization.yaml`).
-Promoting an App with no image tag takes the host down instead of leaving it
-alone.
+Shipping `public/robots.txt` does not fix it — the managed block is appended to
+whatever the origin serves, and a per-agent group beats a `User-agent: *` allow.
+The fix is the zone toggle: Cloudflare dashboard -> hanzo.sh -> AI Crawl Control
+-> Managed robots.txt, off. `hanzo.ai` and `hanzo.app` do not have this block;
+`hanzo.bot` does, and has the same problem for the same reason.
 
 ## The page
 
@@ -192,8 +215,28 @@ shipped for months: a leftover scaffold-template `Navbar`, `Features` and
 invented feature cards, sixteen `href="#"` links, a "Simplifying application
 development and deployment with innovative container solutions" strapline for a
 company that does not sell containers, and a `© 2024` ten pixels below the real
-`© 2016–2026`. All five leftover components are deleted; do not reintroduce a
+copyright line. All five leftover components are deleted; do not reintroduce a
 component that renders chrome.
+
+The mark, everywhere it appears, is the canonical five-path Hanzo mark from
+hanzoai/brand (`assets/logo/favicon.svg`): inline in `Hero.tsx` with
+`fill="currentColor"`, and in `public/favicon.{svg,ico}` +
+`favicon-{16,32}.png` + `apple-touch-icon.png`, which are byte-identical to the
+files hanzo.ai serves. Do not redraw it and do not publish a second copy of it
+under another name — a stale `hanzo-logo.svg` sat at the root for months,
+referenced by nothing. `/og-image.png` is built from `scripts/og-image.svg` with
+`rsvg-convert -w 1200 -h 630`; every string on it is copy that is already on the
+page. `og:image` is absolute, because scrapers do not all resolve relative URLs
+— it pointed at `/og-image.svg`, a file that never existed in this repo, so
+every social card resolved to a 404.
+
+Geist and Geist Mono are served from `/fonts/` (OFL, `public/fonts/OFL.txt`).
+They used to be `@import`ed from `cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/`,
+a path that package no longer has: both requests 404'd, `document.fonts.size`
+was 0, and every visitor read the page in their system fallback. Nothing
+surfaced it, because a cross-origin fetch that fails is not a console error. The
+brand typeface is not something to borrow from a CDN on the host whose whole job
+is one curl command.
 
 ## Stack
 
@@ -203,15 +246,16 @@ Vite 5 + React 19 + Tailwind 4, one route (`src/pages/Index.tsx`). pnpm 9;
 ```bash
 pnpm install
 pnpm dev      # vite, :8080
-pnpm build    # -> dist/, including the polyglot rewrite
+pnpm build    # -> dist/, page.html + install.sh
 pnpm lint
 ```
 
-Verify an installer change without deploying by serving `dist/` and piping it to
-BOTH shells — the polyglot must run under each:
+Verify a change without deploying by running the real Worker over the real
+assets, and piping it to BOTH published shells:
 
 ```sh
-cd dist && python3 -m http.server 8791 &
-curl -fsSL http://127.0.0.1:8791 | sh
-curl -fsSL http://127.0.0.1:8791 | bash
+pnpm build && npx wrangler@3 dev --local --port 8788
+curl -fsSL http://127.0.0.1:8788 | sh
+curl -fsSL http://127.0.0.1:8788 | bash
+curl -fsSL http://127.0.0.1:8788 -H 'Accept: text/html' | head -1   # <!DOCTYPE html>
 ```

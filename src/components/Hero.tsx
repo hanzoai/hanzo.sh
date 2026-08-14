@@ -204,6 +204,7 @@ const Hero = () => {
               {[
                 { cmd: "hanzo auth login", desc: "Sign in through Hanzo IAM" },
                 { cmd: "hanzo code", desc: "Start a coding session" },
+                { cmd: "hanzo up", desc: "Run the cloud on this machine" },
                 { cmd: "hanzo --help", desc: "Every command" },
                 { cmd: "hanzo-mcp", desc: "Run the MCP server" },
               ].map((line, i) => (

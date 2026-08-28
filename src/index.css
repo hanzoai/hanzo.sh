@@ -1,14 +1,12 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
-/* Zen and Zen Mono, from this origin. These were @imported from
-   cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/…/style.css — a path the package
-   no longer has. Both requests 404'd, so document.fonts.size was 0: no
-   @font-face rule ever existed and every visitor read the page in the system
-   fallback. Nothing said so, because a cross-origin fetch that fails is not a
-   console error. The variable files ship with the site instead (OFL, see
-   public/fonts/OFL.txt) — the brand typeface is not something to borrow from a
-   CDN on the host whose whole job is that one curl command. */
+/* Zen and Zen Mono, from this origin. The two variable files ship with the site
+   (SIL OFL, see public/fonts/LICENSE-Zen.txt) rather than coming off a CDN: a
+   cross-origin font fetch that 404s is not a console error, so the page reads
+   as fine in the system fallback and nothing surfaces the miss. The brand
+   typeface is not something to borrow on the host whose whole job is that one
+   curl command. */
 @font-face {
   font-family: 'Zen';
   src: url('/fonts/Zen-Variable.woff2') format('woff2');

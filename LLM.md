@@ -265,13 +265,12 @@ page. `og:image` is absolute, because scrapers do not all resolve relative URLs
 — it pointed at `/og-image.svg`, a file that never existed in this repo, so
 every social card resolved to a 404.
 
-Geist and Geist Mono are served from `/fonts/` (OFL, `public/fonts/OFL.txt`).
-They used to be `@import`ed from `cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/`,
-a path that package no longer has: both requests 404'd, `document.fonts.size`
-was 0, and every visitor read the page in their system fallback. Nothing
-surfaced it, because a cross-origin fetch that fails is not a console error. The
-brand typeface is not something to borrow from a CDN on the host whose whole job
-is one curl command.
+Zen and Zen Mono are served from `/fonts/` as two variable woff2, with the SIL
+OFL notice beside them at `public/fonts/LICENSE-Zen.txt`. They are served from
+this origin, not a CDN: a cross-origin font fetch that 404s is not a console
+error, so a broken `@import` reads as a working page in the system fallback and
+nothing surfaces it. The brand typeface is not something to borrow from a CDN on
+the host whose whole job is one curl command.
 
 ## Stack
 

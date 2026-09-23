@@ -19,6 +19,7 @@ That installs every Hanzo tool published as a public native binary:
 - `hanzo` — the CLI (also installed as `hanzo-node`, the same build)
 - `hanzo-mcp` — the MCP server (also installed as `mcp`, the same build)
 - `dev` — Hanzo Dev, the coding agent `hanzo code` runs by default
+- `zt` — ZT zero-trust networking: tunnel, controller and router
 
 One tool at a time:
 

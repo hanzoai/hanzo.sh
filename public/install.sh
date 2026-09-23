@@ -48,7 +48,8 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 # the delegate name at a different program.
 TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-node
 mcp:hanzoai/mcp:hanzo-mcp:mcp
-dev:hanzoai/dev:dev:'
+dev:hanzoai/dev:dev:
+zt:hanzozt/zt:zt:'
 
 # The installable names, read off TOOLS so no message can name a different set
 # than the loop installs.
@@ -112,6 +113,7 @@ tools:
   hanzo    the Hanzo CLI    (also installed as hanzo-node, the same build)
   mcp      the MCP server   (also installed as hanzo-mcp, the same build)
   dev      Hanzo Dev, the coding agent `hanzo code` runs by default
+  zt       ZT zero-trust networking: tunnel, controller and router
 
 options:
   -d, --dir PATH       install directory (default: ~/.local/bin)

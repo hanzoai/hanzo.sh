@@ -83,35 +83,23 @@ the body POSIX also makes that shebang honest.
 
 ## One URL, two answers
 
-`worker.js` is the whole routing rule:
+The edge holds the whole routing rule — routers `hanzo-sh-page`,
+`hanzo-sh-install` and `hanzo-sh` in hanzo/universe
+`infra/aws/routes/sites.yaml`, over `s3://hanzo-sites/hanzo/sh`:
 
 ```
-GET /            Accept contains text/html  ->  dist/page.html
-                 anything else              ->  dist/install.sh
-everything else                             ->  the matching asset, or 404
+GET /            Accept contains text/html  ->  page.html
+                 anything else              ->  install.sh  (application/x-sh)
+everything else                             ->  the matching file, or 404
 ```
 
-`/` is sent `vary: accept` and `cache-control: no-store, no-transform`.
-Cloudflare honours `Vary` only on `Accept-Encoding`, and a shared cache that
-keeps one representation and hands it to the other kind of client breaks either
-the page or `curl | sh`. `no-transform` is for a second edge behaviour: this zone
-has Web Analytics auto-injection on, and it appends a
-`static.cloudflareinsights.com` beacon to HTML that a **Worker** returns — it
-leaves plain assets alone, which is why the page carried no beacon while it was
-a static file and picked one up the moment `/` became a Worker response. This
-host does not ship third-party script it did not write. The assets behind `/`
-cache normally.
+`/` is sent `Vary: Accept` and `Cache-Control: no-store, no-transform`.
+Cloudflare honours `Vary` only on `Accept-Encoding`, so a shared cache could
+keep one representation and hand it to the other kind of client, breaking either
+the page or `curl | sh`; `no-transform` keeps the edge from rewriting either.
 
-That is also why the deploy gate does not compare the live document byte for
-byte: an edge injection the Worker asks for and does not control cannot be
-allowed to fail a deploy. What it asserts about `/` is that a browser gets a page
-naming this build's content-hashed stylesheet, which is the staleness question
-that actually matters.
-
-`pnpm build` is `vite build && node scripts/postbuild.js`. postbuild does two
-things Vite cannot know about: it moves the document to `dist/page.html` (Static
-Assets serve an exact path match BEFORE the Worker runs, so a file at
-`dist/index.html` would be handed to `curl hanzo.sh | sh` as HTML), and it copies
+`pnpm build` is `vite build && node scripts/postbuild.js`. postbuild moves the
+document to `dist/page.html`, the name the edge rewrites `/` to, and copies
 `dist/install.sh` to `dist/install` — one file in git, two published names, made
 from the same bytes so they cannot drift.
 
@@ -148,79 +136,37 @@ care and a browser sniffs.
 
 ```
 push to main
-  -> .github/workflows/deploy.yml   linux-amd64 (the platform's JIT runners)
-       pnpm build                   -> dist/page.html + dist/install.sh
-       assert                       doctype at byte 0; dash -n AND bash -n
-       npx wrangler@3 deploy        Worker `hanzo-sh` + its static assets
-       re-fetch                     fails unless the live installer and the
-                                    live page are the ones just built
-  -> hanzo.sh                       custom_domain route on the Worker
+  -> .github/workflows/cicd.yml   hanzoai/ci build.yml@v2, the platform's JIT runners
+       test  (amd64 + arm64)      pnpm build; doctype at byte 0; dash -n AND bash -n
+       site  (hanzo.yml)          dist/ -> s3://hanzo-sites/hanzo/sh, via /v1/projects/sh
+  -> hanzo.sh                     the edge serves that prefix
 ```
 
-The Cloudflare key is read from KMS at run time — org hanzo, env prod,
-`cloudflare/CF_API_EMAIL` and `cloudflare/CF_API_KEY` — through hanzoai/ci's
-`bin/kms` with the org's `KMS_CLIENT_ID` / `KMS_CLIENT_SECRET`. No Cloudflare
-credential lives in GitHub. GitHub is the plane that runs this: the forge copy
-is a mirror with Actions off, so a caller under `.hanzo/workflows` runs nowhere.
+Publishing reconciles the prefix against the build, so a file the build stops
+producing leaves the host too. The only credential is the org's KMS pair; the
+site lane reads its deploy token from KMS. GitHub is the plane that runs this:
+the forge copy is a mirror with Actions off, so a caller under
+`.hanzo/workflows` runs nowhere.
 
-`routes` lives ABOVE `[assets]` in `wrangler.toml`. TOML puts every key after a
-table header inside that table, so it used to parse as `assets.routes` and
-wrangler dropped it with a warning; the custom domain survived only because it
-was attached out of band.
-
-### The hanzoai/static image path is not a drop-in, and no longer exists here
-
-`Dockerfile` and `.hanzo/workflows/deploy.yml` used to draft a move to
-`ghcr.io/hanzoai/static` behind `hanzoai/ingress`. Both are deleted. They had
-never produced an image (the forge job named a runner pool that does not exist,
-so it queued to the 24h timeout in silence), and with the polyglot gone they
-could not have produced a working one: `hanzoai/static` answers with
-`http.ServeContent` and has no way to choose a representation from `Accept`, so
-`/` would be either the page or the installer, never both. Moving this host into
-the canonical image lane needs that rule in `hanzoai/static` first. Until then
-the Worker is the honest answer, and `wrangler.toml` is not a placeholder.
+hanzo.sh was a Cloudflare Worker (`worker.js`) until 2026-09-23, when the edge
+took the host (universe `dd71c07db`). The Accept rule is two router matches and a
+`replacePath`, so nothing runs per request, and the Worker's custom domain can
+no longer attach because the name now points at the edge.
 
 ## Deploying is the change, not a follow-up
 
-**`on: push` fires here only sometimes, so dispatch and then check.** Measured,
-by commit:
-
-| push | run |
-|---|---|
-| `94931c7` 2026-08-01 | 30724256412 |
-| `8a5d333` 2026-08-03 | 30823263229 |
-| `0c0a52a` 2026-08-05 | none |
-| `4be78b6` 2026-08-05 | none |
-
-Same repo, same workflow, same pusher (`zeekay`, the identity that pushed
-`8a5d333`), no run either time. `workflow_dispatch` on the identical file has
-never failed to start. So the earlier note in this file — that push never fires
-— was too strong, and its replacement — that push always fires — was too
-generous. Both are wrong in the same way: **a merge is not evidence of a
-deploy.** After landing anything on `main`:
+**A merge is not evidence of a deploy.** The live bytes once lagged `main` by
+seven weeks, because the workflow that published them had been deleted and
+nothing noticed. After landing anything on `main`, read the run and the host:
 
 ```sh
-gh run list -R hanzoai/hanzo.sh -L 1        # a run for your sha, or
-gh workflow run deploy.yml -R hanzoai/hanzo.sh --ref main
+gh run list -R hanzoai/hanzo.sh -L 1
+curl -fsS https://hanzo.sh | cmp - dist/install.sh          # the installer, exactly
+curl -fsS -H 'Accept: text/html' https://hanzo.sh | head -1  # <!DOCTYPE html>
 ```
 
-Those runs were on `hanzo-apps/sh`, which `hanzoai/hanzo.sh` then redirected
-to. `hanzoai/hanzo.sh` is now the one home, a repo of its own; `hanzo-apps/sh`
-is archived.
-
-The job then re-fetches the live host and fails unless the installer at `/` is
-byte for byte the one it just built and what a browser gets at `/` names this
-build's stylesheet. **A hand-published host is why a fix can be merged and
-still not reach anyone**: the live bytes once lagged `main` by weeks, long enough
-that a correct fix sat in the repo while `curl hanzo.sh | bash` kept installing
-the old thing. Anyone changing `public/install.sh` verifies against the live URL,
-not the repo:
-
-```sh
-curl -sS https://hanzo.sh | md5sum            # the installer, exactly
-curl -sS https://hanzo.sh/page.html | md5sum  # the document, exactly
-curl -sS https://hanzo.sh | grep -c astral    # must be 0
-```
+`hanzoai/hanzo.sh` is the one home. `hanzo-apps/sh`, the copy the old
+workflow ran from, is archived.
 
 ### Cloudflare is injecting a robots.txt this host cannot afford
 
@@ -283,12 +229,11 @@ pnpm build    # -> dist/, page.html + install.sh
 pnpm lint
 ```
 
-Verify a change without deploying by running the real Worker over the real
-assets, and piping it to BOTH published shells:
+Verify an installer change without deploying by running the built file under
+BOTH published shells:
 
 ```sh
-pnpm build && npx wrangler@3 dev --local --port 8788
-curl -fsSL http://127.0.0.1:8788 | sh
-curl -fsSL http://127.0.0.1:8788 | bash
-curl -fsSL http://127.0.0.1:8788 -H 'Accept: text/html' | head -1   # <!DOCTYPE html>
+pnpm build
+sh dist/install.sh
+bash dist/install.sh
 ```

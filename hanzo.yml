@@ -1,0 +1,20 @@
+# The export publishes to s3://hanzo-sites/hanzo/sh, which the edge serves as
+# hanzo.sh. Which file `/` answers is the edge's rule, by Accept: page.html to a
+# browser, install.sh to anything else (hanzo/universe infra/aws/routes/sites.yaml).
+site:
+  slug: sh
+  dir: dist
+  build: pnpm install --frozen-lockfile && pnpm build
+  on: [main]
+
+test:
+  # A byte before the doctype puts the page in quirks mode, and both published
+  # one-liners pipe the installer to a shell, so dash and bash must each parse it.
+  - name: page and installer
+    run: |
+      set -eu
+      pnpm install --frozen-lockfile && pnpm build
+      [ "$(head -c 15 dist/page.html)" = '<!DOCTYPE html>' ]
+      [ "$(head -1 dist/install.sh)" = '#!/bin/sh' ]
+      dash -n dist/install.sh
+      bash -n dist/install.sh

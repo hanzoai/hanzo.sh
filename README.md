@@ -24,15 +24,15 @@ curl -fsSL https://hanzo.sh/mcp | sh
 
 ## This repo
 
-`/` is two resources, chosen by the `Accept` header in `worker.js`: the built
-document (`dist/page.html`) to a browser, `public/install.sh` to curl. It used to
-be one **polyglot** file that was both at once — HTML wrapped in a shell heredoc
-— which no browser can be handed honestly: bytes before `<!DOCTYPE html>` put the
-document in quirks mode and every `<head>` element ends up in `<body>`. A POSIX
-script cannot begin with `<!` either, so there was no arrangement that worked.
-`scripts/postbuild.js` moves the document off `index.html` (an asset at that name
-outranks the Worker, and curl would get HTML) and writes `/install` next to
-`/install.sh` from the same bytes.
+`/` is two resources, chosen by the `Accept` header at the edge (hanzo/universe
+`infra/aws/routes/sites.yaml`): the built document (`dist/page.html`) to a
+browser, `public/install.sh` to curl. It used to be one **polyglot** file that
+was both at once — HTML wrapped in a shell heredoc — which no browser can be
+handed honestly: bytes before `<!DOCTYPE html>` put the document in quirks mode
+and every `<head>` element ends up in `<body>`. A POSIX script cannot begin with
+`<!` either, so there was no arrangement that worked.
+`scripts/postbuild.js` moves the document to `page.html`, the name the edge
+rewrites `/` to, and writes `/install` next to `/install.sh` from the same bytes.
 
 Downloading is NOT implemented here. `hanzoai/cli/install.sh` is the one
 implementation of "fetch a Hanzo binary" — platform detection, asset naming,
@@ -47,40 +47,24 @@ pnpm build    # -> dist/, page.html + install.sh
 pnpm lint
 ```
 
-Serve it exactly as Cloudflare will — same Worker, same asset rules — and test
-an installer change without deploying, under **both** published shells:
+Test an installer change without deploying, under **both** published shells:
 
 ```sh
-pnpm build && npx wrangler@3 dev --local --port 8788
-curl -fsSL http://127.0.0.1:8788 | sh
-curl -fsSL http://127.0.0.1:8788 | bash
-curl -fsSL http://127.0.0.1:8788 -H 'Accept: text/html' | head -1   # <!DOCTYPE html>
+pnpm build
+sh dist/install.sh
+bash dist/install.sh
 ```
 
 ## Deploying
 
-`.github/workflows/deploy.yml` builds, publishes the Cloudflare Worker, then
-re-fetches https://hanzo.sh and **fails if the live bytes are not the bytes it
-just built**. This host was hand-published for a long time, which is how a merged
-fix sat unseen for weeks while `curl hanzo.sh | sh` kept handing out the old
-installer — so verifying the live URL is part of deploying, not a follow-up.
-
-`on: push` fires here only sometimes — two pushes on 2026-08-01/03 started runs,
-two on 2026-08-05 did not, same workflow and same pusher (`LLM.md` has the
-table). So a merge is not evidence of a deploy. Check, and dispatch if nothing
-started:
+Every push to `main` runs `.github/workflows/cicd.yml`, which imports
+[hanzoai/ci](https://github.com/hanzoai/ci) and reads `hanzo.yml`: the `test:`
+gate builds and checks the page and the installer on amd64 and arm64, then
+`site:` publishes `dist/` to `s3://hanzo-sites/hanzo/sh`, which the edge serves as
+hanzo.sh. Nobody publishes by hand. A merge is still not evidence of a deploy, so
+check the run and the host:
 
 ```sh
 gh run list -R hanzoai/hanzo.sh -L 1
-gh workflow run deploy.yml -R hanzoai/hanzo.sh --ref main
+curl -fsS https://hanzo.sh | cmp - dist/install.sh
 ```
-
-What the job asserts, after publishing, is what a stranger gets:
-
-```sh
-curl -sS https://hanzo.sh | md5sum                        # the installer
-curl -sS -H 'Accept: text/html' https://hanzo.sh | md5sum # the document
-```
-
-`LLM.md` has the details, including why the `hanzoai/static` image path is not a
-drop-in replacement for the Worker.

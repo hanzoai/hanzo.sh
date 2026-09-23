@@ -2,10 +2,9 @@
 /**
  * Two things Vite cannot know about the shape hanzo.sh is served in.
  *
- * 1. The document must NOT be dist/index.html. Static Assets serve an exact
- *    match before the Worker ever runs, so a file at that name would be handed
- *    to `curl hanzo.sh | sh` as HTML. It moves to page.html; worker.js decides
- *    which of page.html and install.sh `/` means.
+ * 1. The document is page.html, the name the edge rewrites `/` to for a
+ *    browser (install.sh for anything else). An index.html would be a second
+ *    name for `/` that the rule never chose.
  * 2. /install is a published alias of /install.sh (some deployed callers ask
  *    for it). One file in git, two names in dist — copied here rather than
  *    committed twice, and made from the same bytes so they cannot drift.

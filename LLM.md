@@ -102,12 +102,11 @@ a static file and picked one up the moment `/` became a Worker response. This
 host does not ship third-party script it did not write. The assets behind `/`
 cache normally.
 
-That is also why the deploy gate compares the document at `/page.html` rather
-than at `/`: an edge injection the Worker asks for and does not control cannot be
-allowed to fail a deploy. What it asserts about `/` is that a browser gets a
-document whose first 15 bytes are `<!DOCTYPE html>` and that names this build's
-content-hashed stylesheet, which is the staleness question that actually
-matters.
+That is also why the deploy gate does not compare the live document byte for
+byte: an edge injection the Worker asks for and does not control cannot be
+allowed to fail a deploy. What it asserts about `/` is that a browser gets a page
+naming this build's content-hashed stylesheet, which is the staleness question
+that actually matters.
 
 `pnpm build` is `vite build && node scripts/postbuild.js`. postbuild does two
 things Vite cannot know about: it moves the document to `dist/page.html` (Static
@@ -149,18 +148,20 @@ care and a browser sniffs.
 
 ```
 push to main
-  -> .github/workflows/deploy.yml   ubuntu-latest (this org registers no runner)
+  -> .github/workflows/deploy.yml   linux-amd64 (the platform's JIT runners)
        pnpm build                   -> dist/page.html + dist/install.sh
        assert                       doctype at byte 0; dash -n AND bash -n
        npx wrangler@3 deploy        Worker `hanzo-sh` + its static assets
-       purge, then RE-FETCH         fails unless the live installer and the
-                                    live document are the ones just built
+       re-fetch                     fails unless the live installer and the
+                                    live page are the ones just built
   -> hanzo.sh                       custom_domain route on the Worker
 ```
 
-Credentials are `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` from GitHub org
-secrets, not KMS — the one thing about this path that does not follow the house
-rule, and it stays that way until the host moves off Cloudflare.
+The Cloudflare key is read from KMS at run time — org hanzo, env prod,
+`cloudflare/CF_API_EMAIL` and `cloudflare/CF_API_KEY` — through hanzoai/ci's
+`bin/kms` with the org's `KMS_CLIENT_ID` / `KMS_CLIENT_SECRET`. No Cloudflare
+credential lives in GitHub. GitHub is the plane that runs this: the forge copy
+is a mirror with Actions off, so a caller under `.hanzo/workflows` runs nowhere.
 
 `routes` lives ABOVE `[assets]` in `wrangler.toml`. TOML puts every key after a
 table header inside that table, so it used to parse as `assets.routes` and
@@ -203,15 +204,13 @@ gh run list -R hanzoai/hanzo.sh -L 1        # a run for your sha, or
 gh workflow run deploy.yml -R hanzoai/hanzo.sh --ref main
 ```
 
-Untested hypothesis worth someone's hour: this repo answers to two names —
-`hanzoai/hanzo.sh` redirects to `hanzo-apps/hanzo.sh` — and GitHub is known to
-drop workflow triggers for pushes that arrive over a rename redirect. The
-remote here is the redirecting one.
+Those runs were on `hanzo-apps/sh`, which `hanzoai/hanzo.sh` then redirected
+to. `hanzoai/hanzo.sh` is now the one home, a repo of its own; `hanzo-apps/sh`
+is archived.
 
-The job then re-fetches the live host and fails unless the installer at `/` and
-the document at `/page.html` are the ones it just built, unless what a browser
-gets at `/` names this build's stylesheet, and unless every path the head
-declares answers 200. **A hand-published host is why a fix can be merged and
+The job then re-fetches the live host and fails unless the installer at `/` is
+byte for byte the one it just built and what a browser gets at `/` names this
+build's stylesheet. **A hand-published host is why a fix can be merged and
 still not reach anyone**: the live bytes once lagged `main` by weeks, long enough
 that a correct fix sat in the repo while `curl hanzo.sh | bash` kept installing
 the old thing. Anyone changing `public/install.sh` verifies against the live URL,
@@ -274,7 +273,7 @@ the host whose whole job is one curl command.
 
 ## Stack
 
-Vite 5 + React 19 + Tailwind 4, one route (`src/pages/Index.tsx`). pnpm 9;
+Vite 8 + React 19 + Tailwind 4, one route (`src/pages/Index.tsx`). pnpm 9;
 `pnpm-lock.yaml` is what the build resolves (`--frozen-lockfile`).
 
 ```bash

@@ -31,7 +31,7 @@ was both at once — HTML wrapped in a shell heredoc — which no browser can be
 handed honestly: bytes before `<!DOCTYPE html>` put the document in quirks mode
 and every `<head>` element ends up in `<body>`. A POSIX script cannot begin with
 `<!` either, so there was no arrangement that worked.
-`scripts/postbuild.js` moves the document to `page.html`, the name the edge
+`scripts/postbuild.js` copies the document to `page.html`, the name the edge
 rewrites `/` to, and writes `/install` next to `/install.sh` from the same bytes.
 
 Downloading is NOT implemented here. `hanzoai/cli/install.sh` is the one

@@ -98,8 +98,8 @@ Cloudflare honours `Vary` only on `Accept-Encoding`, so a shared cache could
 keep one representation and hand it to the other kind of client, breaking either
 the page or `curl | sh`; `no-transform` keeps the edge from rewriting either.
 
-`pnpm build` is `vite build && node scripts/postbuild.js`. postbuild moves the
-document to `dist/page.html`, the name the edge rewrites `/` to, and copies
+`pnpm build` is `vite build && node scripts/postbuild.js`. postbuild copies the
+document to `dist/page.html`, the name the edge rewrites `/` to, and
 `dist/install.sh` to `dist/install` — one file in git, two published names, made
 from the same bytes so they cannot drift.
 

@@ -265,8 +265,8 @@ finish() {
 
     printf '  %sready%s %s→ %s%s\n\n' "$G" "$N" "$DM" "$HANZO_DIR" "$N"
     printf '  quick start:\n'
+    printf '    %shanzo%s                # start coding\n' "$C" "$N"
     printf '    %shanzo auth login%s     # authenticate\n' "$C" "$N"
-    printf '    %shanzo code%s           # start a coding session\n' "$C" "$N"
     printf '    %shanzo up%s             # run the cloud on this machine\n' "$C" "$N"
     printf '    %shanzo --help%s         # every command\n' "$C" "$N"
     if [ -x "$HANZO_DIR/hanzo-mcp" ]; then

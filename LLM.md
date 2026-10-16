@@ -26,6 +26,14 @@ It installs, and this list is the whole list:
 `hanzo-node`, which the CLI already owns; giving it to either would leave the
 delegate name pointing at a different program.
 
+A row may name a fifth field, the workflow that builds and attests the tool's
+releases (`gen`: `.github/workflows/release.yml`). cli/install.sh then checks the
+download's attestation against that workflow and the release's tag with a
+signed-in `gh`, refuses one that does not match, and without `gh` says the
+provenance was not checked and how to check it. The checksum alone comes from the
+same release as the archive, so it proves the bytes arrived whole, not where they
+came from.
+
 Both names of a pair are ONE build — a symlink, so they cannot drift. That
 property is load-bearing for the CLI: cloud's control binary resolves
 `hanzo-node` before `hanzo` and delegates to it, so two versions under two names

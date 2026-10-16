@@ -37,7 +37,11 @@ HANZO_QUIET="${HANZO_QUIET:-0}"
 CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 
 # The complete set of Hanzo tools that ship as a public, checksummed, native
-# binary today, as <name>:<repo>:<binary>:<second-name>.
+# binary today, as <name>:<repo>:<binary>:<second-name>[:<signer>].
+#
+# <signer> is the workflow that builds and attests a tool's releases. With one,
+# cli/install.sh checks each download's attestation against that workflow and
+# the release's tag (with a signed-in gh), and refuses one that does not match.
 #
 # The binary is also the asset prefix and the name inside the tarball — the
 # convention hanzoai/cli/install.sh relies on. Adding a tool is one line, the day
@@ -49,7 +53,7 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-node
 mcp:hanzoai/mcp:hanzo-mcp:mcp
 dev:hanzoai/dev:dev:
-gen:hanzoai/gen:gen:
+gen:hanzoai/gen:gen::.github/workflows/release.yml
 zt:hanzozt/zt:zt:'
 
 # The installable names, read off TOOLS so no message can name a different set
@@ -187,9 +191,9 @@ fetch_one_installer() {
     curl -fsSL "https://raw.githubusercontent.com/${CLI_REPO}/main/install.sh" -o "$1" 2>/dev/null
 }
 
-# install <repo> <binary> <second-name>
+# install <repo> <binary> <second-name> <signer>
 install_tool() {
-    i_repo="$1"; i_bin="$2"; i_alias="$3"
+    i_repo="$1"; i_bin="$2"; i_alias="$3"; i_signer="$4"
 
     # HANZO_VERSION names a CLI release. Passing it to anything else would pin a
     # tag that repo has never published, so it reaches exactly one tool.
@@ -200,6 +204,7 @@ install_tool() {
                HANZO_INSTALL_REPO="$i_repo" \
                HANZO_INSTALL_BIN="$i_bin" \
                HANZO_INSTALL_ALIAS="$i_alias" \
+               HANZO_INSTALL_SIGNER="$i_signer" \
                HANZO_VERSION="$i_pin" \
                sh "$ONE_INSTALLER" 2>&1); then
         # Surface the installer's own warnings (PATH shadowing, PATH missing).
@@ -209,7 +214,7 @@ install_tool() {
         # and a filter that keeps only the alarm and drops the remedy is worse
         # than not warning at all.
         printf '%s\n' "$i_out" \
-          | grep -E 'WARNING|Remove it, or put|not on PATH|export PATH' \
+          | grep -E 'WARNING|Remove it, or put|not on PATH|export PATH|provenance' \
           | sed 's/^/    /' || true
     else
         printf '%s\n' "$i_out" | sed 's/^/    /'
@@ -295,10 +300,12 @@ main() {
     for row in $TOOLS; do
         t_name=${row%%:*};  rest=${row#*:}
         t_repo=${rest%%:*}; rest=${rest#*:}
-        t_bin=${rest%%:*};  t_alias=${rest#*:}
+        t_bin=${rest%%:*};  rest=${rest#*:}
+        t_alias=${rest%%:*}
+        case $rest in *:*) t_signer=${rest#*:} ;; *) t_signer='' ;; esac
         if [ -n "$WANT" ] && ! wanted "$t_name" "$t_bin"; then continue; fi
         selected=1
-        install_tool "$t_repo" "$t_bin" "$t_alias" || true
+        install_tool "$t_repo" "$t_bin" "$t_alias" "$t_signer" || true
     done
 
     if [ "$selected" -eq 0 ]; then

@@ -20,10 +20,11 @@ It installs, and this list is the whole list:
 | `hanzo` | hanzoai/cli | `hanzo` | `hanzo-node` |
 | `mcp` | hanzoai/mcp | `hanzo-mcp` | `mcp` |
 | `dev` | hanzoai/dev | `dev` | — |
+| `gen` | hanzoai/gen | `gen` | — |
 
-`dev` takes no second name. cli/install.sh defaults the alias to `hanzo-node`,
-which the CLI already owns; giving it to `dev` too would leave the delegate name
-pointing at a different program.
+`dev` and `gen` take no second name. cli/install.sh defaults the alias to
+`hanzo-node`, which the CLI already owns; giving it to either would leave the
+delegate name pointing at a different program.
 
 Both names of a pair are ONE build — a symlink, so they cannot drift. That
 property is load-bearing for the CLI: cloud's control binary resolves

@@ -19,6 +19,7 @@ That installs every Hanzo tool published as a public native binary:
 - `hanzo` — the CLI (also installed as `hanzo-node`, the same build)
 - `hanzo-mcp` — the MCP server (also installed as `mcp`, the same build)
 - `dev` — Hanzo Dev, the coding agent `hanzo dev` runs by default
+- `gen` — Hanzo Gen, the harness that launches and routes any coding agent
 - `zt` — ZT zero-trust networking: tunnel, controller and router
 
 One tool at a time:
@@ -100,6 +101,7 @@ caller and returns 401 without a bearer token.
 - [CLI source](https://github.com/hanzoai/cli)
 - [MCP source](https://github.com/hanzoai/mcp)
 - [Dev source](https://github.com/hanzoai/dev)
+- [Gen source](https://github.com/hanzoai/gen)
 
 ## Contact
 - Support: support@hanzo.ai

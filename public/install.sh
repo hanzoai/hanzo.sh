@@ -43,12 +43,13 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 # convention hanzoai/cli/install.sh relies on. Adding a tool is one line, the day
 # its repo is public and publishes <binary>-<os>-<arch>.tar.gz.sha256.
 #
-# `dev` takes no second name on purpose. cli/install.sh defaults the alias to
-# `hanzo-node`, which the CLI already owns — giving it to `dev` too would point
-# the delegate name at a different program.
+# `dev` and `gen` take no second name on purpose. cli/install.sh defaults the
+# alias to `hanzo-node`, which the CLI already owns — giving it to either would
+# point the delegate name at a different program.
 TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-node
 mcp:hanzoai/mcp:hanzo-mcp:mcp
 dev:hanzoai/dev:dev:
+gen:hanzoai/gen:gen:
 zt:hanzozt/zt:zt:'
 
 # The installable names, read off TOOLS so no message can name a different set
@@ -113,6 +114,7 @@ tools:
   hanzo    the Hanzo CLI    (also installed as hanzo-node, the same build)
   mcp      the MCP server   (also installed as hanzo-mcp, the same build)
   dev      Hanzo Dev, the coding agent `hanzo dev` runs by default
+  gen      Hanzo Gen, the harness that launches and routes any coding agent
   zt       ZT zero-trust networking: tunnel, controller and router
 
 options:

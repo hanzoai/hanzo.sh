@@ -27,12 +27,19 @@ It installs, and this list is the whole list:
 delegate name pointing at a different program.
 
 A row may name a fifth field, the workflow that builds and attests the tool's
-releases (`gen`: `.github/workflows/release.yml`). cli/install.sh then checks the
-download's attestation against that workflow and the release's tag with a
-signed-in `gh`, refuses one that does not match, and without `gh` says the
-provenance was not checked and how to check it. The checksum alone comes from the
-same release as the archive, so it proves the bytes arrived whole, not where they
-came from.
+releases (`gen`: `.github/workflows/release.yml`). cli/install.sh then installs
+that tool from `vX.Y.Z` tags only, and checks the download's attestation against
+that workflow and the release's tag with a signed-in `gh` that has `attestation
+verify --source-ref`. A check that ran and did not match refuses the install,
+with gh's reason. Without such a `gh` (none, signed out, or older, like Ubuntu's
+2.45.0) the install says provenance was not checked, why, and the command that
+checks it. The checksum alone comes from the same release as the archive, so it
+proves the bytes arrived whole, not where they came from.
+
+Merge order: this script fetches cli/install.sh from hanzoai/cli `main`, and
+`main`'s installer before the signer change ignores `HANZO_INSTALL_SIGNER`, so it
+would install `gen` with no provenance line at all. Ship hanzoai/cli's install.sh
+first, then this.
 
 Both names of a pair are ONE build — a symlink, so they cannot drift. That
 property is load-bearing for the CLI: cloud's control binary resolves

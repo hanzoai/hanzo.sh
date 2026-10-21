@@ -13,78 +13,38 @@ PATH. That is all of it. No package manager, no runtime, no build step, no
 compiler — and specifically nothing that installs a language toolchain in order
 to deliver a program written in a different language.
 
-It installs, and this list is the whole list:
+The installer downloads released, checksummed native binaries. Current names:
 
-| tool | repo | binary | second name |
-|---|---|---|---|
-| `hanzo` | hanzoai/cli | `hanzo` | `hanzo-node` |
-| `mcp` | hanzoai/mcp | `hanzo-mcp` | `mcp` |
-| `dev` | hanzoai/dev | `dev` | — |
-| `gen` | hanzoai/gen | `gen` | — |
+| tool | repository | commands |
+|---|---|---|
+| CLI | hanzoai/cli | hanzo, hanzo-cli (internal delegate) |
+| MCP | hanzoai/mcp | hanzo-mcp, mcp |
+| Dev | hanzoai/dev | dev, hanzo-dev |
+| Gen | hanzoai/gen | gen, hanzo-gen |
+| ZT | hanzozt/zt | zt, hanzo-zet |
 
-`dev` and `gen` take no second name. cli/install.sh defaults the alias to
-`hanzo-node`, which the CLI already owns; giving it to either would leave the
-delegate name pointing at a different program.
+Aliases resolve to the same binary. Reserve hanzo-node for the actual network
+node; it must not be an alias for the main CLI.
 
-A row may name a fifth field, the workflow that builds and attests the tool's
-releases (`gen`: `.github/workflows/release.yml`). cli/install.sh then installs
-that tool from `vX.Y.Z` tags only, and checks the download's attestation against
-that workflow and the release's tag with a signed-in `gh` that has `attestation
-verify --source-ref`. A check that ran and did not match refuses the install,
-with gh's reason. Without such a `gh` (none, signed out, or older, like Ubuntu's
-2.45.0) the install says provenance was not checked, why, and the command that
-checks it. The checksum alone comes from the same release as the archive, so it
-proves the bytes arrived whole, not where they came from.
+### One downloader
 
-Merge order: this script fetches cli/install.sh from hanzoai/cli `main`, and
-`main`'s installer before the signer change ignores `HANZO_INSTALL_SIGNER`, so it
-would install `gen` with no provenance line at all. Ship hanzoai/cli's install.sh
-first, then this.
+hanzoai/cli/install.sh owns platform detection, release selection, checksums,
+provenance verification and aliases. This repository coordinates tools using
+HANZO_INSTALL_REPO, HANZO_INSTALL_BIN and HANZO_INSTALL_ALIAS. Do not duplicate
+that implementation. --strict passes HANZO_INSTALL_STRICT=1 and requires
+repository- and tag-bound provenance before a downloaded binary is installed.
 
-Both names of a pair are ONE build — a symlink, so they cannot drift. That
-property is load-bearing for the CLI: cloud's control binary resolves
-`hanzo-node` before `hanzo` and delegates to it, so two versions under two names
-means a user types `hanzo` and silently runs an old build.
+A skipped provenance check is displayed as installed but unverified, with an
+upgrade instruction. It must not receive an unqualified green success mark.
 
-### It does not re-implement downloading
+### Availability
 
-`hanzoai/cli/install.sh` is the ONE implementation of "fetch a Hanzo binary".
-Platform detection, asset naming, checksum verification, the second-name symlink
-and the PATH-shadow warning all live there, once. `public/install.sh` fetches it
-and runs it once per tool, varying three env vars:
-
-```
-HANZO_INSTALL_REPO   HANZO_INSTALL_BIN   HANZO_INSTALL_ALIAS
-```
-
-That works because every published Hanzo binary follows one convention: asset
-`<BIN>-<os>-<arch>.tar.gz`, a sibling `<asset>.sha256`, unpacking to a single
-file named `<BIN>`. `BIN` alone therefore determines the asset, the checksum and
-the payload — which is why adding a tool is one row in `TOOLS` and no new code.
-
-A second copy of platform detection here would be the same class of bug as two
-copies of a route table, and the copy that drifts is the one nobody reads.
-
-### Tools it does NOT install, and why
-
-Named in the output rather than quietly substituted. An installer that reaches
-for a package manager so the list looks complete is the exact defect this file
-was rewritten to remove.
-
-- **`node`** — `hanzoai/node` is private; a 404 to an anonymous fetch, and no
-  per-asset checksums. Its asset is also a ~277 MB zip with vendored runtimes
-  rather than a lone binary, so it does not fit the one convention yet.
-- **`desktop`** — `hanzoai/desktop` is private, and its latest release is
-  linux-amd64 only with an orphaned macOS signature. `hanzo desktop` (a CLI verb)
-  is unaffected and works; the standalone Tauri app is what is unavailable.
-- **`bot`** — not a native binary at all. `hanzo bot` (a CLI verb) works; the
-  standalone bot node is a JS package, so installing it here would mean shelling
-  out to a package manager.
-
-**Name collision to keep in mind:** the CLI installs its second name as
-`hanzo-node`, and `hanzoai/node` also builds a binary called `hanzo-node`. They
-are different programs. Nothing collides today because `node` is not installed,
-but whoever makes `hanzoai/node` public must rename one of them first.
+Checked on 2026-10-20: hanzoai/node is public but has no published release;
+hanzoai/bot is public and its v1.0.0 release has no binary assets; hanzoai/desktop
+has no published standalone release. Public source does not imply a downloadable
+binary. Verify the release assets before changing this list. The default install
+shows the tools it installs, without an unrelated unavailable-products block.
+Explicit requests for an unavailable tool explain the missing release.
 
 ### POSIX on purpose
 

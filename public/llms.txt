@@ -16,11 +16,11 @@ curl -fsSL https://hanzo.sh | sh
 
 That installs every Hanzo tool published as a public native binary:
 
-- `hanzo` — the CLI (also installed as `hanzo-node`, the same build)
+- `hanzo` — the CLI (also installed as `hanzo-cli`, the same build)
 - `hanzo-mcp` — the MCP server (also installed as `mcp`, the same build)
-- `dev` — Hanzo Dev, the coding agent `hanzo dev` runs by default
-- `gen` — Hanzo Gen, the harness that launches and routes any coding agent
-- `zt` — ZT zero-trust networking: tunnel, controller and router
+- `hanzo-dev` (also `dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default
+- `hanzo-gen` (also `gen`) — Hanzo Gen, the harness that launches and routes any coding agent
+- `hanzo-zet` (also `zt`) — ZT zero-trust networking: tunnel, controller and router
 
 One tool at a time:
 

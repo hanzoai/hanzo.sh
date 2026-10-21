@@ -18,3 +18,4 @@ test:
       [ "$(head -1 dist/install.sh)" = '#!/bin/sh' ]
       dash -n dist/install.sh
       bash -n dist/install.sh
+      sh scripts/test-installer.sh

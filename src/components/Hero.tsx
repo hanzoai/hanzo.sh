@@ -180,7 +180,7 @@ const Hero = () => {
             {[
               {
                 bin: "hanzo",
-                also: "hanzo-node",
+                also: "hanzo-cli",
                 desc: "The Hanzo CLI \u2014 auth, billing, coding sessions, and every product of the Hanzo cloud.",
                 href: "https://github.com/hanzoai/cli",
                 icon: <Cpu className="w-4 h-4 text-orange-400" />,
@@ -195,12 +195,28 @@ const Hero = () => {
                 tint: "bg-green-500/10",
               },
               {
-                bin: "dev",
-                also: null,
+                bin: "hanzo-dev",
+                also: "dev",
                 desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default.",
                 href: "https://github.com/hanzoai/dev",
                 icon: <Terminal className="w-4 h-4 text-sky-400" />,
                 tint: "bg-sky-500/10",
+              },
+              {
+                bin: "hanzo-gen",
+                also: "gen",
+                desc: "Hanzo Gen — the native coding harness.",
+                href: "https://github.com/hanzoai/gen",
+                icon: <Code className="w-4 h-4 text-purple-400" />,
+                tint: "bg-purple-500/10",
+              },
+              {
+                bin: "hanzo-zet",
+                also: "zt",
+                desc: "ZT — zero-trust networking, tunnels, controller and router.",
+                href: "https://github.com/hanzozt/zt",
+                icon: <Cpu className="w-4 h-4 text-blue-400" />,
+                tint: "bg-blue-500/10",
               },
             ].map((t) => (
               <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
@@ -221,23 +237,6 @@ const Hero = () => {
                 )}
               </div>
             ))}
-          </div>
-
-          {/* Not included — say so rather than let someone find out */}
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-white/60 mb-3">Not included yet</h2>
-            <ul className="space-y-1.5 text-xs">
-              {[
-                { bin: "node", why: "source is not public yet" },
-                { bin: "desktop", why: "`hanzo desktop` is in the CLI; the standalone app is not public yet" },
-                { bin: "bot", why: "`hanzo bot` is in the CLI; the standalone node is not native yet" },
-              ].map((item) => (
-                <li key={item.bin} className="flex items-start justify-between gap-4 text-white/50">
-                  <code className="text-white/70 shrink-0">{item.bin}</code>
-                  <span className="text-white/35 text-right">{item.why}</span>
-                </li>
-              ))}
-            </ul>
           </div>
 
           {/* After install */}

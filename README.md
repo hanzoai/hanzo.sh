@@ -11,8 +11,11 @@ it on PATH — no runtime, no package manager, no build step:
 
 | tool | also installed as | source |
 |---|---|---|
-| `hanzo` | `hanzo-node` | [hanzoai/cli](https://github.com/hanzoai/cli) |
+| `hanzo` | `hanzo-cli` | [hanzoai/cli](https://github.com/hanzoai/cli) |
 | `hanzo-mcp` | `mcp` | [hanzoai/mcp](https://github.com/hanzoai/mcp) |
+| `hanzo-dev` | `dev` | [hanzoai/dev](https://github.com/hanzoai/dev) |
+| `hanzo-gen` | `gen` | [hanzoai/gen](https://github.com/hanzoai/gen) |
+| `hanzo-zet` | `zt` | [hanzozt/zt](https://github.com/hanzozt/zt) |
 
 Each pair is one build, symlinked, so the two names can never be two versions.
 Re-run to upgrade. One tool at a time:

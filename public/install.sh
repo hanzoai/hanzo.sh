@@ -117,7 +117,7 @@ With no tool named, installs every tool that ships as a public native binary.
 tools:
   hanzo    the Hanzo CLI    (also installed as hanzo-cli, the same build)
   mcp      the MCP server   (also installed as hanzo-mcp, the same build)
-  dev      Hanzo Dev (dev and hanzo-dev)
+  dev      Hanzo Dev (dev and hanzo-dev; co-installs hanzo-mcp)
   gen      Hanzo Gen (gen and hanzo-gen)
   zt       ZT zero-trust networking (zt and hanzo-zet)
 
@@ -181,10 +181,11 @@ validate_wanted() {
     done
 }
 
-# wanted <name> <binary> — did the caller ask for this tool?
+# wanted <name> <binary> <alias> — did the caller ask for this tool?
 # `default`, `full` and `all` named the old bundles. They meant "everything",
 # which is what naming nothing means, so they map to that rather than failing an
-# install someone already scripted.
+# install someone already scripted. The crate name (`hanzo-dev`) selects the
+# same row as the short name.
 wanted() {
     for w in $WANT; do
         case $w in
@@ -192,6 +193,18 @@ wanted() {
         esac
     done
     return 1
+}
+
+# Requesting `dev` or `hanzo-dev` always co-installs `mcp` (`hanzo-mcp`).
+expand_verbs() {
+    case " $WANT " in
+        *" dev "*|*" hanzo-dev "*)
+            case " $WANT " in
+                *" mcp "*|*" hanzo-mcp "*) ;;
+                *) WANT="$WANT mcp" ;;
+            esac
+            ;;
+    esac
 }
 
 # hanzoai/cli/install.sh, fetched once and reused for every tool.
@@ -321,6 +334,7 @@ finish() {
 main() {
     parse_args "$@"
     validate_wanted
+    expand_verbs
     banner
 
     command -v curl >/dev/null 2>&1 || die "need curl on PATH"
@@ -348,6 +362,11 @@ main() {
         selected=1
         install_tool "$t_repo" "$t_bin" "$t_alias" "$t_signer" || true
     done
+
+    # Initialize ~/.hanzo/dev/config.toml (with [mcp_servers.hanzo]) when dev is installed
+    if [ -x "$HANZO_DIR/dev" ]; then
+        "$HANZO_DIR/dev" --version >/dev/null 2>&1 || true
+    fi
 
     if [ "$selected" -eq 0 ]; then
         # Asked for something real that we publish no binary for. Answer with the

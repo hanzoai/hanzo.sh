@@ -4,4 +4,4 @@
 #
 # Routing only. The installer is the one place that knows which tools ship as a
 # native binary and what to say about the ones that do not.
-exec sh -c "$(curl -fsSL https://hanzo.sh)" -- dev "$@"
+exec sh -c "$(curl -fsSL https://hanzo.sh)" -- dev mcp "$@"

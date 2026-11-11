@@ -44,13 +44,20 @@ for shell in sh bash; do
         if "$shell" "$root/public/install.sh" "$invalid" > "$fixture/invalid.log" 2>&1; then exit 1; fi
         grep -q 'see --help' "$fixture/invalid.log"
     done
-    if "$shell" "$root/public/install.sh" --dir "$fixture/mixed" hanzo hanzo-node > "$fixture/mixed.log" 2>&1; then exit 1; fi
+    if "$shell" "$root/public/install.sh" --dir "$fixture/mixed" hanzo hanzo-bot > "$fixture/mixed.log" 2>&1; then exit 1; fi
     grep -q 'source is public' "$fixture/mixed.log"
     [ ! -e "$fixture/mixed/hanzo" ]
+    "$shell" "$root/public/install.sh" --dir "$fixture/all" > "$fixture/all.log" 2>&1
+    grep -q 'Installed and available.*hanzo gen dev hanzo-mcp hanzo-engine hanzod zt' "$fixture/all.log"
+    "$fixture/all/hanzo-engine" --version | grep -q 'hanzo-engine 1.2.3'
+    "$fixture/all/engine" --version | grep -q 'hanzo-engine 1.2.3'
+    "$fixture/all/hanzod" --version | grep -q 'hanzod 1.2.3'
+    "$fixture/all/hanzo-node" --version | grep -q 'hanzod 1.2.3'
+    "$fixture/all/hanzo-zt" --version | grep -q 'zt 1.2.3'
     "$shell" "$root/public/install.sh" --dir "$fixture/installed" hanzo dev gen > "$fixture/success.log" 2>&1
     grep -q 'ready' "$fixture/success.log"
     [ "$(grep -c 'export PATH=' "$fixture/success.log")" -eq 1 ]
-    grep -q 'Installed and available.*hanzo hanzo-mcp gen dev' "$fixture/success.log"
+    grep -q 'Installed and available.*hanzo gen dev hanzo-mcp' "$fixture/success.log"
     "$fixture/installed/hanzo-mcp" --version | grep -q 'hanzo-mcp 1.2.3'
     "$fixture/installed/dev" --version | grep -q 'dev 1.2.3'
     "$fixture/installed/hanzo-dev" --version | grep -q 'dev 1.2.3'
@@ -66,7 +73,7 @@ for shell in sh bash; do
         exit 1
     fi
     grep -q 'simulated download failure' "$fixture/partial.log"
-    grep -q 'Installed and available.*hanzo hanzo-mcp dev' "$fixture/partial.log"
+    grep -q 'Installed and available.*hanzo dev hanzo-mcp' "$fixture/partial.log"
     grep -q 'tools listed as installed above still work' "$fixture/partial.log"
     grep -q 'incomplete' "$fixture/partial.log"
     if grep -q 'ready' "$fixture/partial.log"; then exit 1; fi

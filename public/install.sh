@@ -50,9 +50,11 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 # Prefixed aliases give each product a distinct command. hanzo-cli is the
 # control plane delegate; hanzo-node is reserved for the network node.
 TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-cli
-mcp:hanzoai/mcp:hanzo-mcp:mcp
 gen:hanzoai/gen:gen:hanzo-gen:.github/workflows/release.yml
 dev:hanzoai/dev:dev:hanzo-dev
+mcp:hanzoai/mcp:hanzo-mcp:mcp
+engine:hanzoai/engine:hanzo-engine:engine
+node:hanzoai/node:hanzod:hanzo-node
 zt:hanzozt/zt:zt:hanzo-zt'
 
 # The installable names, read off TOOLS so no message can name a different set
@@ -66,7 +68,6 @@ tool_names() {
 # Named, not silently skipped, and never substituted with something else.
 unavailable_rows() {
     cat <<'ROWS'
-node|source is public at github.com/hanzoai/node; no prebuilt release is published yet
 desktop|no standalone desktop release is published yet
 bot|source is public at github.com/hanzoai/bot; its current release has no prebuilt binaries
 ROWS
@@ -116,9 +117,11 @@ With no tool named, installs every tool that ships as a public native binary.
 
 tools:
   hanzo    the Hanzo CLI    (also installed as hanzo-cli, the same build)
+  gen      Hanzo Gen        (gen and hanzo-gen)
+  dev      Hanzo Dev        (dev and hanzo-dev; co-installs hanzo-mcp)
   mcp      the MCP server   (also installed as hanzo-mcp, the same build)
-  gen      Hanzo Gen (gen and hanzo-gen)
-  dev      Hanzo Dev (dev and hanzo-dev; co-installs hanzo-mcp)
+  engine   Hanzo Engine     (hanzo-engine and engine)
+  node     Hanzo Node       (hanzod and hanzo-node)
   zt       ZT zero-trust networking (zt and hanzo-zt)
 
 options:
@@ -131,6 +134,11 @@ options:
 shortcuts:
   curl -fsSL hanzo.sh | sh           # every installable tool
   curl -fsSL hanzo.sh/cli | sh       # the CLI only
+  curl -fsSL hanzo.sh/gen | sh       # Hanzo Gen only
+  curl -fsSL hanzo.sh/dev | sh       # Hanzo Dev (+ MCP server)
+  curl -fsSL hanzo.sh/engine | sh    # Hanzo Engine only
+  curl -fsSL hanzo.sh/node | sh      # Hanzo Node (hanzod) only
+  curl -fsSL hanzo.sh/zt | sh        # ZT networking only
   curl -fsSL hanzo.sh/mcp | sh       # the MCP server only
 
 Re-run any time to upgrade; installing is just downloading the current build.

@@ -17,17 +17,23 @@ curl -fsSL https://hanzo.sh | sh
 That installs every Hanzo tool published as a public native binary:
 
 - `hanzo` — the CLI (also installed as `hanzo-cli`, the same build)
-- `hanzo-mcp` — the MCP server (also installed as `mcp`, the same build)
-- `hanzo-gen` (also `gen`) — Hanzo Gen, the harness that launches and routes any coding agent
-- `hanzo-dev` (also `dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default
-- `hanzo-zt` (also `zt`) — ZT zero-trust networking: tunnel, controller and router
+- `gen` (also `hanzo-gen`) — Hanzo Gen, the harness that launches and routes any coding agent
+- `dev` (also `hanzo-dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default (co-installs `hanzo-mcp`)
+- `hanzo-mcp` (also `mcp`) — the MCP server
+- `hanzo-engine` (also `engine`) — Hanzo Engine, local OpenAI/Anthropic-compatible LLM inference
+- `hanzod` (also `hanzo-node`) — Hanzo Node, the L1 network validator and RPC node
+- `zt` (also `hanzo-zt`) — ZT zero-trust networking: tunnel, controller and router
 
 One tool at a time:
 
 ```sh
-curl -fsSL https://hanzo.sh/cli | sh    # the CLI only
-curl -fsSL https://hanzo.sh/mcp | sh    # the MCP server only
-curl -fsSL https://hanzo.sh/dev | sh    # the coding agent only
+curl -fsSL https://hanzo.sh/cli | sh       # the CLI only
+curl -fsSL https://hanzo.sh/gen | sh       # Hanzo Gen only
+curl -fsSL https://hanzo.sh/dev | sh       # the coding agent (+ MCP server)
+curl -fsSL https://hanzo.sh/engine | sh    # Hanzo Engine only
+curl -fsSL https://hanzo.sh/node | sh      # Hanzo Node (hanzod) only
+curl -fsSL https://hanzo.sh/zt | sh        # ZT networking only
+curl -fsSL https://hanzo.sh/mcp | sh       # the MCP server only
 ```
 
 Binaries land in `~/.local/bin`. Re-run to upgrade — installing is just
@@ -83,8 +89,8 @@ A group name is not a command on its own: `hanzo usage` and `hanzo auth` print
 their subcommands and stop.
 
 `hanzo engine serve <model>` runs a model locally on an OpenAI-compatible
-endpoint. It needs the Hanzo engine binary, which this installer does not ship;
-with no `hanzo-engine` on PATH and no `HANZO_ENGINE_BIN` set it exits saying so.
+endpoint using `hanzo-engine` (`engine`). `hanzo chain up` starts the local L1
+chain node using `hanzod` (`hanzo-node`).
 
 ## Models
 Hanzo's own families, and the ids these tools take: `enso`, `enso-flash`,

@@ -12,10 +12,12 @@ it on PATH — no runtime, no package manager, no build step:
 | tool | also installed as | source |
 |---|---|---|
 | `hanzo` | `hanzo-cli` | [hanzoai/cli](https://github.com/hanzoai/cli) |
+| `gen` | `hanzo-gen` | [hanzoai/gen](https://github.com/hanzoai/gen) |
+| `dev` | `hanzo-dev` | [hanzoai/dev](https://github.com/hanzoai/dev) |
 | `hanzo-mcp` | `mcp` | [hanzoai/mcp](https://github.com/hanzoai/mcp) |
-| `hanzo-gen` | `gen` | [hanzoai/gen](https://github.com/hanzoai/gen) |
-| `hanzo-dev` | `dev` | [hanzoai/dev](https://github.com/hanzoai/dev) |
-| `hanzo-zt` | `zt` | [hanzozt/zt](https://github.com/hanzozt/zt) |
+| `hanzo-engine` | `engine` | [hanzoai/engine](https://github.com/hanzoai/engine) |
+| `hanzod` | `hanzo-node` | [hanzoai/node](https://github.com/hanzoai/node) |
+| `zt` | `hanzo-zt` | [hanzozt/zt](https://github.com/hanzozt/zt) |
 
 Each pair is one build, symlinked, so the two names can never be two versions.
 Re-run to upgrade. One tool at a time:

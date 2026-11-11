@@ -51,7 +51,7 @@ for shell in sh bash; do
     grep -q 'source is public' "$fixture/mixed.log"
     [ ! -e "$fixture/mixed/hanzo" ]
     PASSED_PROVENANCE=gen "$shell" "$root/public/install.sh" --dir "$fixture/all" > "$fixture/all.log" 2>&1
-    grep -q 'Installed and available.*hanzo hanzo-gen hanzo-dev hanzo-engine hanzo-mcp hanzozt hanzod' "$fixture/all.log"
+    grep -q 'Installed and available.*hanzo hanzod hanzozt hanzo-gen hanzo-dev hanzo-engine hanzo-mcp hanzo-cloud' "$fixture/all.log"
     if grep -q 'same build' "$fixture/all.log"; then exit 1; fi
     if grep -q 'provenance:' "$fixture/all.log"; then exit 1; fi
     "$fixture/all/hanzo-engine" --version | grep -q 'hanzo-engine 1.2.3'
@@ -60,6 +60,8 @@ for shell in sh bash; do
     "$fixture/all/hanzo-node" --version | grep -q 'hanzod 1.2.3'
     "$fixture/all/hanzozt" --version | grep -q 'zt 1.2.3'
     "$fixture/all/hanzo-zt" --version | grep -q 'zt 1.2.3'
+    "$fixture/all/hanzo-cloud" --version | grep -q 'hanzo-cloud 1.2.3'
+    "$fixture/all/cloud" --version | grep -q 'hanzo-cloud 1.2.3'
     "$shell" "$root/public/install.sh" --dir "$fixture/installed" hanzo dev gen > "$fixture/success.log" 2>&1
     grep -q 'ready' "$fixture/success.log"
     [ "$(grep -c 'export PATH=' "$fixture/success.log")" -eq 1 ]

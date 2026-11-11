@@ -51,12 +51,13 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 # installer output; short aliases symlink to the same binary. hanzo-cli is the
 # control plane delegate; hanzo-node is reserved for the network node.
 TOOLS='hanzo:hanzo:hanzoai/cli:hanzo:hanzo-cli
+node:hanzod:hanzoai/node:hanzod:hanzo-node
+zt:hanzozt:hanzozt/zt:zt:hanzozt
 gen:hanzo-gen:hanzoai/gen:gen:hanzo-gen
 dev:hanzo-dev:hanzoai/dev:dev:hanzo-dev
 engine:hanzo-engine:hanzoai/engine:hanzo-engine:engine
 mcp:hanzo-mcp:hanzoai/mcp:hanzo-mcp:mcp
-zt:hanzozt:hanzozt/zt:zt:hanzozt
-node:hanzod:hanzoai/node:hanzod:hanzo-node'
+cloud:hanzo-cloud:hanzoai/cloud:hanzo-cloud:cloud'
 
 # The installable names, read off TOOLS so no message can name a different set
 # than the loop installs.
@@ -119,12 +120,13 @@ With no tool named, installs every tool that ships as a public native binary.
 
 tools:
   hanzo          the Hanzo CLI
+  hanzod         Hanzo Node
+  hanzozt        ZT zero-trust networking
   hanzo-gen      Hanzo Gen
   hanzo-dev      Hanzo Dev (co-installs hanzo-mcp)
   hanzo-engine   Hanzo Engine
   hanzo-mcp      the MCP server
-  hanzozt        ZT zero-trust networking
-  hanzod         Hanzo Node
+  hanzo-cloud    Hanzo Cloud
 
 options:
   -d, --dir PATH       install directory (default: ~/.local/bin)
@@ -136,12 +138,13 @@ options:
 shortcuts:
   curl -fsSL hanzo.sh | sh           # every installable tool
   curl -fsSL hanzo.sh/cli | sh       # the CLI only
+  curl -fsSL hanzo.sh/node | sh      # Hanzo Node (hanzod) only
+  curl -fsSL hanzo.sh/zt | sh        # ZT networking only
   curl -fsSL hanzo.sh/gen | sh       # Hanzo Gen only
   curl -fsSL hanzo.sh/dev | sh       # Hanzo Dev (+ MCP server)
   curl -fsSL hanzo.sh/engine | sh    # Hanzo Engine only
   curl -fsSL hanzo.sh/mcp | sh       # the MCP server only
-  curl -fsSL hanzo.sh/zt | sh        # ZT networking only
-  curl -fsSL hanzo.sh/node | sh      # Hanzo Node (hanzod) only
+  curl -fsSL hanzo.sh/cloud | sh     # Hanzo Cloud only
 
 Re-run any time to upgrade; installing is just downloading the current build.
 EOF

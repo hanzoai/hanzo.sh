@@ -161,12 +161,13 @@ const Hero = () => {
           <div className="flex flex-wrap justify-center gap-2 text-sm">
             {[
               { path: "/cli", label: "CLI Only" },
+              { path: "/node", label: "Node" },
+              { path: "/zt", label: "ZT" },
               { path: "/gen", label: "Gen" },
               { path: "/dev", label: "Dev Agent" },
               { path: "/engine", label: "Engine" },
               { path: "/mcp", label: "MCP Server" },
-              { path: "/zt", label: "ZT" },
-              { path: "/node", label: "Node" },
+              { path: "/cloud", label: "Cloud" },
             ].map((shortcut) => (
               <button
                 key={shortcut.path}
@@ -191,9 +192,25 @@ const Hero = () => {
                 tint: "bg-orange-500/10",
               },
               {
+                bin: "hanzod",
+                also: "hanzo-node",
+                desc: "Hanzo Node \u2014 the L1 network validator, consensus mesh and JSON-RPC node.",
+                href: "https://github.com/hanzoai/node",
+                icon: <Globe className="w-4 h-4 text-emerald-400" />,
+                tint: "bg-emerald-500/10",
+              },
+              {
+                bin: "hanzozt",
+                also: "zt",
+                desc: "ZT \u2014 zero-trust networking, tunnels, controller and router.",
+                href: "https://github.com/hanzozt/zt",
+                icon: <Cpu className="w-4 h-4 text-blue-400" />,
+                tint: "bg-blue-500/10",
+              },
+              {
                 bin: "hanzo-gen",
                 also: "gen",
-                desc: "Hanzo Gen — the native coding harness.",
+                desc: "Hanzo Gen \u2014 the native coding harness.",
                 href: "https://github.com/hanzoai/gen",
                 icon: <Code className="w-4 h-4 text-purple-400" />,
                 tint: "bg-purple-500/10",
@@ -223,20 +240,12 @@ const Hero = () => {
                 tint: "bg-green-500/10",
               },
               {
-                bin: "hanzozt",
-                also: "zt",
-                desc: "ZT — zero-trust networking, tunnels, controller and router.",
-                href: "https://github.com/hanzozt/zt",
-                icon: <Cpu className="w-4 h-4 text-blue-400" />,
-                tint: "bg-blue-500/10",
-              },
-              {
-                bin: "hanzod",
-                also: "hanzo-node",
-                desc: "Hanzo Node \u2014 the L1 network validator, consensus mesh and JSON-RPC node.",
-                href: "https://github.com/hanzoai/node",
-                icon: <Globe className="w-4 h-4 text-emerald-400" />,
-                tint: "bg-emerald-500/10",
+                bin: "hanzo-cloud",
+                also: "cloud",
+                desc: "Hanzo Cloud \u2014 self-hosted AI gateway, encrypted KMS, IAM and chat UI in one binary.",
+                href: "https://github.com/hanzoai/cloud",
+                icon: <Globe className="w-4 h-4 text-rose-400" />,
+                tint: "bg-rose-500/10",
               },
             ].map((t) => (
               <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">

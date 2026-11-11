@@ -12,12 +12,13 @@ it on PATH — no runtime, no package manager, no build step:
 | tool | alias | source |
 |---|---|---|
 | `hanzo` | `hanzo-cli` | [hanzoai/cli](https://github.com/hanzoai/cli) |
+| `hanzod` | `hanzo-node` | [hanzoai/node](https://github.com/hanzoai/node) |
+| `hanzozt` | `zt`, `hanzo-zt` | [hanzozt/zt](https://github.com/hanzozt/zt) |
 | `hanzo-gen` | `gen` | [hanzoai/gen](https://github.com/hanzoai/gen) |
 | `hanzo-dev` | `dev` | [hanzoai/dev](https://github.com/hanzoai/dev) |
 | `hanzo-engine` | `engine` | [hanzoai/engine](https://github.com/hanzoai/engine) |
 | `hanzo-mcp` | `mcp` | [hanzoai/mcp](https://github.com/hanzoai/mcp) |
-| `hanzozt` | `zt`, `hanzo-zt` | [hanzozt/zt](https://github.com/hanzozt/zt) |
-| `hanzod` | `hanzo-node` | [hanzoai/node](https://github.com/hanzoai/node) |
+| `hanzo-cloud` | `cloud` | [hanzoai/cloud](https://github.com/hanzoai/cloud) |
 
 Re-run to upgrade. One tool at a time:
 

@@ -18,12 +18,13 @@ The installer downloads released, checksummed native binaries. Current names:
 | tool | repository | commands |
 |---|---|---|
 | CLI | hanzoai/cli | hanzo, hanzo-cli (internal delegate) |
+| Node | hanzoai/node | hanzod, hanzo-node |
+| ZT | hanzozt/zt | hanzozt, zt, hanzo-zt |
 | Gen | hanzoai/gen | hanzo-gen, gen |
 | Dev | hanzoai/dev | hanzo-dev, dev |
 | Engine | hanzoai/engine | hanzo-engine, engine |
 | MCP | hanzoai/mcp | hanzo-mcp, mcp |
-| ZT | hanzozt/zt | hanzozt, zt, hanzo-zt |
-| Node | hanzoai/node | hanzod, hanzo-node |
+| Cloud | hanzoai/cloud | hanzo-cloud, cloud |
 
 Aliases resolve to the same binary. Reserve hanzo-node for the actual network
 node; it must not be an alias for the main CLI.

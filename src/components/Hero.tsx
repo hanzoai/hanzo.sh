@@ -195,14 +195,6 @@ const Hero = () => {
                 tint: "bg-green-500/10",
               },
               {
-                bin: "hanzo-dev",
-                also: "dev",
-                desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default.",
-                href: "https://github.com/hanzoai/dev",
-                icon: <Terminal className="w-4 h-4 text-sky-400" />,
-                tint: "bg-sky-500/10",
-              },
-              {
                 bin: "hanzo-gen",
                 also: "gen",
                 desc: "Hanzo Gen — the native coding harness.",
@@ -211,7 +203,15 @@ const Hero = () => {
                 tint: "bg-purple-500/10",
               },
               {
-                bin: "hanzo-zet",
+                bin: "hanzo-dev",
+                also: "dev",
+                desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default.",
+                href: "https://github.com/hanzoai/dev",
+                icon: <Terminal className="w-4 h-4 text-sky-400" />,
+                tint: "bg-sky-500/10",
+              },
+              {
+                bin: "hanzo-zt",
                 also: "zt",
                 desc: "ZT — zero-trust networking, tunnels, controller and router.",
                 href: "https://github.com/hanzozt/zt",

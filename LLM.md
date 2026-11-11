@@ -19,9 +19,9 @@ The installer downloads released, checksummed native binaries. Current names:
 |---|---|---|
 | CLI | hanzoai/cli | hanzo, hanzo-cli (internal delegate) |
 | MCP | hanzoai/mcp | hanzo-mcp, mcp |
-| Dev | hanzoai/dev | dev, hanzo-dev |
 | Gen | hanzoai/gen | gen, hanzo-gen |
-| ZT | hanzozt/zt | zt, hanzo-zet |
+| Dev | hanzoai/dev | dev, hanzo-dev |
+| ZT | hanzozt/zt | zt, hanzo-zt |
 
 Aliases resolve to the same binary. Reserve hanzo-node for the actual network
 node; it must not be an alias for the main CLI.

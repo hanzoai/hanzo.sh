@@ -51,9 +51,9 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 # control plane delegate; hanzo-node is reserved for the network node.
 TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-cli
 mcp:hanzoai/mcp:hanzo-mcp:mcp
-dev:hanzoai/dev:dev:hanzo-dev
 gen:hanzoai/gen:gen:hanzo-gen:.github/workflows/release.yml
-zt:hanzozt/zt:zt:hanzo-zet'
+dev:hanzoai/dev:dev:hanzo-dev
+zt:hanzozt/zt:zt:hanzo-zt'
 
 # The installable names, read off TOOLS so no message can name a different set
 # than the loop installs.
@@ -117,9 +117,9 @@ With no tool named, installs every tool that ships as a public native binary.
 tools:
   hanzo    the Hanzo CLI    (also installed as hanzo-cli, the same build)
   mcp      the MCP server   (also installed as hanzo-mcp, the same build)
-  dev      Hanzo Dev (dev and hanzo-dev; co-installs hanzo-mcp)
   gen      Hanzo Gen (gen and hanzo-gen)
-  zt       ZT zero-trust networking (zt and hanzo-zet)
+  dev      Hanzo Dev (dev and hanzo-dev; co-installs hanzo-mcp)
+  zt       ZT zero-trust networking (zt and hanzo-zt)
 
 options:
   -d, --dir PATH       install directory (default: ~/.local/bin)
@@ -264,6 +264,9 @@ install_tool() {
     if [ ! -x "$HANZO_DIR/$i_bin" ]; then
         FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_bin"
         fail "$i_bin (nothing at $HANZO_DIR/$i_bin)"; return 1
+    fi
+    if [ "$i_bin" = dev ]; then
+        rm -f "${HANZO_HOME:-$HOME/.hanzo}/dev/version.json"
     fi
     # The first token that looks like a version, not the last token on the line:
     # `--version` output is not one shape across tools (`hanzo 1.9.18` ends on

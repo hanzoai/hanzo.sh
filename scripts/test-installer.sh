@@ -50,7 +50,7 @@ for shell in sh bash; do
     "$shell" "$root/public/install.sh" --dir "$fixture/installed" hanzo dev gen > "$fixture/success.log" 2>&1
     grep -q 'ready' "$fixture/success.log"
     [ "$(grep -c 'export PATH=' "$fixture/success.log")" -eq 1 ]
-    grep -q 'Installed and available.*hanzo hanzo-mcp dev gen' "$fixture/success.log"
+    grep -q 'Installed and available.*hanzo hanzo-mcp gen dev' "$fixture/success.log"
     "$fixture/installed/hanzo-mcp" --version | grep -q 'hanzo-mcp 1.2.3'
     "$fixture/installed/dev" --version | grep -q 'dev 1.2.3'
     "$fixture/installed/hanzo-dev" --version | grep -q 'dev 1.2.3'

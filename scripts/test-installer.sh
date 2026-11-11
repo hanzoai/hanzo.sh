@@ -20,6 +20,9 @@ if [ "${FAIL_TOOL:-}" = "$HANZO_INSTALL_BIN" ]; then
     echo "$HANZO_INSTALL_BIN: simulated download failure" >&2
     exit 1
 fi
+if [ "${PASSED_PROVENANCE:-}" = "$HANZO_INSTALL_BIN" ]; then
+    echo "$HANZO_INSTALL_BIN: provenance: hanzoai/gen/.github/workflows/release.yml built gen-darwin-arm64.tar.gz"
+fi
 if [ "${UNVERIFIED_TOOL:-}" = "$HANZO_INSTALL_BIN" ]; then
     echo "$HANZO_INSTALL_BIN: provenance not checked (fixture verifier too old)"
 fi
@@ -47,17 +50,20 @@ for shell in sh bash; do
     if "$shell" "$root/public/install.sh" --dir "$fixture/mixed" hanzo hanzo-bot > "$fixture/mixed.log" 2>&1; then exit 1; fi
     grep -q 'source is public' "$fixture/mixed.log"
     [ ! -e "$fixture/mixed/hanzo" ]
-    "$shell" "$root/public/install.sh" --dir "$fixture/all" > "$fixture/all.log" 2>&1
-    grep -q 'Installed and available.*hanzo gen dev hanzo-mcp hanzo-engine hanzod zt' "$fixture/all.log"
+    PASSED_PROVENANCE=gen "$shell" "$root/public/install.sh" --dir "$fixture/all" > "$fixture/all.log" 2>&1
+    grep -q 'Installed and available.*hanzo hanzo-gen hanzo-dev hanzo-engine hanzo-mcp hanzozt hanzod' "$fixture/all.log"
+    if grep -q 'same build' "$fixture/all.log"; then exit 1; fi
+    if grep -q 'provenance:' "$fixture/all.log"; then exit 1; fi
     "$fixture/all/hanzo-engine" --version | grep -q 'hanzo-engine 1.2.3'
     "$fixture/all/engine" --version | grep -q 'hanzo-engine 1.2.3'
     "$fixture/all/hanzod" --version | grep -q 'hanzod 1.2.3'
     "$fixture/all/hanzo-node" --version | grep -q 'hanzod 1.2.3'
+    "$fixture/all/hanzozt" --version | grep -q 'zt 1.2.3'
     "$fixture/all/hanzo-zt" --version | grep -q 'zt 1.2.3'
     "$shell" "$root/public/install.sh" --dir "$fixture/installed" hanzo dev gen > "$fixture/success.log" 2>&1
     grep -q 'ready' "$fixture/success.log"
     [ "$(grep -c 'export PATH=' "$fixture/success.log")" -eq 1 ]
-    grep -q 'Installed and available.*hanzo gen dev hanzo-mcp' "$fixture/success.log"
+    grep -q 'Installed and available.*hanzo hanzo-gen hanzo-dev hanzo-mcp' "$fixture/success.log"
     "$fixture/installed/hanzo-mcp" --version | grep -q 'hanzo-mcp 1.2.3'
     "$fixture/installed/dev" --version | grep -q 'dev 1.2.3'
     "$fixture/installed/hanzo-dev" --version | grep -q 'dev 1.2.3'
@@ -65,7 +71,7 @@ for shell in sh bash; do
 
     UNVERIFIED_TOOL=gen "$shell" "$root/public/install.sh" --dir "$fixture/warning" hanzo-gen > "$fixture/warning.log" 2>&1
     grep -q 'installed; provenance unverified' "$fixture/warning.log"
-    if grep -q '✓ gen' "$fixture/warning.log"; then exit 1; fi
+    if grep -q '✓ hanzo-gen' "$fixture/warning.log"; then exit 1; fi
     EXPECT_STRICT=1 "$shell" "$root/public/install.sh" --strict --dir "$fixture/strict" hanzo-dev > "$fixture/strict.log" 2>&1
 
     if FAIL_TOOL=gen "$shell" "$root/public/install.sh" --dir "$fixture/partial" hanzo dev gen > "$fixture/partial.log" 2>&1; then
@@ -73,7 +79,7 @@ for shell in sh bash; do
         exit 1
     fi
     grep -q 'simulated download failure' "$fixture/partial.log"
-    grep -q 'Installed and available.*hanzo dev hanzo-mcp' "$fixture/partial.log"
+    grep -q 'Installed and available.*hanzo hanzo-dev hanzo-mcp' "$fixture/partial.log"
     grep -q 'tools listed as installed above still work' "$fixture/partial.log"
     grep -q 'incomplete' "$fixture/partial.log"
     if grep -q 'ready' "$fixture/partial.log"; then exit 1; fi

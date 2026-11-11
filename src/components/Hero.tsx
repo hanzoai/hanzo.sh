@@ -164,9 +164,9 @@ const Hero = () => {
               { path: "/gen", label: "Gen" },
               { path: "/dev", label: "Dev Agent" },
               { path: "/engine", label: "Engine" },
-              { path: "/node", label: "Node" },
-              { path: "/zt", label: "ZT" },
               { path: "/mcp", label: "MCP Server" },
+              { path: "/zt", label: "ZT" },
+              { path: "/node", label: "Node" },
             ].map((shortcut) => (
               <button
                 key={shortcut.path}
@@ -191,28 +191,20 @@ const Hero = () => {
                 tint: "bg-orange-500/10",
               },
               {
-                bin: "gen",
-                also: "hanzo-gen",
+                bin: "hanzo-gen",
+                also: "gen",
                 desc: "Hanzo Gen — the native coding harness.",
                 href: "https://github.com/hanzoai/gen",
                 icon: <Code className="w-4 h-4 text-purple-400" />,
                 tint: "bg-purple-500/10",
               },
               {
-                bin: "dev",
-                also: "hanzo-dev",
+                bin: "hanzo-dev",
+                also: "dev",
                 desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default (co-installs hanzo-mcp).",
                 href: "https://github.com/hanzoai/dev",
                 icon: <Terminal className="w-4 h-4 text-sky-400" />,
                 tint: "bg-sky-500/10",
-              },
-              {
-                bin: "hanzo-mcp",
-                also: "mcp",
-                desc: "The MCP server \u2014 the Hanzo toolset, for any MCP client.",
-                href: "https://github.com/hanzoai/mcp",
-                icon: <Package className="w-4 h-4 text-green-400" />,
-                tint: "bg-green-500/10",
               },
               {
                 bin: "hanzo-engine",
@@ -223,20 +215,28 @@ const Hero = () => {
                 tint: "bg-amber-500/10",
               },
               {
+                bin: "hanzo-mcp",
+                also: "mcp",
+                desc: "The MCP server \u2014 the Hanzo toolset, for any MCP client.",
+                href: "https://github.com/hanzoai/mcp",
+                icon: <Package className="w-4 h-4 text-green-400" />,
+                tint: "bg-green-500/10",
+              },
+              {
+                bin: "hanzozt",
+                also: "zt",
+                desc: "ZT — zero-trust networking, tunnels, controller and router.",
+                href: "https://github.com/hanzozt/zt",
+                icon: <Cpu className="w-4 h-4 text-blue-400" />,
+                tint: "bg-blue-500/10",
+              },
+              {
                 bin: "hanzod",
                 also: "hanzo-node",
                 desc: "Hanzo Node \u2014 the L1 network validator, consensus mesh and JSON-RPC node.",
                 href: "https://github.com/hanzoai/node",
                 icon: <Globe className="w-4 h-4 text-emerald-400" />,
                 tint: "bg-emerald-500/10",
-              },
-              {
-                bin: "zt",
-                also: "hanzo-zt",
-                desc: "ZT — zero-trust networking, tunnels, controller and router.",
-                href: "https://github.com/hanzozt/zt",
-                icon: <Cpu className="w-4 h-4 text-blue-400" />,
-                tint: "bg-blue-500/10",
               },
             ].map((t) => (
               <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
@@ -252,7 +252,7 @@ const Hero = () => {
                 <p className="text-xs text-white/50 mb-3">{t.desc}</p>
                 {t.also && (
                   <p className="text-[11px] text-white/30">
-                    also installed as <code className="text-white/50">{t.also}</code> — the same build, symlinked
+                    alias: <code className="text-white/50">{t.also}</code>
                   </p>
                 )}
               </div>

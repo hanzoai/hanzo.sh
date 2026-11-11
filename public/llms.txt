@@ -16,13 +16,13 @@ curl -fsSL https://hanzo.sh | sh
 
 That installs every Hanzo tool published as a public native binary:
 
-- `hanzo` — the CLI (also installed as `hanzo-cli`, the same build)
-- `gen` (also `hanzo-gen`) — Hanzo Gen, the harness that launches and routes any coding agent
-- `dev` (also `hanzo-dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default (co-installs `hanzo-mcp`)
-- `hanzo-mcp` (also `mcp`) — the MCP server
+- `hanzo` — the CLI
+- `hanzo-gen` (also `gen`) — Hanzo Gen, the harness that launches and routes any coding agent
+- `hanzo-dev` (also `dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default (co-installs `hanzo-mcp`)
 - `hanzo-engine` (also `engine`) — Hanzo Engine, local OpenAI/Anthropic-compatible LLM inference
+- `hanzo-mcp` (also `mcp`) — the MCP server
+- `hanzozt` (also `zt`, `hanzo-zt`) — ZT zero-trust networking: tunnel, controller and router
 - `hanzod` (also `hanzo-node`) — Hanzo Node, the L1 network validator and RPC node
-- `zt` (also `hanzo-zt`) — ZT zero-trust networking: tunnel, controller and router
 
 One tool at a time:
 
@@ -31,9 +31,9 @@ curl -fsSL https://hanzo.sh/cli | sh       # the CLI only
 curl -fsSL https://hanzo.sh/gen | sh       # Hanzo Gen only
 curl -fsSL https://hanzo.sh/dev | sh       # the coding agent (+ MCP server)
 curl -fsSL https://hanzo.sh/engine | sh    # Hanzo Engine only
-curl -fsSL https://hanzo.sh/node | sh      # Hanzo Node (hanzod) only
-curl -fsSL https://hanzo.sh/zt | sh        # ZT networking only
 curl -fsSL https://hanzo.sh/mcp | sh       # the MCP server only
+curl -fsSL https://hanzo.sh/zt | sh        # ZT networking only
+curl -fsSL https://hanzo.sh/node | sh      # Hanzo Node (hanzod) only
 ```
 
 Binaries land in `~/.local/bin`. Re-run to upgrade — installing is just

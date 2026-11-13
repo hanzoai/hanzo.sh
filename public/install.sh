@@ -272,30 +272,49 @@ install_tool() {
         fail "$i_disp"; return 1
     fi
 
+    EXT=''
+    case "$(uname -s 2>/dev/null || true)" in
+        MINGW*|MSYS*|CYGWIN*|Windows_NT) EXT='.exe' ;;
+    esac
+
     # Trust the artifact, not the log line: ask the binary that is now on disk.
-    if [ ! -x "$HANZO_DIR/$i_bin" ]; then
+    bin_path="$HANZO_DIR/$i_bin$EXT"
+    if [ -n "$EXT" ] && [ ! -e "$bin_path" ] && [ -e "$HANZO_DIR/$i_bin" ]; then
+        bin_path="$HANZO_DIR/$i_bin"
+        EXT=''
+    fi
+    if [ ! -x "$bin_path" ]; then
         FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_disp"
-        fail "$i_disp (nothing at $HANZO_DIR/$i_bin)"; return 1
+        fail "$i_disp (nothing at $bin_path)"; return 1
     fi
     if [ "$i_bin" = dev ]; then
         rm -f "${HANZO_HOME:-$HOME/.hanzo}/dev/version.json"
     fi
     if [ "$i_bin" = zt ]; then
-        ln -sf zt "$HANZO_DIR/hanzo-zt" 2>/dev/null || cp -f "$HANZO_DIR/zt" "$HANZO_DIR/hanzo-zt"
+        ln -sf "zt$EXT" "$HANZO_DIR/hanzo-zt$EXT" 2>/dev/null || cp -f "$bin_path" "$HANZO_DIR/hanzo-zt$EXT"
     fi
     # The first token that looks like a version, not the last token on the line:
     # `--version` output is not one shape across tools (`hanzo 1.9.18` ends on
     # the version, `hanzo dev 0.6.91 (sha) 2026-04-01` ends on a date), and
     # printing a build date where a version belongs is its own small lie.
-    i_ver=$("$HANZO_DIR/$i_bin" --version 2>/dev/null | head -1 \
+    i_ver=$("$bin_path" --version 2>/dev/null | head -1 \
             | tr ' ' '\n' | grep -m1 -E '^v?[0-9]+\.[0-9]+' | sed 's/^v//')
     [ -n "${i_ver:-}" ] || i_ver='?'
 
     i_unverified=0
     if printf '%s\n' "$i_out" | grep -q 'provenance not checked'; then i_unverified=1; fi
-    if [ -n "$i_alias" ] && [ ! -e "$HANZO_DIR/$i_alias" ]; then
-        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_alias"
-        fail "$i_alias was not installed alongside $i_bin"; return 1
+    if [ -n "$i_alias" ]; then
+        alias_path="$HANZO_DIR/$i_alias$EXT"
+        if [ ! -e "$alias_path" ] && [ -e "$HANZO_DIR/$i_alias" ]; then
+            alias_path="$HANZO_DIR/$i_alias"
+        fi
+        if [ ! -e "$alias_path" ]; then
+            cp -f "$bin_path" "$HANZO_DIR/$i_alias$EXT" 2>/dev/null || true
+        fi
+        if [ ! -e "$HANZO_DIR/$i_alias$EXT" ] && [ ! -e "$HANZO_DIR/$i_alias" ]; then
+            FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_alias"
+            fail "$i_alias was not installed alongside $i_bin"; return 1
+        fi
     fi
     if [ "$i_unverified" = 1 ]; then
         warn "$i_disp $i_ver — installed; provenance unverified"
@@ -333,7 +352,7 @@ finish() {
     printf '    %shanzo%s                # sign in, pick your coding agent, launch it\n' "$C" "$N"
     printf '    %shanzo up%s             # run the cloud on this machine\n' "$C" "$N"
     printf '    %shanzo --help%s         # every command\n' "$C" "$N"
-    if [ -x "$HANZO_DIR/hanzo-mcp" ]; then
+    if [ -x "$HANZO_DIR/hanzo-mcp" ] || [ -x "$HANZO_DIR/hanzo-mcp.exe" ]; then
         printf '    %shanzo-mcp --help%s     # the MCP server\n' "$C" "$N"
     fi
     printf '\n  docs: https://docs.hanzo.ai\n\n'
@@ -373,7 +392,9 @@ main() {
     done
 
     # Initialize ~/.hanzo/dev/config.toml (with [mcp_servers.hanzo]) when dev is installed
-    if [ -x "$HANZO_DIR/dev" ]; then
+    if [ -x "$HANZO_DIR/dev.exe" ]; then
+        "$HANZO_DIR/dev.exe" --version >/dev/null 2>&1 || true
+    elif [ -x "$HANZO_DIR/dev" ]; then
         "$HANZO_DIR/dev" --version >/dev/null 2>&1 || true
     fi
 

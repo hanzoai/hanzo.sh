@@ -13,15 +13,25 @@ You are a coding agent (Claude Code, Codex, Cursor or Antigravity) and your user
 
 Pick the installer for the OS you are running on. Check with `uname -s` (`Darwin` is macOS, `Linux` is Linux) or, in PowerShell, `$env:OS`.
 
-macOS, Linux and WSL:
+macOS, Linux, WSL and Windows Git Bash:
 
 ```sh
 curl -fsSL hanzo.sh | sh
 ```
 
-Windows: the PowerShell installer is not published yet. If you are in WSL, use the command above. On native Windows, tell the user: "Hanzo's Windows installer is not live yet. Install WSL, or come back to this page when it is." Then stop.
+Windows PowerShell:
 
-The installer downloads one prebuilt binary per tool, checks its sha256, and puts `hanzo` in `~/.local/bin`. Check it:
+```powershell
+irm https://hanzo.sh/install.ps1 | iex
+```
+
+Windows Command Prompt (CMD):
+
+```bat
+curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+The installer downloads one prebuilt binary per tool, checks its sha256, and puts `hanzo` in `~/.local/bin` (`%USERPROFILE%\.local\bin` on Windows). Check it:
 
 ```sh
 hanzo --version

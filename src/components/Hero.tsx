@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Terminal, Copy, Check, Code, ExternalLink, Package, Cpu, Globe, BookOpen, Zap } from "lucide-react";
+import { Terminal, Copy, Check, Code, Download, Package, Cpu, Globe, BookOpen, Zap, Laptop } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -27,11 +26,51 @@ const Github = ({ className }: { className?: string }) => (
 // the CLI and hands back to the person, who runs `hanzo`.
 const AGENT_LINE = "Set up Hanzo on this machine: follow https://hanzo.sh/setup.md";
 
-// The only live installer is the POSIX one, so Windows is told the truth about it.
 const onWindows = () => typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent);
+
+type PlatformTab = "unix" | "ps1" | "gitbash" | "cmd";
+
+const PLATFORM_TABS: { id: PlatformTab; label: string; note: string }[] = [
+  { id: "unix", label: "macOS / Linux / WSL", note: "POSIX sh / bash / zsh (Apple Silicon, Intel, Linux amd64/arm64)." },
+  { id: "ps1", label: "Windows PowerShell", note: "Native Windows 10/11 (x64) — installs .exe binaries to ~\\.local\\bin and updates User PATH." },
+  { id: "gitbash", label: "Windows Git Bash", note: "Git Bash / MSYS2 — runs the same curl | sh installer natively on Windows." },
+  { id: "cmd", label: "Windows CMD", note: "Command Prompt — downloads install.cmd, verifies checksums via PowerShell, cleans up." },
+];
+
+const DESKTOP_APPS = [
+  {
+    name: "Hanzo App",
+    domain: "hanzo.app",
+    desc: "Native AI workspace & chat client with local models, MCP tools, and encrypted sync.",
+    winUrl: "https://github.com/hanzoai/desktop/releases/latest",
+    allUrl: "https://github.com/hanzoai/desktop/releases",
+  },
+  {
+    name: "Hanzo Bot",
+    domain: "hanzo.bot",
+    desc: "Autonomous multi-channel desktop assistant, scheduler, and agent runner.",
+    winUrl: "https://github.com/hanzoai/bot/releases/latest",
+    allUrl: "https://github.com/hanzoai/bot/releases",
+  },
+  {
+    name: "Hanzo Codes",
+    domain: "hanzo.codes",
+    desc: "Native AI IDE + local Git forge (`gitd`) for code review, editing, and agent sessions.",
+    winUrl: "https://github.com/hanzoai/ide/releases/latest",
+    allUrl: "https://github.com/hanzoai/codes/releases",
+  },
+  {
+    name: "Hanzo Team",
+    domain: "hanzo.team",
+    desc: "Collaborative team workspace, project boards, and agent orchestration client.",
+    winUrl: "https://github.com/hanzoai/team/releases/latest",
+    allUrl: "https://github.com/hanzoai/team/releases",
+  },
+];
 
 const Hero = () => {
   const [copied, setCopied] = useState<string | null>(null);
+  const [platform, setPlatform] = useState<PlatformTab>(() => (onWindows() ? "ps1" : "unix"));
 
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -40,17 +79,35 @@ const Hero = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // One install path. `| sh` because the installer is POSIX and the file the
-  // site hands curl declares #!/bin/sh — the page and llms.txt used to
-  // disagree, and the `sh` half died on dash before anything was downloaded.
-  const installCommands = [
-    { id: "curl", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
-    { id: "curl-cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
-    { id: "curl-mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
-    { id: "curl-dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
-  ];
+  const installCommandsByPlatform: Record<PlatformTab, { id: string; label: string; cmd: string }[]> = {
+    unix: [
+      { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
+      { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
+      { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
+      { id: "dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
+    ],
+    ps1: [
+      { id: "all", label: "Everything", cmd: "irm https://hanzo.sh/install.ps1 | iex" },
+      { id: "cli", label: "CLI", cmd: "irm https://hanzo.sh/cli.ps1 | iex" },
+      { id: "mcp", label: "MCP", cmd: "irm https://hanzo.sh/mcp.ps1 | iex" },
+      { id: "dev", label: "Dev", cmd: "irm https://hanzo.sh/dev.ps1 | iex" },
+    ],
+    gitbash: [
+      { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
+      { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
+      { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
+      { id: "dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
+    ],
+    cmd: [
+      { id: "all", label: "Everything", cmd: "curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del install.cmd" },
+      { id: "cli", label: "CLI", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/cli.ps1 | iex\"" },
+      { id: "mcp", label: "MCP", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/mcp.ps1 | iex\"" },
+      { id: "dev", label: "Dev", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/dev.ps1 | iex\"" },
+    ],
+  };
 
-  const [activeInstall, setActiveInstall] = useState("curl");
+  const installCommands = installCommandsByPlatform[platform];
+  const [activeInstall, setActiveInstall] = useState("all");
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -92,6 +149,23 @@ const Hero = () => {
 
           {/* Main Install */}
           <div className="max-w-xl mx-auto space-y-3">
+            {/* OS / Shell Selector (Antigravity-style platform switcher) */}
+            <div className="flex flex-wrap justify-center gap-1 p-1 bg-white/[0.04] border border-white/10 rounded-lg w-fit mx-auto">
+              {PLATFORM_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setPlatform(tab.id)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                    platform === tab.id
+                      ? "bg-[#d81c33] text-white"
+                      : "text-white/50 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex justify-center gap-1 p-1 bg-white/5 rounded-lg w-fit mx-auto">
               {installCommands.map((item) => (
                 <button
@@ -113,7 +187,7 @@ const Hero = () => {
               onClick={() => handleCopy(installCommands.find((c) => c.id === activeInstall)?.cmd || "", activeInstall)}
             >
               <Terminal className="w-4 h-4 text-white/40 flex-shrink-0" />
-              <code className="text-[#e6edf3] font-mono text-sm flex-1 select-all">
+              <code className="text-[#e6edf3] font-mono text-sm flex-1 select-all overflow-x-auto">
                 {installCommands.find((c) => c.id === activeInstall)?.cmd}
               </code>
               {copied === activeInstall ? (
@@ -123,15 +197,11 @@ const Hero = () => {
               )}
             </div>
 
-            <p className="text-center text-white/40 text-xs">
-              macOS, Linux and WSL. Then run <code className="text-white/70">hanzo</code>: it
-              signs you in, asks which coding agent is your favourite and launches it.
-            </p>
-            <p className={`text-center text-xs ${onWindows() ? "text-white/70" : "text-white/40"}`}>
-              Windows: use WSL until the PowerShell installer ships.
+            <p className="text-center text-white/60 text-xs">
+              {PLATFORM_TABS.find((t) => t.id === platform)?.note}
             </p>
             <p className="text-center text-white/40 text-xs">
-              One prebuilt native binary per tool, checksum-verified. No runtime,
+              One prebuilt native binary per tool, SHA-256 verified. No runtime,
               no package manager, no build step. Re-run to upgrade.
             </p>
           </div>
@@ -266,6 +336,45 @@ const Hero = () => {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Desktop Apps */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
+                <Laptop className="w-4 h-4 text-[#f0506a]" />
+                <span>Desktop Apps (Windows x64, macOS, Linux)</span>
+              </div>
+              <span className="text-xs text-white/40">Native installers</span>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              {DESKTOP_APPS.map((app) => (
+                <div key={app.name} className="bg-white/[0.02] border border-white/10 rounded-xl p-5 flex flex-col justify-between gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="font-medium text-white text-sm">{app.name}</h3>
+                      <span className="text-xs font-mono text-white/40">{app.domain}</span>
+                    </div>
+                    <p className="text-xs text-white/50">{app.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <a
+                      href={app.winUrl}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-medium hover:bg-white/90 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download
+                    </a>
+                    <a
+                      href={app.allUrl}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-white/15 text-white/60 hover:text-white text-xs transition-colors"
+                    >
+                      All platforms →
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* After install */}

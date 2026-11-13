@@ -8,10 +8,21 @@ every product of the Hanzo cloud from the terminal. It is a native binary — on
 download per tool, checksum-verified, no runtime and no package manager.
 
 ## Install
-A single command, and it is the only one:
+A single command per platform:
 
+macOS, Linux, WSL, and Windows Git Bash:
 ```sh
 curl -fsSL https://hanzo.sh | sh
+```
+
+Windows PowerShell:
+```powershell
+irm https://hanzo.sh/install.ps1 | iex
+```
+
+Windows Command Prompt (CMD):
+```bat
+curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del install.cmd
 ```
 
 That installs every Hanzo tool published as a public native binary:

@@ -66,7 +66,7 @@ try {
         $fetched = (Test-Path $oneInstaller) -and ((Get-Item $oneInstaller).Length -gt 0)
     } catch { $fetched = $false }
     if (-not $fetched) {
-        Invoke-WebRequest -UseBasicParsing -Uri $rawUrl -Headers $hdr -OutFile $oneInstaller
+        Invoke-WebRequest -UseBasicParsing -Uri $rawUrl -Headers @{ 'User-Agent' = 'hanzo-sh/1.0' } -OutFile $oneInstaller
     }
 } catch {
     Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue

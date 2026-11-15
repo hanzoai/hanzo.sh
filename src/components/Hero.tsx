@@ -1,5 +1,5 @@
-import { Terminal, Copy, Check, Code, Download, Package, Cpu, Globe, BookOpen, Zap, Laptop } from "lucide-react";
-import { useState } from "react";
+import { Copy, Check, Download, BookOpen, Zap } from "lucide-react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { toast } from "sonner";
 
 const HanzoLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
@@ -68,6 +68,74 @@ const DESKTOP_APPS = [
   },
 ];
 
+const TOOLS = [
+              {
+                bin: "hanzo",
+                also: "hanzo-cli",
+                desc: "The Hanzo CLI \u2014 auth, billing, coding sessions, and every product of the Hanzo cloud.",
+                href: "https://github.com/hanzoai/cli",
+              },
+              {
+                bin: "hanzod",
+                also: "hanzo-node",
+                desc: "Hanzo Node \u2014 the L1 network validator, consensus mesh and JSON-RPC node.",
+                href: "https://github.com/hanzoai/node",
+              },
+              {
+                bin: "hanzozt",
+                also: "zt",
+                desc: "ZT \u2014 zero-trust networking, tunnels, controller and router.",
+                href: "https://github.com/hanzozt/zt",
+              },
+              {
+                bin: "hanzo-gen",
+                also: "gen",
+                desc: "Hanzo Gen \u2014 the native coding harness.",
+                href: "https://github.com/hanzoai/gen",
+              },
+              {
+                bin: "hanzo-dev",
+                also: "dev",
+                desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default (co-installs hanzo-mcp).",
+                href: "https://github.com/hanzoai/dev",
+              },
+              {
+                bin: "hanzo-engine",
+                also: "engine",
+                desc: "Hanzo Engine \u2014 local OpenAI & Anthropic compatible LLM inference.",
+                href: "https://github.com/hanzoai/engine",
+              },
+              {
+                bin: "hanzo-mcp",
+                also: "mcp",
+                desc: "The MCP server \u2014 the Hanzo toolset, for any MCP client.",
+                href: "https://github.com/hanzoai/mcp",
+              },
+              {
+                bin: "hanzo-cloud",
+                also: "cloud",
+                desc: "Hanzo Cloud \u2014 self-hosted AI gateway, encrypted KMS, IAM and chat UI in one binary.",
+                href: "https://github.com/hanzoai/cloud",
+              },];
+
+const SHORTCUTS = [
+              { path: "/cli", label: "CLI Only" },
+              { path: "/node", label: "Node" },
+              { path: "/zt", label: "ZT" },
+              { path: "/gen", label: "Gen" },
+              { path: "/dev", label: "Dev Agent" },
+              { path: "/engine", label: "Engine" },
+              { path: "/mcp", label: "MCP Server" },
+              { path: "/cloud", label: "Cloud" },];
+
+const AFTER_INSTALL = [
+              { cmd: "hanzo", desc: "Sign in, pick your coding agent, launch it" },
+                { cmd: "hanzo dev --claude", desc: "Switch agent: --claude, --codex, --cursor, --agy" },
+                { cmd: "hanzo -- -c", desc: "Continue the last conversation" },
+                { cmd: "hanzo up", desc: "Run the cloud on this machine" },
+                { cmd: "hanzo --help", desc: "Every command" },
+                { cmd: "hanzo-mcp", desc: "Run the MCP server" },];
+
 const Hero = () => {
   const [copied, setCopied] = useState<string | null>(null);
   const [platform, setPlatform] = useState<PlatformTab>(() => (onWindows() ? "ps1" : "unix"));
@@ -76,7 +144,7 @@ const Hero = () => {
     await navigator.clipboard.writeText(text);
     setCopied(id);
     toast.success("Copied to clipboard!");
-    setTimeout(() => setCopied(null), 2000);
+    setTimeout(() => setCopied(null), 1600);
   };
 
   const installCommandsByPlatform: Record<PlatformTab, { id: string; label: string; cmd: string }[]> = {
@@ -109,343 +177,209 @@ const Hero = () => {
   const installCommands = installCommandsByPlatform[platform];
   const [activeInstall, setActiveInstall] = useState("all");
 
+  const active = installCommands.find((c) => c.id === activeInstall);
+  const cmdText = active?.cmd ?? "";
+  // The command types itself once and again on every tab change. The whole string is always in the DOM
+  // (the untyped rest is only transparent), so screen readers and reduced motion get it whole.
+  const [typed, setTyped] = useState(cmdText.length);
+  useLayoutEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTyped(cmdText.length); return; }
+    let raf = 0;
+    let start = 0;
+    setTyped(0);
+    const tick = (now: number) => {
+      start ||= now;
+      const n = Math.min(cmdText.length, Math.floor(((now - start) / 600) * cmdText.length));
+      setTyped(n);
+      if (n < cmdText.length) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [cmdText]);
+  const platformIndex = PLATFORM_TABS.findIndex((t) => t.id === platform);
+  const toolIndex = installCommands.findIndex((c) => c.id === activeInstall);
+  const note = PLATFORM_TABS.find((t) => t.id === platform)?.note;
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/90 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <a href="https://hanzo.ai" className="flex items-center gap-2.5 text-white font-medium">
-            <HanzoLogo className="w-6 h-6" />
-            <span>Hanzo</span>
+    <div className="hz">
+      <header className="hz-wrap hzb-bar">
+        <a href="https://hanzo.ai" className="hzb-logo">
+          <HanzoLogo className="w-6 h-6" />
+          <span>Hanzo</span>
+        </a>
+        <nav>
+          <a href="https://docs.hanzo.ai" className="hz-btn hz-btn-quiet">Docs</a>
+          <a href="https://github.com/hanzoai/python-sdk" className="hz-btn hz-btn-quiet">SDK</a>
+          <a href="https://github.com/hanzoai" className="hz-btn hz-btn-quiet" style={{ minWidth: 44 }}>
+            <Github className="w-5 h-5" />
           </a>
-          <nav className="flex items-center gap-1">
-            <a href="https://docs.hanzo.ai" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              Docs
-            </a>
-            <a href="https://github.com/hanzoai/python-sdk" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              SDK
-            </a>
-            <a href="https://github.com/hanzoai" className="ml-2 p-2 text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              <Github className="w-5 h-5" />
-            </a>
-          </nav>
-        </div>
+        </nav>
       </header>
 
-      {/* Hero */}
-      <main className="pt-28 pb-16 px-6">
-        <div className="max-w-4xl mx-auto space-y-12">
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              <code className="text-white/90">curl</code>{" "}
-              <span className="bg-gradient-to-r from-[#d81c33] to-[#f0506a] bg-clip-text text-transparent">hanzo.sh</span>
+      <main>
+        <section className="hz-wrap hz-section hz-arrive">
+          <div className="hz-head hz-arrive">
+            <h1 className="hz-display">
+              <code style={{ font: "inherit" }}>curl</code> <span>hanzo.sh</span>
             </h1>
-            <p className="text-lg text-white/50 max-w-xl mx-auto">
+            <p>
               The Hanzo CLI, the MCP server and the coding agent, as native
               binaries. One command, nothing to build.
             </p>
           </div>
 
-          {/* Main Install */}
-          <div className="max-w-xl mx-auto space-y-3">
-            {/* OS / Shell Selector (Antigravity-style platform switcher) */}
-            <div className="flex flex-wrap justify-center gap-1 p-1 bg-white/[0.04] border border-white/10 rounded-lg w-fit mx-auto">
-              {PLATFORM_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setPlatform(tab.id)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                    platform === tab.id
-                      ? "bg-[#d81c33] text-white"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-center gap-1 p-1 bg-white/5 rounded-lg w-fit mx-auto">
-              {installCommands.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveInstall(item.id)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    activeInstall === item.id
-                      ? "bg-white text-black"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <div
-              className="group flex items-center gap-3 bg-[#0d1117] border border-white/10 hover:border-white/20 p-3 rounded-lg cursor-pointer transition-colors"
-              onClick={() => handleCopy(installCommands.find((c) => c.id === activeInstall)?.cmd || "", activeInstall)}
-            >
-              <Terminal className="w-4 h-4 text-white/40 flex-shrink-0" />
-              <code className="text-[#e6edf3] font-mono text-sm flex-1 select-all overflow-x-auto">
-                {installCommands.find((c) => c.id === activeInstall)?.cmd}
-              </code>
-              {copied === activeInstall ? (
-                <Check className="w-4 h-4 text-green-400" />
-              ) : (
-                <Copy className="w-4 h-4 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-              )}
-            </div>
-
-            <p className="text-center text-white/60 text-xs">
-              {PLATFORM_TABS.find((t) => t.id === platform)?.note}
-            </p>
-            <p className="text-center text-white/40 text-xs">
-              One prebuilt native binary per tool, SHA-256 verified. No runtime,
-              no package manager, no build step. Re-run to upgrade.
-            </p>
-          </div>
-
-          {/* Paste into your agent */}
-          <div className="max-w-xl mx-auto space-y-2">
-            <p className="text-center text-white/50 text-sm">
-              Or paste this into Claude Code, Codex, Cursor or Antigravity
-            </p>
-            <button
-              type="button"
-              aria-label="Copy the line to paste into your coding agent"
-              onClick={() => handleCopy(AGENT_LINE, "agent")}
-              className="group w-full flex items-start gap-3 bg-[#0d1117] border border-white/10 hover:border-white/20 p-3 rounded-lg text-left transition-colors"
-            >
-              <Terminal className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5" />
-              <code className="text-[#e6edf3] font-mono text-sm flex-1 break-words">{AGENT_LINE}</code>
-              {copied === "agent" ? (
-                <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-              ) : (
-                <Copy className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
-              )}
-            </button>
-          </div>
-
-          {/* Quick shortcuts */}
-          <div className="flex flex-wrap justify-center gap-2 text-sm">
-            {[
-              { path: "/cli", label: "CLI Only" },
-              { path: "/node", label: "Node" },
-              { path: "/zt", label: "ZT" },
-              { path: "/gen", label: "Gen" },
-              { path: "/dev", label: "Dev Agent" },
-              { path: "/engine", label: "Engine" },
-              { path: "/mcp", label: "MCP Server" },
-              { path: "/cloud", label: "Cloud" },
-            ].map((shortcut) => (
-              <button
-                key={shortcut.path}
-                onClick={() => handleCopy(`curl -fsSL hanzo.sh${shortcut.path} | sh`, shortcut.path)}
-                className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-colors font-mono text-xs"
-              >
-                hanzo.sh{shortcut.path}
-                {copied === shortcut.path && <Check className="w-3 h-3 text-green-400 inline ml-1" />}
-              </button>
-            ))}
-          </div>
-
-          {/* What gets installed */}
-          <div className="grid md:grid-cols-2 gap-3">
-            {[
-              {
-                bin: "hanzo",
-                also: "hanzo-cli",
-                desc: "The Hanzo CLI \u2014 auth, billing, coding sessions, and every product of the Hanzo cloud.",
-                href: "https://github.com/hanzoai/cli",
-                icon: <Cpu className="w-4 h-4 text-orange-400" />,
-                tint: "bg-orange-500/10",
-              },
-              {
-                bin: "hanzod",
-                also: "hanzo-node",
-                desc: "Hanzo Node \u2014 the L1 network validator, consensus mesh and JSON-RPC node.",
-                href: "https://github.com/hanzoai/node",
-                icon: <Globe className="w-4 h-4 text-emerald-400" />,
-                tint: "bg-emerald-500/10",
-              },
-              {
-                bin: "hanzozt",
-                also: "zt",
-                desc: "ZT \u2014 zero-trust networking, tunnels, controller and router.",
-                href: "https://github.com/hanzozt/zt",
-                icon: <Cpu className="w-4 h-4 text-blue-400" />,
-                tint: "bg-blue-500/10",
-              },
-              {
-                bin: "hanzo-gen",
-                also: "gen",
-                desc: "Hanzo Gen \u2014 the native coding harness.",
-                href: "https://github.com/hanzoai/gen",
-                icon: <Code className="w-4 h-4 text-purple-400" />,
-                tint: "bg-purple-500/10",
-              },
-              {
-                bin: "hanzo-dev",
-                also: "dev",
-                desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default (co-installs hanzo-mcp).",
-                href: "https://github.com/hanzoai/dev",
-                icon: <Terminal className="w-4 h-4 text-sky-400" />,
-                tint: "bg-sky-500/10",
-              },
-              {
-                bin: "hanzo-engine",
-                also: "engine",
-                desc: "Hanzo Engine \u2014 local OpenAI & Anthropic compatible LLM inference.",
-                href: "https://github.com/hanzoai/engine",
-                icon: <Zap className="w-4 h-4 text-amber-400" />,
-                tint: "bg-amber-500/10",
-              },
-              {
-                bin: "hanzo-mcp",
-                also: "mcp",
-                desc: "The MCP server \u2014 the Hanzo toolset, for any MCP client.",
-                href: "https://github.com/hanzoai/mcp",
-                icon: <Package className="w-4 h-4 text-green-400" />,
-                tint: "bg-green-500/10",
-              },
-              {
-                bin: "hanzo-cloud",
-                also: "cloud",
-                desc: "Hanzo Cloud \u2014 self-hosted AI gateway, encrypted KMS, IAM and chat UI in one binary.",
-                href: "https://github.com/hanzoai/cloud",
-                icon: <Globe className="w-4 h-4 text-rose-400" />,
-                tint: "bg-rose-500/10",
-              },
-            ].map((t) => (
-              <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
-                <div className="flex items-center gap-2.5 mb-3">
-                  <div className={`w-8 h-8 rounded-lg ${t.tint} flex items-center justify-center`}>
-                    {t.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-white text-sm font-mono">{t.bin}</h3>
-                    <a href={t.href} className="text-xs text-white/40 hover:text-white/60">source →</a>
-                  </div>
-                </div>
-                <p className="text-xs text-white/50 mb-3">{t.desc}</p>
-                {t.also && (
-                  <p className="text-[11px] text-white/30">
-                    alias: <code className="text-white/50">{t.also}</code>
-                  </p>
-                )}
+          <div className="hzb-stack hzb-tabs">
+              <div className="hz-seg hzb-os" style={{ "--hz-seg-n": 4, "--hz-seg-i": platformIndex } as React.CSSProperties}>
+                {PLATFORM_TABS.map((tab) => (
+                  <button key={tab.id} type="button" aria-pressed={platform === tab.id} onClick={() => setPlatform(tab.id)}>
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-            ))}
+              <div className="hz-seg hzb-seg-4" style={{ "--hz-seg-n": 4, "--hz-seg-i": toolIndex } as React.CSSProperties}>
+                {installCommands.map((item) => (
+                  <button key={item.id} type="button" aria-pressed={activeInstall === item.id} onClick={() => setActiveInstall(item.id)}>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
           </div>
 
-          {/* Desktop Apps */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
-                <Laptop className="w-4 h-4 text-[#f0506a]" />
-                <span>Desktop Apps (Windows x64, macOS, Linux)</span>
-              </div>
-              <span className="text-xs text-white/40">Native installers</span>
-            </div>
-            <div className="grid md:grid-cols-2 gap-3">
-              {DESKTOP_APPS.map((app) => (
-                <div key={app.name} className="bg-white/[0.02] border border-white/10 rounded-xl p-5 flex flex-col justify-between gap-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <h3 className="font-medium text-white text-sm">{app.name}</h3>
-                      <span className="text-xs font-mono text-white/40">{app.domain}</span>
+          <div className="hz-stage">
+            <div className="hzb-stack">
+              <div className="hzb-term hz-codeblock hz-gleam">
+                <button
+                  type="button"
+                  className={`hz-btn hz-btn-primary hz-copy${copied === activeInstall ? " is-copied" : ""}`}
+                  aria-labelledby="install-cmd"
+                  onClick={() => handleCopy(active?.cmd || "", activeInstall)}
+                >
+                  {copied === activeInstall ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+                <div className="hzb-body">
+                  <div className="hzb-run">
+                    <span aria-hidden="true">$</span>
+                    <code id="install-cmd">{cmdText.slice(0, typed)}<span style={{ color: "transparent" }}>{cmdText.slice(typed)}</span></code>
+                    {/* every command, unseen, in the same cell: the card keeps the height of the longest one */}
+                    {Object.values(installCommandsByPlatform).flat().map((c, i) => <code key={i} className="hzb-ghost" aria-hidden="true">{c.cmd}</code>)}
+                  </div>
+                  <div className="hzb-out">
+                    <div className="hzb-note">
+                      <p key={platform} className="hz-swap is-in">{note}</p>
+                      {PLATFORM_TABS.map((t) => <p key={t.id} className="hzb-ghost" aria-hidden="true">{t.note}</p>)}
                     </div>
-                    <p className="text-xs text-white/50">{app.desc}</p>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <a
-                      href={app.winUrl}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-medium hover:bg-white/90 transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Download
-                    </a>
-                    <a
-                      href={app.allUrl}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-white/15 text-white/60 hover:text-white text-xs transition-colors"
-                    >
-                      All platforms →
-                    </a>
+                    <p>
+                      One prebuilt native binary per tool, SHA-256 verified. No runtime,
+                      no package manager, no build step. Re-run to upgrade.
+                    </p>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
 
-          {/* After install */}
-          <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-white/60 mb-3">After install</h2>
-            <div className="font-mono text-sm space-y-2">
-              {[
-                { cmd: "hanzo", desc: "Sign in, pick your coding agent, launch it" },
-                { cmd: "hanzo dev --claude", desc: "Switch agent: --claude, --codex, --cursor, --agy" },
-                { cmd: "hanzo -- -c", desc: "Continue the last conversation" },
-                { cmd: "hanzo up", desc: "Run the cloud on this machine" },
-                { cmd: "hanzo --help", desc: "Every command" },
-                { cmd: "hanzo-mcp", desc: "Run the MCP server" },
-              ].map((line, i) => (
-                <div key={i} className="flex items-center gap-3 text-[#e6edf3]">
-                  <span className="text-white/30 select-none w-4">$</span>
-                  <span className="flex-1">{line.cmd}</span>
-                  <span className="text-white/30 text-xs hidden md:block">{line.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <div className="hzb-stack">
+              <p className="hzb-lead">Or paste this into Claude Code, Codex, Cursor or Antigravity</p>
+              <button
+                type="button"
+                aria-label="Copy the line to paste into your coding agent"
+                onClick={() => handleCopy(AGENT_LINE, "agent")}
+                className={`hz-codeline hzb-agent${copied === "agent" ? " is-copied" : ""}`}
+                style={{ height: "auto", padding: "12px 18px", borderRadius: "var(--hz-r16)", color: "inherit", textAlign: "start" }}
+              >
+                <code style={{ whiteSpace: "normal" }}>{AGENT_LINE}</code>
+                {copied === "agent" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </button>
 
-          {/* Resources */}
-          <div className="flex flex-wrap justify-center gap-3">
-            <a
-              href="https://docs.hanzo.ai"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-medium text-sm hover:bg-white/90 transition-colors"
-            >
-              <BookOpen className="w-4 h-4" />
-              Documentation
-            </a>
-            <a
-              href="https://github.com/hanzoai/python-sdk"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
-            >
-              <Github className="w-4 h-4" />
-              Python SDK
-            </a>
-            <a
-              href="https://github.com/hanzoai/js-sdk"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
-            >
-              <Github className="w-4 h-4" />
-              JS SDK
-            </a>
-            <a
-              href="https://hanzo.ai"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
-            >
-              <Zap className="w-4 h-4" />
-              hanzo.ai
-            </a>
+              <div className="hz-tags hzb-pills" style={{ justifyContent: "center" }}>
+                {SHORTCUTS.map((shortcut) => (
+                  <button
+                    key={shortcut.path}
+                    type="button"
+                    onClick={() => handleCopy(`curl -fsSL hanzo.sh${shortcut.path} | sh`, shortcut.path)}
+                    className={`hz-btn hz-btn-sm${copied === shortcut.path ? " is-copied" : ""}`}
+                  >
+                    <span>hanzo.sh{shortcut.path}</span>
+                    {copied === shortcut.path && <Check className="w-3 h-3" />}
+                  </button>
+                ))}
+              </div>
           </div>
-        </div>
+        </section>
+
+        <section className="hz-wrap hz-section">
+          <div className="hz-grid hz-grid-4">
+            {TOOLS.map((t) => (
+              <div key={t.bin} className="hz-card hz-lift">
+                <h3 className="font-mono">{t.bin}</h3>
+                <p className="hz-small">{t.desc}</p>
+                <div className="hz-tags">
+                  <span className="hz-tag">alias: <code>{t.also}</code></span>
+                  <a href={t.href} className="hz-tag">source <span className="hz-arrow">→</span></a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="hz-wrap hz-section">
+          <div className="hz-head">
+            <h2>Desktop Apps (Windows x64, macOS, Linux)</h2>
+            <p>Native installers</p>
+          </div>
+          <div className="hz-grid hz-grid-4">
+            {DESKTOP_APPS.map((app) => (
+              <div key={app.name} className="hz-card hz-lift">
+                <h3>{app.name}</h3>
+                <span className="hz-label">{app.domain}</span>
+                <p className="hz-small">{app.desc}</p>
+                <div className="hzb-acts">
+                  <a href={app.winUrl} className="hz-btn hz-btn-sm">
+                    <Download className="w-3.5 h-3.5" />
+                    Download
+                  </a>
+                  <a href={app.allUrl} className="hz-btn hz-btn-sm hz-btn-quiet">All platforms <span className="hz-arrow">→</span></a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="hz-wrap hz-section">
+          <div className="hz-head">
+            <h2>After install</h2>
+          </div>
+          <dl className="hz-ledger hzb-ledger">
+            {AFTER_INSTALL.map((line) => (
+              <div key={line.cmd} className="hzb-cmdrow">
+                <dt><span aria-hidden="true">$</span>{line.cmd}</dt>
+                <dd>{line.desc}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section className="hz-wrap hz-section">
+          <div className="hz-actions">
+            <a href="https://docs.hanzo.ai" className="hz-btn"><BookOpen className="w-4 h-4" />Documentation</a>
+            <a href="https://github.com/hanzoai/python-sdk" className="hz-btn"><Github className="w-4 h-4" />Python SDK</a>
+            <a href="https://github.com/hanzoai/js-sdk" className="hz-btn"><Github className="w-4 h-4" />JS SDK</a>
+            <a href="https://hanzo.ai" className="hz-btn"><Zap className="w-4 h-4" />hanzo.ai</a>
+          </div>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-6 px-6">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/40">
-          <div className="flex items-center gap-2">
-            <HanzoLogo className="w-4 h-4" />
-            <span>© {new Date().getFullYear()} Hanzo AI, Inc.</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="https://hanzo.ai/privacy" className="hover:text-white transition-colors">Privacy</a>
-            <a href="https://hanzo.ai/terms" className="hover:text-white transition-colors">Terms</a>
-            <a href="https://status.hanzo.ai" className="hover:text-white transition-colors">Status</a>
-            <a href="https://github.com/hanzoai" className="hover:text-white transition-colors">GitHub</a>
-          </div>
+      <footer className="hz-wrap hzb-foot">
+        <div>
+          <HanzoLogo className="w-4 h-4" />
+          <span>© {new Date().getFullYear()} Hanzo AI, Inc.</span>
         </div>
+        <nav>
+          <a href="https://hanzo.ai/privacy" className="hz-btn hz-btn-quiet hz-btn-sm">Privacy</a>
+          <a href="https://hanzo.ai/terms" className="hz-btn hz-btn-quiet hz-btn-sm">Terms</a>
+          <a href="https://status.hanzo.ai" className="hz-btn hz-btn-quiet hz-btn-sm">Status</a>
+          <a href="https://github.com/hanzoai" className="hz-btn hz-btn-quiet hz-btn-sm">GitHub</a>
+        </nav>
       </footer>
     </div>
   );

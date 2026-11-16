@@ -235,7 +235,6 @@ const Hero = () => {
               { path: "/zt", label: "ZT" },
               { path: "/gen", label: "Gen" },
               { path: "/dev", label: "Dev Agent" },
-              { path: "/engine", label: "Engine" },
               { path: "/mcp", label: "MCP Server" },
               { path: "/cloud", label: "Cloud" },
             ].map((shortcut) => (
@@ -292,14 +291,6 @@ const Hero = () => {
                 href: "https://github.com/hanzoai/dev",
                 icon: <Terminal className="w-4 h-4 text-sky-400" />,
                 tint: "bg-sky-500/10",
-              },
-              {
-                bin: "hanzo-engine",
-                also: "engine",
-                desc: "Hanzo Engine \u2014 local OpenAI & Anthropic compatible LLM inference.",
-                href: "https://github.com/hanzoai/engine",
-                icon: <Zap className="w-4 h-4 text-amber-400" />,
-                tint: "bg-amber-500/10",
               },
               {
                 bin: "hanzo-mcp",

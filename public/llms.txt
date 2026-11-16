@@ -28,11 +28,10 @@ curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del ins
 That installs every Hanzo tool published as a public native binary:
 
 - `hanzo` — the CLI
-- `hanzod` (also `hanzo-node`) — Hanzo Node, the L1 network validator and RPC node
+- `hanzod` (also `hanzo-node`) — Hanzo Node, the L1 network validator and RPC node, with the inference engine built in
 - `hanzozt` (also `zt`, `hanzo-zt`) — ZT zero-trust networking: tunnel, controller and router
 - `hanzo-gen` (also `gen`) — Hanzo Gen, the harness that launches and routes any coding agent
 - `hanzo-dev` (also `dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default (co-installs `hanzo-mcp`)
-- `hanzo-engine` (also `engine`) — Hanzo Engine, local OpenAI/Anthropic-compatible LLM inference
 - `hanzo-mcp` (also `mcp`) — the MCP server
 - `hanzo-cloud` (also `cloud`) — Hanzo Cloud, self-hosted AI gateway, encrypted KMS, IAM and chat UI
 
@@ -44,7 +43,6 @@ curl -fsSL https://hanzo.sh/node | sh      # Hanzo Node (hanzod) only
 curl -fsSL https://hanzo.sh/zt | sh        # ZT networking only
 curl -fsSL https://hanzo.sh/gen | sh       # Hanzo Gen only
 curl -fsSL https://hanzo.sh/dev | sh       # the coding agent (+ MCP server)
-curl -fsSL https://hanzo.sh/engine | sh    # Hanzo Engine only
 curl -fsSL https://hanzo.sh/mcp | sh       # the MCP server only
 curl -fsSL https://hanzo.sh/cloud | sh     # Hanzo Cloud only
 ```
@@ -102,7 +100,7 @@ A group name is not a command on its own: `hanzo usage` and `hanzo auth` print
 their subcommands and stop.
 
 `hanzo engine serve <model>` runs a model locally on an OpenAI-compatible
-endpoint using `hanzo-engine` (`engine`). `hanzo chain up` starts the local L1
+endpoint using the engine built into `hanzod`. `hanzo chain up` starts the local L1
 chain node using `hanzod` (`hanzo-node`).
 
 ## Models

@@ -55,7 +55,6 @@ node:hanzod:hanzoai/node:hanzod:hanzo-node
 zt:hanzozt:hanzozt/zt:zt:hanzozt
 gen:hanzo-gen:hanzoai/gen:gen:hanzo-gen
 dev:hanzo-dev:hanzoai/dev:dev:hanzo-dev
-engine:hanzo-engine:hanzoai/engine:hanzo-engine:engine
 mcp:hanzo-mcp:hanzoai/mcp:hanzo-mcp:mcp
 cloud:hanzo-cloud:hanzoai/cloud:hanzo-cloud:cloud'
 
@@ -72,6 +71,7 @@ tool_names() {
 unavailable_rows() {
     cat <<'ROWS'
 desktop|no standalone desktop release is published yet
+engine|the engine is built into hanzod; install hanzod
 bot|source is public at github.com/hanzoai/bot; its current release has no prebuilt binaries
 ROWS
 }
@@ -124,7 +124,6 @@ tools:
   hanzozt        ZT zero-trust networking
   hanzo-gen      Hanzo Gen
   hanzo-dev      Hanzo Dev (co-installs hanzo-mcp)
-  hanzo-engine   Hanzo Engine
   hanzo-mcp      the MCP server
   hanzo-cloud    Hanzo Cloud
 
@@ -142,7 +141,6 @@ shortcuts:
   curl -fsSL hanzo.sh/zt | sh        # ZT networking only
   curl -fsSL hanzo.sh/gen | sh       # Hanzo Gen only
   curl -fsSL hanzo.sh/dev | sh       # Hanzo Dev (+ MCP server)
-  curl -fsSL hanzo.sh/engine | sh    # Hanzo Engine only
   curl -fsSL hanzo.sh/mcp | sh       # the MCP server only
   curl -fsSL hanzo.sh/cloud | sh     # Hanzo Cloud only
 

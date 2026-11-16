@@ -19,7 +19,7 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
 copyFileSync(join(dist, 'index.html'), join(dist, 'page.html'))
 copyFileSync(join(dist, 'install.sh'), join(dist, 'install'))
 
-const tools = ['cli', 'node', 'zt', 'gen', 'dev', 'engine', 'mcp', 'cloud']
+const tools = ['cli', 'node', 'zt', 'gen', 'dev', 'mcp', 'cloud']
 for (const tool of tools) {
   const mapped = tool === 'cli' ? 'hanzo' : tool
   writeFileSync(

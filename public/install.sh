@@ -270,7 +270,9 @@ finish() {
     if [ -x "$HANZO_DIR/hanzo-mcp" ]; then
         printf '    %shanzo-mcp --help%s     # the MCP server\n' "$C" "$N"
     fi
-    printf '\n  docs: https://docs.hanzo.ai\n\n'
+    printf '\n  docs:   https://docs.hanzo.ai\n'
+    printf '  learn:  https://hanzo.ai/university   # L1-L3 free -> L4-L9 credentials\n'
+    printf '  market: https://hanzo.market          # L3+ Senseis at https://sensei.group\n\n'
 }
 
 main() {

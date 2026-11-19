@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { Terminal, Copy, Check, Code, ExternalLink, Package, Cpu, Globe, Github, BookOpen, Zap } from "lucide-react";
+import { Terminal, Copy, Check, Code, ExternalLink, Package, Cpu, Globe, BookOpen, Zap } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+const GitHubIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+    <path d="M12 0.297C5.37 0.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+  </svg>
+);
 
 const HanzoLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
   <svg viewBox="0 0 67 67" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -50,11 +56,17 @@ const Hero = () => {
             <a href="https://docs.hanzo.ai" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
               Docs
             </a>
-            <a href="https://github.com/hanzoai/python-sdk" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              SDK
+            <a href="https://hanzo.ai/university" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
+              University
             </a>
-            <a href="https://github.com/hanzoai" className="ml-2 p-2 text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              <Github className="w-5 h-5" />
+            <a href="https://hanzo.market" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
+              Market
+            </a>
+            <a href="https://sensei.group" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
+              Sensei
+            </a>
+            <a href="https://github.com/hanzoai" aria-label="Hanzo GitHub" className="ml-2 p-2 text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
+              <GitHubIcon className="w-5 h-5" />
             </a>
           </nav>
         </div>
@@ -217,35 +229,82 @@ const Hero = () => {
             </div>
           </div>
 
+          {/* Continuity: hanzo.sh -> Hanzo University (L1-L9) -> hanzo.market & sensei.group */}
+          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <h2 className="text-sm font-medium text-white">Continue from CLI to Credentials &amp; Marketplace</h2>
+              <span className="text-xs font-mono text-white/40">One Hanzo IAM session across every surface</span>
+            </div>
+            <div className="grid md:grid-cols-3 gap-3 text-xs">
+              <a
+                href="https://hanzo.ai/university"
+                className="block rounded-lg border border-white/10 bg-[#0d1117] p-4 hover:border-white/25 transition-colors"
+              >
+                <div className="font-mono text-white/40 mb-1">1 · hanzo.university</div>
+                <div className="font-medium text-white mb-1">Start Free L1–L3 Track →</div>
+                <p className="text-white/50">
+                  Run labs locally with your CLI and Zen 6, track L1–L9 progress, and mint Chain 36963 credentials.
+                </p>
+              </a>
+              <a
+                href="https://sensei.group"
+                className="block rounded-lg border border-white/10 bg-[#0d1117] p-4 hover:border-white/25 transition-colors"
+              >
+                <div className="font-mono text-white/40 mb-1">2 · sensei.group</div>
+                <div className="font-medium text-white mb-1">Unlock L3–L9 Sensei Roster →</div>
+                <p className="text-white/50">
+                  Passing L3 unlocks verified human Sensei eligibility for enterprise and agent-escalated work.
+                </p>
+              </a>
+              <a
+                href="https://hanzo.market"
+                className="block rounded-lg border border-white/10 bg-[#0d1117] p-4 hover:border-white/25 transition-colors"
+              >
+                <div className="font-mono text-white/40 mb-1">3 · hanzo.market</div>
+                <div className="font-medium text-white mb-1">Apply, Deliver &amp; Settle →</div>
+                <p className="text-white/50">
+                  Complete org clearance at /sell, claim escrowed jobs, deliver verified work, and track payouts.
+                </p>
+              </a>
+            </div>
+          </div>
+
           {/* Resources */}
           <div className="flex flex-wrap justify-center gap-3">
             <a
-              href="https://docs.hanzo.ai"
+              href="https://hanzo.ai/university"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-medium text-sm hover:bg-white/90 transition-colors"
             >
               <BookOpen className="w-4 h-4" />
-              Documentation
+              Hanzo University (L1–L9)
             </a>
             <a
-              href="https://github.com/hanzoai/python-sdk"
+              href="https://hanzo.market"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
             >
-              <Github className="w-4 h-4" />
-              Python SDK
+              <Package className="w-4 h-4" />
+              Hanzo Market
             </a>
             <a
-              href="https://github.com/hanzoai/js-sdk"
+              href="https://sensei.group"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
             >
-              <Github className="w-4 h-4" />
-              JS SDK
+              <Globe className="w-4 h-4" />
+              Sensei Group
             </a>
             <a
-              href="https://hanzo.ai"
+              href="https://hanzo.ai/bounty"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
             >
               <Zap className="w-4 h-4" />
-              hanzo.ai
+              Open Bounties
+            </a>
+            <a
+              href="https://docs.hanzo.ai"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Documentation
             </a>
           </div>
         </div>

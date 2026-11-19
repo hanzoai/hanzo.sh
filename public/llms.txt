@@ -8,41 +8,78 @@ every product of the Hanzo cloud from the terminal. It is a native binary — on
 download per tool, checksum-verified, no runtime and no package manager.
 
 ## Install
-A single command, and it is the only one:
+A single command per platform:
 
+macOS, Linux, WSL, and Windows Git Bash:
 ```sh
 curl -fsSL https://hanzo.sh | sh
 ```
 
+Windows PowerShell:
+```powershell
+irm https://hanzo.sh/install.ps1 | iex
+```
+
+Windows Command Prompt (CMD):
+```bat
+curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
 That installs every Hanzo tool published as a public native binary:
 
-- `hanzo` — the CLI (also installed as `hanzo-node`, the same build)
-- `hanzo-mcp` — the MCP server (also installed as `mcp`, the same build)
-- `dev` — Hanzo Dev, the coding agent `hanzo code` runs by default
+- `hanzo` — the CLI
+- `hanzod` (also `hanzo-node`) — Hanzo Node, the L1 network validator and RPC node, with the inference engine built in
+- `hanzozt` (also `zt`, `hanzo-zt`) — ZT zero-trust networking: tunnel, controller and router
+- `hanzo-gen` (also `gen`) — Hanzo Gen, the harness that launches and routes any coding agent
+- `hanzo-dev` (also `dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default (co-installs `hanzo-mcp`)
+- `hanzo-mcp` (also `mcp`) — the MCP server
+- `hanzo-cloud` (also `cloud`) — Hanzo Cloud, self-hosted AI gateway, encrypted KMS, IAM and chat UI
 
 One tool at a time:
 
 ```sh
-curl -fsSL https://hanzo.sh/cli | sh    # the CLI only
-curl -fsSL https://hanzo.sh/mcp | sh    # the MCP server only
-curl -fsSL https://hanzo.sh/dev | sh    # the coding agent only
+curl -fsSL https://hanzo.sh/cli | sh       # the CLI only
+curl -fsSL https://hanzo.sh/node | sh      # Hanzo Node (hanzod) only
+curl -fsSL https://hanzo.sh/zt | sh        # ZT networking only
+curl -fsSL https://hanzo.sh/gen | sh       # Hanzo Gen only
+curl -fsSL https://hanzo.sh/dev | sh       # the coding agent (+ MCP server)
+curl -fsSL https://hanzo.sh/mcp | sh       # the MCP server only
+curl -fsSL https://hanzo.sh/cloud | sh     # Hanzo Cloud only
 ```
 
 Binaries land in `~/.local/bin`. Re-run to upgrade — installing is just
 downloading the current build. Published for linux and macOS on amd64 and arm64,
 and windows on amd64.
 
+## From a coding agent
+Paste this into Claude Code, Codex, Cursor or Antigravity and the agent installs
+the CLI, then tells you to run `hanzo`:
+
+```
+Set up Hanzo on this machine: follow https://hanzo.sh/setup.md
+```
+
+The procedure is https://hanzo.sh/setup.md.
+
 ## Usage
 Every command below exists in the shipped binary; `hanzo --help` lists them all.
 
 ```sh
-# Sign in (through Hanzo IAM). Note: `hanzo auth login`, not `hanzo login`.
-hanzo auth login
-hanzo auth show
+# First run: signs you in through the browser, links the machine to Hanzo Tabs,
+# asks once which coding agent is your favourite, adds Hanzo's tools to it and
+# launches it accelerated. After that, `hanzo` alone launches your favourite.
+hanzo
 
-# Start a coding session on the current repo
-hanzo code
-hanzo code "fix the failing test"
+# Switch agent (saved as your favourite), or run Hanzo Dev
+hanzo dev --claude      # --codex, --cursor, --agy; plain `hanzo dev` is Hanzo Dev
+hanzo dev "fix the failing test"
+
+# Continue the last conversation
+hanzo -- -c
+
+# Sign in on its own, and check who you are
+hanzo login
+hanzo auth show
 
 # Point an agent at the desktop and browser instead of the repo
 hanzo desktop
@@ -60,13 +97,11 @@ hanzo-mcp
 ```
 
 A group name is not a command on its own: `hanzo usage` and `hanzo auth` print
-their subcommands and stop. A first word the CLI does not recognise is read as a
-task for the coding agent, so `hanzo login` starts a session about the word
-"login" instead of signing you in.
+their subcommands and stop.
 
 `hanzo engine serve <model>` runs a model locally on an OpenAI-compatible
-endpoint. It needs the Hanzo engine binary, which this installer does not ship;
-with no `hanzo-engine` on PATH and no `HANZO_ENGINE_BIN` set it exits saying so.
+endpoint using the engine built into `hanzod`. `hanzo chain up` starts the local L1
+chain node using `hanzod` (`hanzo-node`).
 
 ## Models
 Hanzo's own families, and the ids these tools take: `enso`, `enso-flash`,
@@ -89,6 +124,7 @@ for a signed-in caller and returns 401 without a bearer token.
 - [CLI source](https://github.com/hanzoai/cli)
 - [MCP source](https://github.com/hanzoai/mcp)
 - [Dev source](https://github.com/hanzoai/dev)
+- [Gen source](https://github.com/hanzoai/gen)
 
 ## Contact
 - Support: support@hanzo.ai

@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Terminal, Copy, Check, Code, ExternalLink, Package, Cpu, Globe, BookOpen, Zap } from "lucide-react";
+import { Terminal, Copy, Check, Code, Download, ExternalLink, Package, Cpu, Globe, BookOpen, Zap, Laptop } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,8 +20,63 @@ const HanzoLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
   </svg>
 );
 
+// lucide 1.0 dropped its brand icons; these are the paths its Github icon drew.
+const Github = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+    <path d="M9 18c-4.51 2-5-2-7-2"/>
+  </svg>
+);
+
+// What a person pastes into a coding agent: the agent fetches setup.md, installs
+// the CLI and hands back to the person, who runs `hanzo`.
+const AGENT_LINE = "Set up Hanzo on this machine: follow https://hanzo.sh/setup.md";
+
+const onWindows = () => typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent);
+
+type PlatformTab = "unix" | "ps1" | "gitbash" | "cmd";
+
+const PLATFORM_TABS: { id: PlatformTab; label: string; note: string }[] = [
+  { id: "unix", label: "macOS / Linux / WSL", note: "POSIX sh / bash / zsh (Apple Silicon, Intel, Linux amd64/arm64)." },
+  { id: "ps1", label: "Windows PowerShell", note: "Native Windows 10/11 (x64) — installs .exe binaries to ~\\.local\\bin and updates User PATH." },
+  { id: "gitbash", label: "Windows Git Bash", note: "Git Bash / MSYS2 — runs the same curl | sh installer natively on Windows." },
+  { id: "cmd", label: "Windows CMD", note: "Command Prompt — downloads install.cmd, verifies checksums via PowerShell, cleans up." },
+];
+
+const DESKTOP_APPS = [
+  {
+    name: "Hanzo App",
+    domain: "hanzo.app",
+    desc: "Native AI workspace & chat client with local models, MCP tools, and encrypted sync.",
+    winUrl: "https://github.com/hanzoai/desktop/releases/latest",
+    allUrl: "https://github.com/hanzoai/desktop/releases",
+  },
+  {
+    name: "Hanzo Bot",
+    domain: "hanzo.bot",
+    desc: "Autonomous multi-channel desktop assistant, scheduler, and agent runner.",
+    winUrl: "https://github.com/hanzoai/bot/releases/latest",
+    allUrl: "https://github.com/hanzoai/bot/releases",
+  },
+  {
+    name: "Hanzo Codes",
+    domain: "hanzo.codes",
+    desc: "Native AI IDE + local Git forge (`gitd`) for code review, editing, and agent sessions.",
+    winUrl: "https://github.com/hanzoai/ide/releases/latest",
+    allUrl: "https://github.com/hanzoai/codes/releases",
+  },
+  {
+    name: "Hanzo Team",
+    domain: "hanzo.team",
+    desc: "Collaborative team workspace, project boards, and agent orchestration client.",
+    winUrl: "https://github.com/hanzoai/team/releases/latest",
+    allUrl: "https://github.com/hanzoai/team/releases",
+  },
+];
+
 const Hero = () => {
   const [copied, setCopied] = useState<string | null>(null);
+  const [platform, setPlatform] = useState<PlatformTab>(() => (onWindows() ? "ps1" : "unix"));
 
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -31,17 +85,35 @@ const Hero = () => {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  // One install path. `| sh` because the installer is POSIX and the file the
-  // site hands curl declares #!/bin/sh — the page and llms.txt used to
-  // disagree, and the `sh` half died on dash before anything was downloaded.
-  const installCommands = [
-    { id: "curl", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
-    { id: "curl-cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
-    { id: "curl-mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
-    { id: "curl-dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
-  ];
+  const installCommandsByPlatform: Record<PlatformTab, { id: string; label: string; cmd: string }[]> = {
+    unix: [
+      { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
+      { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
+      { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
+      { id: "dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
+    ],
+    ps1: [
+      { id: "all", label: "Everything", cmd: "irm https://hanzo.sh/install.ps1 | iex" },
+      { id: "cli", label: "CLI", cmd: "irm https://hanzo.sh/cli.ps1 | iex" },
+      { id: "mcp", label: "MCP", cmd: "irm https://hanzo.sh/mcp.ps1 | iex" },
+      { id: "dev", label: "Dev", cmd: "irm https://hanzo.sh/dev.ps1 | iex" },
+    ],
+    gitbash: [
+      { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
+      { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
+      { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
+      { id: "dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
+    ],
+    cmd: [
+      { id: "all", label: "Everything", cmd: "curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del install.cmd" },
+      { id: "cli", label: "CLI", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/cli.ps1 | iex\"" },
+      { id: "mcp", label: "MCP", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/mcp.ps1 | iex\"" },
+      { id: "dev", label: "Dev", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/dev.ps1 | iex\"" },
+    ],
+  };
 
-  const [activeInstall, setActiveInstall] = useState("curl");
+  const installCommands = installCommandsByPlatform[platform];
+  const [activeInstall, setActiveInstall] = useState("all");
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -89,6 +161,23 @@ const Hero = () => {
 
           {/* Main Install */}
           <div className="max-w-xl mx-auto space-y-3">
+            {/* OS / Shell Selector (Antigravity-style platform switcher) */}
+            <div className="flex flex-wrap justify-center gap-1 p-1 bg-white/[0.04] border border-white/10 rounded-lg w-fit mx-auto">
+              {PLATFORM_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setPlatform(tab.id)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                    platform === tab.id
+                      ? "bg-[#d81c33] text-white"
+                      : "text-white/50 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex justify-center gap-1 p-1 bg-white/5 rounded-lg w-fit mx-auto">
               {installCommands.map((item) => (
                 <button
@@ -110,7 +199,7 @@ const Hero = () => {
               onClick={() => handleCopy(installCommands.find((c) => c.id === activeInstall)?.cmd || "", activeInstall)}
             >
               <Terminal className="w-4 h-4 text-white/40 flex-shrink-0" />
-              <code className="text-[#e6edf3] font-mono text-sm flex-1 select-all">
+              <code className="text-[#e6edf3] font-mono text-sm flex-1 select-all overflow-x-auto">
                 {installCommands.find((c) => c.id === activeInstall)?.cmd}
               </code>
               {copied === activeInstall ? (
@@ -120,18 +209,46 @@ const Hero = () => {
               )}
             </div>
 
+            <p className="text-center text-white/60 text-xs">
+              {PLATFORM_TABS.find((t) => t.id === platform)?.note}
+            </p>
             <p className="text-center text-white/40 text-xs">
-              One prebuilt native binary per tool, checksum-verified. No runtime,
+              One prebuilt native binary per tool, SHA-256 verified. No runtime,
               no package manager, no build step. Re-run to upgrade.
             </p>
+          </div>
+
+          {/* Paste into your agent */}
+          <div className="max-w-xl mx-auto space-y-2">
+            <p className="text-center text-white/50 text-sm">
+              Or paste this into Claude Code, Codex, Cursor or Antigravity
+            </p>
+            <button
+              type="button"
+              aria-label="Copy the line to paste into your coding agent"
+              onClick={() => handleCopy(AGENT_LINE, "agent")}
+              className="group w-full flex items-start gap-3 bg-[#0d1117] border border-white/10 hover:border-white/20 p-3 rounded-lg text-left transition-colors"
+            >
+              <Terminal className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5" />
+              <code className="text-[#e6edf3] font-mono text-sm flex-1 break-words">{AGENT_LINE}</code>
+              {copied === "agent" ? (
+                <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+              ) : (
+                <Copy className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
+              )}
+            </button>
           </div>
 
           {/* Quick shortcuts */}
           <div className="flex flex-wrap justify-center gap-2 text-sm">
             {[
               { path: "/cli", label: "CLI Only" },
-              { path: "/mcp", label: "MCP Server" },
+              { path: "/node", label: "Node" },
+              { path: "/zt", label: "ZT" },
+              { path: "/gen", label: "Gen" },
               { path: "/dev", label: "Dev Agent" },
+              { path: "/mcp", label: "MCP Server" },
+              { path: "/cloud", label: "Cloud" },
             ].map((shortcut) => (
               <button
                 key={shortcut.path}
@@ -149,27 +266,59 @@ const Hero = () => {
             {[
               {
                 bin: "hanzo",
-                also: "hanzo-node",
+                also: "hanzo-cli",
                 desc: "The Hanzo CLI \u2014 auth, billing, coding sessions, and every product of the Hanzo cloud.",
                 href: "https://github.com/hanzoai/cli",
                 icon: <Cpu className="w-4 h-4 text-orange-400" />,
                 tint: "bg-orange-500/10",
               },
               {
+                bin: "hanzod",
+                also: "hanzo-node",
+                desc: "Hanzo Node \u2014 the L1 network validator, consensus mesh and JSON-RPC node.",
+                href: "https://github.com/hanzoai/node",
+                icon: <Globe className="w-4 h-4 text-emerald-400" />,
+                tint: "bg-emerald-500/10",
+              },
+              {
+                bin: "hanzozt",
+                also: "zt",
+                desc: "ZT \u2014 zero-trust networking, tunnels, controller and router.",
+                href: "https://github.com/hanzozt/zt",
+                icon: <Cpu className="w-4 h-4 text-blue-400" />,
+                tint: "bg-blue-500/10",
+              },
+              {
+                bin: "hanzo-gen",
+                also: "gen",
+                desc: "Hanzo Gen \u2014 the native coding harness.",
+                href: "https://github.com/hanzoai/gen",
+                icon: <Code className="w-4 h-4 text-purple-400" />,
+                tint: "bg-purple-500/10",
+              },
+              {
+                bin: "hanzo-dev",
+                also: "dev",
+                desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default (co-installs hanzo-mcp).",
+                href: "https://github.com/hanzoai/dev",
+                icon: <Terminal className="w-4 h-4 text-sky-400" />,
+                tint: "bg-sky-500/10",
+              },
+              {
                 bin: "hanzo-mcp",
                 also: "mcp",
                 desc: "The MCP server \u2014 the Hanzo toolset, for any MCP client.",
                 href: "https://github.com/hanzoai/mcp",
-                icon: <Code className="w-4 h-4 text-green-400" />,
+                icon: <Package className="w-4 h-4 text-green-400" />,
                 tint: "bg-green-500/10",
               },
               {
-                bin: "dev",
-                also: null,
-                desc: "Hanzo Dev \u2014 the coding agent `hanzo code` runs by default.",
-                href: "https://github.com/hanzoai/dev",
-                icon: <Terminal className="w-4 h-4 text-sky-400" />,
-                tint: "bg-sky-500/10",
+                bin: "hanzo-cloud",
+                also: "cloud",
+                desc: "Hanzo Cloud \u2014 self-hosted AI gateway, encrypted KMS, IAM and chat UI in one binary.",
+                href: "https://github.com/hanzoai/cloud",
+                icon: <Globe className="w-4 h-4 text-rose-400" />,
+                tint: "bg-rose-500/10",
               },
             ].map((t) => (
               <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
@@ -185,28 +334,50 @@ const Hero = () => {
                 <p className="text-xs text-white/50 mb-3">{t.desc}</p>
                 {t.also && (
                   <p className="text-[11px] text-white/30">
-                    also installed as <code className="text-white/50">{t.also}</code> — the same build, symlinked
+                    alias: <code className="text-white/50">{t.also}</code>
                   </p>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Not included — say so rather than let someone find out */}
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-white/60 mb-3">Not included yet</h2>
-            <ul className="space-y-1.5 text-xs">
-              {[
-                { bin: "node", why: "source is not public yet" },
-                { bin: "desktop", why: "`hanzo desktop` is in the CLI; the standalone app is not public yet" },
-                { bin: "bot", why: "`hanzo bot` is in the CLI; the standalone node is not native yet" },
-              ].map((item) => (
-                <li key={item.bin} className="flex items-start justify-between gap-4 text-white/50">
-                  <code className="text-white/70 shrink-0">{item.bin}</code>
-                  <span className="text-white/35 text-right">{item.why}</span>
-                </li>
+          {/* Desktop Apps */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
+                <Laptop className="w-4 h-4 text-[#f0506a]" />
+                <span>Desktop Apps (Windows x64, macOS, Linux)</span>
+              </div>
+              <span className="text-xs text-white/40">Native installers</span>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              {DESKTOP_APPS.map((app) => (
+                <div key={app.name} className="bg-white/[0.02] border border-white/10 rounded-xl p-5 flex flex-col justify-between gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="font-medium text-white text-sm">{app.name}</h3>
+                      <span className="text-xs font-mono text-white/40">{app.domain}</span>
+                    </div>
+                    <p className="text-xs text-white/50">{app.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <a
+                      href={app.winUrl}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-medium hover:bg-white/90 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download
+                    </a>
+                    <a
+                      href={app.allUrl}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-white/15 text-white/60 hover:text-white text-xs transition-colors"
+                    >
+                      All platforms →
+                    </a>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
           {/* After install */}
@@ -214,8 +385,9 @@ const Hero = () => {
             <h2 className="text-sm font-medium text-white/60 mb-3">After install</h2>
             <div className="font-mono text-sm space-y-2">
               {[
-                { cmd: "hanzo auth login", desc: "Sign in through Hanzo IAM" },
-                { cmd: "hanzo code", desc: "Start a coding session" },
+                { cmd: "hanzo", desc: "Sign in, pick your coding agent, launch it" },
+                { cmd: "hanzo dev --claude", desc: "Switch agent: --claude, --codex, --cursor, --agy" },
+                { cmd: "hanzo -- -c", desc: "Continue the last conversation" },
                 { cmd: "hanzo up", desc: "Run the cloud on this machine" },
                 { cmd: "hanzo --help", desc: "Every command" },
                 { cmd: "hanzo-mcp", desc: "Run the MCP server" },

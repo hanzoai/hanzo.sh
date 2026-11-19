@@ -1,0 +1,7 @@
+#!/bin/sh
+# Hanzo Gen only.
+#   curl -fsSL hanzo.sh/gen | sh
+#
+# Routing only. The installer is the one place that knows which tools ship as a
+# native binary and what to say about the ones that do not.
+exec sh -c "$(curl -fsSL https://hanzo.sh)" -- gen "$@"

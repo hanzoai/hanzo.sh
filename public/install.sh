@@ -37,33 +37,42 @@ HANZO_QUIET="${HANZO_QUIET:-0}"
 CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 
 # The complete set of Hanzo tools that ship as a public, checksummed, native
-# binary today, as <name>:<repo>:<binary>:<second-name>.
+# binary today, as <name>:<display>:<repo>:<binary>:<second-name>[:<signer>].
+#
+# <signer> is the workflow that builds and attests a tool's releases. With one
+# (or under --strict), cli/install.sh checks each download's attestation against
+# that workflow and the release's tag, and refuses one that does not match.
 #
 # The binary is also the asset prefix and the name inside the tarball — the
 # convention hanzoai/cli/install.sh relies on. Adding a tool is one line, the day
 # its repo is public and publishes <binary>-<os>-<arch>.tar.gz.sha256.
 #
-# `dev` takes no second name on purpose. cli/install.sh defaults the alias to
-# `hanzo-node`, which the CLI already owns — giving it to `dev` too would point
-# the delegate name at a different program.
-TOOLS='hanzo:hanzoai/cli:hanzo:hanzo-node
-mcp:hanzoai/mcp:hanzo-mcp:mcp
-dev:hanzoai/dev:dev:'
+# Prefixed names give each product a distinct command on the left side of the
+# installer output; short aliases symlink to the same binary. hanzo-cli is the
+# control plane delegate; hanzo-node is reserved for the network node.
+TOOLS='hanzo:hanzo:hanzoai/cli:hanzo:hanzo-cli
+node:hanzod:hanzoai/node:hanzod:hanzo-node
+zt:hanzozt:hanzozt/zt:zt:hanzozt
+gen:hanzo-gen:hanzoai/gen:gen:hanzo-gen
+dev:hanzo-dev:hanzoai/dev:dev:hanzo-dev
+mcp:hanzo-mcp:hanzoai/mcp:hanzo-mcp:mcp
+cloud:hanzo-cloud:hanzoai/cloud:hanzo-cloud:cloud'
 
 # The installable names, read off TOOLS so no message can name a different set
 # than the loop installs.
 tool_names() {
     printf '%s\n' "$TOOLS" | while IFS= read -r n_row; do
-        printf ' %s' "${n_row%%:*}"
+        n_rest=${n_row#*:}
+        printf ' %s' "${n_rest%%:*}"
     done
 }
 
 # Named, not silently skipped, and never substituted with something else.
 unavailable_rows() {
     cat <<'ROWS'
-node|source is not public yet
-desktop|`hanzo desktop` is in the CLI; the standalone app is not public yet
-bot|`hanzo bot` is in the CLI; the standalone node is not native yet
+desktop|no standalone desktop release is published yet
+engine|the engine is built into hanzod; install hanzod
+bot|source is public at github.com/hanzoai/bot; its current release has no prebuilt binaries
 ROWS
 }
 
@@ -76,6 +85,7 @@ else
 fi
 
 INSTALLED_N=0
+INSTALLED_LIST=''
 FAILED_N=0
 FAILED_LIST=''
 
@@ -109,20 +119,30 @@ Downloads one prebuilt native binary per tool and verifies its checksum.
 With no tool named, installs every tool that ships as a public native binary.
 
 tools:
-  hanzo    the Hanzo CLI    (also installed as hanzo-node, the same build)
-  mcp      the MCP server   (also installed as hanzo-mcp, the same build)
-  dev      Hanzo Dev, the coding agent `hanzo code` runs by default
+  hanzo          the Hanzo CLI
+  hanzod         Hanzo Node
+  hanzozt        ZT zero-trust networking
+  hanzo-gen      Hanzo Gen
+  hanzo-dev      Hanzo Dev (co-installs hanzo-mcp)
+  hanzo-mcp      the MCP server
+  hanzo-cloud    Hanzo Cloud
 
 options:
   -d, --dir PATH       install directory (default: ~/.local/bin)
       --version TAG    pin the CLI release (default: latest)
+      --strict         require release provenance verification for every tool
   -q, --quiet          less output
   -h, --help           show this help
 
 shortcuts:
   curl -fsSL hanzo.sh | sh           # every installable tool
   curl -fsSL hanzo.sh/cli | sh       # the CLI only
+  curl -fsSL hanzo.sh/node | sh      # Hanzo Node (hanzod) only
+  curl -fsSL hanzo.sh/zt | sh        # ZT networking only
+  curl -fsSL hanzo.sh/gen | sh       # Hanzo Gen only
+  curl -fsSL hanzo.sh/dev | sh       # Hanzo Dev (+ MCP server)
   curl -fsSL hanzo.sh/mcp | sh       # the MCP server only
+  curl -fsSL hanzo.sh/cloud | sh     # Hanzo Cloud only
 
 Re-run any time to upgrade; installing is just downloading the current build.
 EOF
@@ -133,32 +153,71 @@ WANT=''
 parse_args() {
     while [ $# -gt 0 ]; do
         case $1 in
+            --dir|-d|--version|--bundle|-b)
+                [ $# -ge 2 ] && [ -n "$2" ] || die "$1 needs a value (see --help)" ;;
+        esac
+        case $1 in
             --dir|-d)   HANZO_DIR="$2"; shift 2 ;;
             --version)  HANZO_VERSION="$2"; export HANZO_VERSION; shift 2 ;;
             --quiet|-q) HANZO_QUIET=1; shift ;;
+            --strict)   HANZO_INSTALL_STRICT=1; export HANZO_INSTALL_STRICT; shift ;;
             --help|-h)  usage ;;
             # Retired flags. Installing IS upgrading — there is one path and it
             # always fetches the current build — so these mean nothing now.
             # Accept and ignore rather than failing an install someone scripted.
             --upgrade|-u|--force|-f) shift ;;
             --bundle|-b) WANT="$WANT $2"; shift 2 ;;
-            -*)          warn "ignoring unknown option: $1"; shift ;;
+            -*)          die "unknown option: $1 (see --help)" ;;
             *)           WANT="$WANT $1"; shift ;;
         esac
     done
 }
 
-# wanted <name> <binary> — did the caller ask for this tool?
+validate_wanted() {
+    for v_want in $WANT; do
+        case "$v_want" in default|full|all|hanzo-zt) continue ;; esac
+        v_found=0
+        for v_row in $TOOLS; do
+            v_name=${v_row%%:*};  v_rest=${v_row#*:}
+            v_disp=${v_rest%%:*}; v_rest=${v_rest#*:}; v_rest=${v_rest#*:}
+            v_bin=${v_rest%%:*};  v_rest=${v_rest#*:}; v_alias=${v_rest%%:*}
+            case "$v_want" in "$v_name"|"$v_disp"|"$v_bin"|"$v_alias") v_found=1 ;; esac
+        done
+        [ "$v_found" = 0 ] || continue
+        v_short=${v_want#hanzo-}
+        v_why=$(unavailable_rows | while IFS='|' read -r v_name v_reason; do
+            if [ "$v_name" = "$v_short" ]; then printf '%s' "$v_reason"; fi
+        done)
+        [ -z "$v_why" ] || die "$v_want — $v_why"
+        die "no such tool: $v_want — installable today:$(tool_names)"
+    done
+}
+
+# wanted <name> <display> <binary> <alias> — did the caller ask for this tool?
 # `default`, `full` and `all` named the old bundles. They meant "everything",
 # which is what naming nothing means, so they map to that rather than failing an
-# install someone already scripted.
+# install someone already scripted. The prefixed name (`hanzo-dev`) selects the
+# same row as the short name.
 wanted() {
     for w in $WANT; do
         case $w in
-            "$1"|"$2"|default|full|all) return 0 ;;
+            "$1"|"$2"|"$3"|"${4:-$1}"|default|full|all) return 0 ;;
+            hanzo-zt) [ "$1" = zt ] && return 0 ;;
         esac
     done
     return 1
+}
+
+# Requesting `dev` or `hanzo-dev` always co-installs `mcp` (`hanzo-mcp`).
+expand_verbs() {
+    case " $WANT " in
+        *" dev "*|*" hanzo-dev "*)
+            case " $WANT " in
+                *" mcp "*|*" hanzo-mcp "*) ;;
+                *) WANT="$WANT mcp" ;;
+            esac
+            ;;
+    esac
 }
 
 # hanzoai/cli/install.sh, fetched once and reused for every tool.
@@ -183,9 +242,9 @@ fetch_one_installer() {
     curl -fsSL "https://raw.githubusercontent.com/${CLI_REPO}/main/install.sh" -o "$1" 2>/dev/null
 }
 
-# install <repo> <binary> <second-name>
+# install <display> <repo> <binary> <second-name> <signer>
 install_tool() {
-    i_repo="$1"; i_bin="$2"; i_alias="$3"
+    i_disp="$1"; i_repo="$2"; i_bin="$3"; i_alias="$4"; i_signer="$5"
 
     # HANZO_VERSION names a CLI release. Passing it to anything else would pin a
     # tag that repo has never published, so it reaches exactly one tool.
@@ -196,78 +255,102 @@ install_tool() {
                HANZO_INSTALL_REPO="$i_repo" \
                HANZO_INSTALL_BIN="$i_bin" \
                HANZO_INSTALL_ALIAS="$i_alias" \
+               HANZO_INSTALL_SIGNER="$i_signer" \
                HANZO_VERSION="$i_pin" \
                sh "$ONE_INSTALLER" 2>&1); then
-        # Surface the installer's own warnings (PATH shadowing, PATH missing).
-        # They are the difference between an install that worked and one the user
-        # will never actually run — so carry the CONTINUATION lines too. The
-        # shadow warning's second line is the half that says what to do about it,
-        # and a filter that keeps only the alarm and drops the remedy is worse
-        # than not warning at all.
+        # Surface the installer's own warnings (PATH shadowing, unverified
+        # provenance). Carry the shadow warning's continuation line too so the
+        # remedy stays attached, while omitting noisy passing-provenance lines.
         printf '%s\n' "$i_out" \
-          | grep -E 'WARNING|Remove it, or put|not on PATH|export PATH' \
+          | grep -E 'WARNING|Remove it, or put|provenance not checked|upgrade GitHub CLI' \
           | sed 's/^/    /' || true
     else
         printf '%s\n' "$i_out" | sed 's/^/    /'
-        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_bin"
-        fail "$i_bin"; return 1
+        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_disp"
+        fail "$i_disp"; return 1
     fi
 
+    EXT=''
+    case "$(uname -s 2>/dev/null || true)" in
+        MINGW*|MSYS*|CYGWIN*|Windows_NT) EXT='.exe' ;;
+    esac
+
     # Trust the artifact, not the log line: ask the binary that is now on disk.
-    if [ ! -x "$HANZO_DIR/$i_bin" ]; then
-        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_bin"
-        fail "$i_bin (nothing at $HANZO_DIR/$i_bin)"; return 1
+    bin_path="$HANZO_DIR/$i_bin$EXT"
+    if [ -n "$EXT" ] && [ ! -e "$bin_path" ] && [ -e "$HANZO_DIR/$i_bin" ]; then
+        bin_path="$HANZO_DIR/$i_bin"
+        EXT=''
+    fi
+    if [ ! -x "$bin_path" ]; then
+        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_disp"
+        fail "$i_disp (nothing at $bin_path)"; return 1
+    fi
+    if [ "$i_bin" = dev ]; then
+        rm -f "${HANZO_HOME:-$HOME/.hanzo}/dev/version.json"
+    fi
+    if [ "$i_bin" = zt ]; then
+        ln -sf "zt$EXT" "$HANZO_DIR/hanzo-zt$EXT" 2>/dev/null || cp -f "$bin_path" "$HANZO_DIR/hanzo-zt$EXT"
     fi
     # The first token that looks like a version, not the last token on the line:
     # `--version` output is not one shape across tools (`hanzo 1.9.18` ends on
     # the version, `hanzo dev 0.6.91 (sha) 2026-04-01` ends on a date), and
     # printing a build date where a version belongs is its own small lie.
-    i_ver=$("$HANZO_DIR/$i_bin" --version 2>/dev/null | head -1 \
+    i_ver=$("$bin_path" --version 2>/dev/null | head -1 \
             | tr ' ' '\n' | grep -m1 -E '^v?[0-9]+\.[0-9]+' | sed 's/^v//')
     [ -n "${i_ver:-}" ] || i_ver='?'
 
+    i_unverified=0
+    if printf '%s\n' "$i_out" | grep -q 'provenance not checked'; then i_unverified=1; fi
     if [ -n "$i_alias" ]; then
-        # Both names or it is not a finished install. A missing second name falls
-        # through to whatever older copy is already on the box, silently.
-        if [ ! -e "$HANZO_DIR/$i_alias" ]; then
+        alias_path="$HANZO_DIR/$i_alias$EXT"
+        if [ ! -e "$alias_path" ] && [ -e "$HANZO_DIR/$i_alias" ]; then
+            alias_path="$HANZO_DIR/$i_alias"
+        fi
+        if [ ! -e "$alias_path" ]; then
+            cp -f "$bin_path" "$HANZO_DIR/$i_alias$EXT" 2>/dev/null || true
+        fi
+        if [ ! -e "$HANZO_DIR/$i_alias$EXT" ] && [ ! -e "$HANZO_DIR/$i_alias" ]; then
             FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_alias"
             fail "$i_alias was not installed alongside $i_bin"; return 1
         fi
-        ok "$i_bin $i_ver ${DM}(+ $i_alias, same build)${N}"
+    fi
+    if [ "$i_unverified" = 1 ]; then
+        warn "$i_disp $i_ver — installed; provenance unverified"
     else
-        ok "$i_bin $i_ver"
+        ok "$i_disp $i_ver"
     fi
     INSTALLED_N=$((INSTALLED_N + 1))
-}
-
-show_unavailable() {
-    [ "$HANZO_QUIET" = 1 ] && return 0
-    printf '\n  %snot included:%s\n' "$BD" "$N"
-    unavailable_rows | while IFS='|' read -r u_name u_why; do
-        printf '    %s○ %-8s %s%s\n' "$DM" "$u_name" "$u_why" "$N"
-    done
+    INSTALLED_LIST="$INSTALLED_LIST $i_disp"
 }
 
 finish() {
     printf '\n'
     if [ "$INSTALLED_N" -eq 0 ]; then die "nothing was installed"; fi
 
+    printf '  Installed and available in %s:%s\n' "$HANZO_DIR" "$INSTALLED_LIST"
+    case ":$PATH:" in
+        *":$HANZO_DIR:"*) ;;
+        *) printf '\n  PATH setup needed for this shell (installation succeeded):\n'
+           printf '    export PATH="%s:$PATH"\n' "$HANZO_DIR" ;;
+    esac
+
     # Never say "ready" over a failure. A partial install that reads as success
     # is how someone spends an afternoon on a tool that was never there.
     if [ "$FAILED_N" -gt 0 ]; then
         printf '  %s%sincomplete%s — did not install:%s\n' "$R" "$BD" "$N" "$N"
         for f in $FAILED_LIST; do printf '    %s✗%s %s\n' "$R" "$N" "$f"; done
+        printf '\n  The tools listed as installed above still work.\n'
+        printf '  Re-run the same install command to retry the failed downloads.\n'
         printf '\n'
         return 0
     fi
 
     printf '  %sready%s %s→ %s%s\n\n' "$G" "$N" "$DM" "$HANZO_DIR" "$N"
     printf '  quick start:\n'
-    printf '    %shanzo auth login%s     # authenticate\n' "$C" "$N"
-    printf '    %shanzo code%s           # start a coding session\n' "$C" "$N"
+    printf '    %shanzo%s                # sign in, pick your coding agent, launch it\n' "$C" "$N"
     printf '    %shanzo up%s             # run the cloud on this machine\n' "$C" "$N"
     printf '    %shanzo --help%s         # every command\n' "$C" "$N"
-    if [ -x "$HANZO_DIR/hanzo-mcp" ]; then
+    if [ -x "$HANZO_DIR/hanzo-mcp" ] || [ -x "$HANZO_DIR/hanzo-mcp.exe" ]; then
         printf '    %shanzo-mcp --help%s     # the MCP server\n' "$C" "$N"
     fi
     printf '\n  docs:   https://docs.hanzo.ai\n'
@@ -277,6 +360,8 @@ finish() {
 
 main() {
     parse_args "$@"
+    validate_wanted
+    expand_verbs
     banner
 
     command -v curl >/dev/null 2>&1 || die "need curl on PATH"
@@ -287,18 +372,31 @@ main() {
     fetch_one_installer "$ONE_INSTALLER" \
         || die "could not fetch the installer from ${CLI_REPO}"
     [ -s "$ONE_INSTALLER" ] || die "the installer fetched from ${CLI_REPO} is empty"
+    if [ "${HANZO_INSTALL_STRICT:-0}" = 1 ] && ! grep -q 'HANZO_INSTALL_STRICT' "$ONE_INSTALLER"; then
+        die "the downloaded installer does not support strict verification; retry after the installer update is available. Nothing was installed."
+    fi
 
     mkdir -p "$HANZO_DIR"
 
     selected=0
     for row in $TOOLS; do
         t_name=${row%%:*};  rest=${row#*:}
+        t_disp=${rest%%:*}; rest=${rest#*:}
         t_repo=${rest%%:*}; rest=${rest#*:}
-        t_bin=${rest%%:*};  t_alias=${rest#*:}
-        if [ -n "$WANT" ] && ! wanted "$t_name" "$t_bin"; then continue; fi
+        t_bin=${rest%%:*};  rest=${rest#*:}
+        t_alias=${rest%%:*}
+        case $rest in *:*) t_signer=${rest#*:} ;; *) t_signer='' ;; esac
+        if [ -n "$WANT" ] && ! wanted "$t_name" "$t_disp" "$t_bin" "$t_alias"; then continue; fi
         selected=1
-        install_tool "$t_repo" "$t_bin" "$t_alias" || true
+        install_tool "$t_disp" "$t_repo" "$t_bin" "$t_alias" "$t_signer" || true
     done
+
+    # Initialize ~/.hanzo/dev/config.toml (with [mcp_servers.hanzo]) when dev is installed
+    if [ -x "$HANZO_DIR/dev.exe" ]; then
+        "$HANZO_DIR/dev.exe" --version >/dev/null 2>&1 || true
+    elif [ -x "$HANZO_DIR/dev" ]; then
+        "$HANZO_DIR/dev" --version >/dev/null 2>&1 || true
+    fi
 
     if [ "$selected" -eq 0 ]; then
         # Asked for something real that we publish no binary for. Answer with the
@@ -318,7 +416,6 @@ main() {
         die "no such tool:$WANT — installable today:$(tool_names)"
     fi
 
-    if [ -z "$WANT" ]; then show_unavailable; fi
     finish
 
     # A failed download or a missing second name is a failed install, and the

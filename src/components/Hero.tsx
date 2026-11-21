@@ -23,6 +23,13 @@ const Github = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// What a person pastes into a coding agent: the agent fetches setup.md, installs
+// the CLI and hands back to the person, who runs `hanzo`.
+const AGENT_LINE = "Set up Hanzo on this machine: follow https://hanzo.sh/setup.md";
+
+// The only live installer is the POSIX one, so Windows is told the truth about it.
+const onWindows = () => typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent);
+
 const Hero = () => {
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -117,9 +124,37 @@ const Hero = () => {
             </div>
 
             <p className="text-center text-white/40 text-xs">
+              macOS, Linux and WSL. Then run <code className="text-white/70">hanzo</code>: it
+              signs you in, asks which coding agent is your favourite and launches it.
+            </p>
+            <p className={`text-center text-xs ${onWindows() ? "text-white/70" : "text-white/40"}`}>
+              Windows: use WSL until the PowerShell installer ships.
+            </p>
+            <p className="text-center text-white/40 text-xs">
               One prebuilt native binary per tool, checksum-verified. No runtime,
               no package manager, no build step. Re-run to upgrade.
             </p>
+          </div>
+
+          {/* Paste into your agent */}
+          <div className="max-w-xl mx-auto space-y-2">
+            <p className="text-center text-white/50 text-sm">
+              Or paste this into Claude Code, Codex, Cursor or Antigravity
+            </p>
+            <button
+              type="button"
+              aria-label="Copy the line to paste into your coding agent"
+              onClick={() => handleCopy(AGENT_LINE, "agent")}
+              className="group w-full flex items-start gap-3 bg-[#0d1117] border border-white/10 hover:border-white/20 p-3 rounded-lg text-left transition-colors"
+            >
+              <Terminal className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5" />
+              <code className="text-[#e6edf3] font-mono text-sm flex-1 break-words">{AGENT_LINE}</code>
+              {copied === "agent" ? (
+                <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+              ) : (
+                <Copy className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
+              )}
+            </button>
           </div>
 
           {/* Quick shortcuts */}
@@ -162,7 +197,7 @@ const Hero = () => {
               {
                 bin: "dev",
                 also: null,
-                desc: "Hanzo Dev \u2014 the coding agent `hanzo code` runs by default.",
+                desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default.",
                 href: "https://github.com/hanzoai/dev",
                 icon: <Terminal className="w-4 h-4 text-sky-400" />,
                 tint: "bg-sky-500/10",
@@ -210,8 +245,9 @@ const Hero = () => {
             <h2 className="text-sm font-medium text-white/60 mb-3">After install</h2>
             <div className="font-mono text-sm space-y-2">
               {[
-                { cmd: "hanzo auth login", desc: "Sign in through Hanzo IAM" },
-                { cmd: "hanzo code", desc: "Start a coding session" },
+                { cmd: "hanzo", desc: "Sign in, pick your coding agent, launch it" },
+                { cmd: "hanzo dev --claude", desc: "Switch agent: --claude, --codex, --cursor, --agy" },
+                { cmd: "hanzo -- -c", desc: "Continue the last conversation" },
                 { cmd: "hanzo up", desc: "Run the cloud on this machine" },
                 { cmd: "hanzo --help", desc: "Every command" },
                 { cmd: "hanzo-mcp", desc: "Run the MCP server" },

@@ -54,7 +54,7 @@ TOOLS='hanzo:hanzo:hanzoai/cli:hanzo:hanzo-cli
 node:hanzod:hanzoai/node:hanzod:hanzo-node
 zt:hanzozt:hanzozt/zt:zt:hanzozt
 gen:hanzo-gen:hanzoai/gen:gen:hanzo-gen
-dev:hanzo-dev:hanzoai/dev:dev:hanzo-dev
+dev:hanzo-dev:hanzoai/dev-v1:dev:hanzo-dev
 mcp:hanzo-mcp:hanzoai/mcp:hanzo-mcp:mcp
 cloud:hanzo-cloud:hanzoai/cloud:hanzo-cloud:cloud'
 

@@ -90,25 +90,21 @@ const Hero = () => {
       { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
       { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
       { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
-      { id: "dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
     ],
     ps1: [
       { id: "all", label: "Everything", cmd: "irm https://hanzo.sh/install.ps1 | iex" },
       { id: "cli", label: "CLI", cmd: "irm https://hanzo.sh/cli.ps1 | iex" },
       { id: "mcp", label: "MCP", cmd: "irm https://hanzo.sh/mcp.ps1 | iex" },
-      { id: "dev", label: "Dev", cmd: "irm https://hanzo.sh/dev.ps1 | iex" },
     ],
     gitbash: [
       { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
       { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
       { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
-      { id: "dev", label: "Dev", cmd: "curl -fsSL hanzo.sh/dev | sh" },
     ],
     cmd: [
       { id: "all", label: "Everything", cmd: "curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del install.cmd" },
       { id: "cli", label: "CLI", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/cli.ps1 | iex\"" },
       { id: "mcp", label: "MCP", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/mcp.ps1 | iex\"" },
-      { id: "dev", label: "Dev", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/dev.ps1 | iex\"" },
     ],
   };
 
@@ -246,7 +242,6 @@ const Hero = () => {
               { path: "/node", label: "Node" },
               { path: "/zt", label: "ZT" },
               { path: "/gen", label: "Gen" },
-              { path: "/dev", label: "Dev Agent" },
               { path: "/mcp", label: "MCP Server" },
               { path: "/cloud", label: "Cloud" },
             ].map((shortcut) => (
@@ -295,14 +290,6 @@ const Hero = () => {
                 href: "https://github.com/hanzoai/gen",
                 icon: <Code className="w-4 h-4 text-purple-400" />,
                 tint: "bg-purple-500/10",
-              },
-              {
-                bin: "hanzo-dev",
-                also: "dev",
-                desc: "Hanzo Dev \u2014 the coding agent `hanzo dev` runs by default (co-installs hanzo-mcp).",
-                href: "https://github.com/hanzoai/dev",
-                icon: <Terminal className="w-4 h-4 text-sky-400" />,
-                tint: "bg-sky-500/10",
               },
               {
                 bin: "hanzo-mcp",

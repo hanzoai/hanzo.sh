@@ -20,7 +20,7 @@ $Tools = @(
     @{ Name = 'node';   Display = 'hanzod';       Repo = 'hanzoai/node';   Bin = 'hanzod';       Alias = 'hanzo-node' },
     @{ Name = 'zt';     Display = 'hanzozt';      Repo = 'hanzozt/zt';     Bin = 'zt';           Alias = 'hanzozt' },
     @{ Name = 'gen';    Display = 'hanzo-gen';    Repo = 'hanzoai/gen';    Bin = 'gen';          Alias = 'hanzo-gen' },
-    @{ Name = 'dev';    Display = 'hanzo-dev';    Repo = 'hanzoai/dev-v1';    Bin = 'dev';          Alias = 'hanzo-dev' },
+    @{ Name = 'dev';    Display = '';             Repo = 'hanzoai/dev-v1'; Bin = 'dev';          Alias = '' },
     @{ Name = 'mcp';    Display = 'hanzo-mcp';    Repo = 'hanzoai/mcp';    Bin = 'hanzo-mcp';    Alias = 'mcp' },
     @{ Name = 'cloud';  Display = 'hanzo-cloud';  Repo = 'hanzoai/cloud';  Bin = 'hanzo-cloud';  Alias = 'cloud' }
 )
@@ -38,8 +38,8 @@ if (-not $Quiet) {
 $wantRaw = if ($args -and $args.Count -gt 0) { $args } elseif ($env:HANZO_TOOLS) { $env:HANZO_TOOLS -split '[,\s]+' | Where-Object { $_ } } else { @() }
 $want = @($wantRaw | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ })
 
-if (($want -contains 'dev' -or $want -contains 'hanzo-dev') -and ($want -notcontains 'mcp' -and $want -notcontains 'hanzo-mcp')) {
-    $want += 'mcp'
+if ($want -contains 'hanzo') {
+    foreach ($dep in 'dev', 'mcp') { if ($want -notcontains $dep) { $want += $dep } }
 }
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
@@ -110,11 +110,14 @@ try {
             } catch {}
             if (-not $ver) { $ver = '?' }
 
-            Write-Host "  + $($t.Display) $ver" -ForegroundColor Green
-            $installed += $t.Display
+            if ($t.Display) {
+                Write-Host "  + $($t.Display) $ver" -ForegroundColor Green
+                $installed += $t.Display
+            }
         } catch {
-            Write-Host "  x $($t.Display) ($_ )" -ForegroundColor Red
-            $failed += $t.Display
+            $label = if ($t.Display) { $t.Display } else { $t.Bin }
+            Write-Host "  x $label ($_ )" -ForegroundColor Red
+            $failed += $label
         }
     }
 } finally {

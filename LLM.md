@@ -21,7 +21,6 @@ The installer downloads released, checksummed native binaries. Current names:
 | Node | hanzoai/node | hanzod, hanzo-node |
 | ZT | hanzozt/zt | hanzozt, zt, hanzo-zt |
 | Gen | hanzoai/gen | hanzo-gen, gen |
-| Dev | hanzoai/dev | hanzo-dev, dev |
 | Engine | hanzoai/engine | hanzo-engine, engine |
 | MCP | hanzoai/mcp | hanzo-mcp, mcp |
 | Cloud | hanzoai/cloud | hanzo-cloud, cloud |

@@ -49,12 +49,13 @@ CLI_REPO="${HANZO_CLI_REPO:-hanzoai/cli}"
 #
 # Prefixed names give each product a distinct command on the left side of the
 # installer output; short aliases symlink to the same binary. hanzo-cli is the
-# control plane delegate; hanzo-node is reserved for the network node.
+# control plane delegate; hanzo-node is reserved for the network node. A row with
+# no <display> is part of `hanzo`: installed with it, never listed or named.
 TOOLS='hanzo:hanzo:hanzoai/cli:hanzo:hanzo-cli
 node:hanzod:hanzoai/node:hanzod:hanzo-node
 zt:hanzozt:hanzozt/zt:zt:hanzozt
 gen:hanzo-gen:hanzoai/gen:gen:hanzo-gen
-dev:hanzo-dev:hanzoai/dev-v1:dev:hanzo-dev
+dev::hanzoai/dev-v1:dev:
 mcp:hanzo-mcp:hanzoai/mcp:hanzo-mcp:mcp
 cloud:hanzo-cloud:hanzoai/cloud:hanzo-cloud:cloud'
 
@@ -63,7 +64,7 @@ cloud:hanzo-cloud:hanzoai/cloud:hanzo-cloud:cloud'
 tool_names() {
     printf '%s\n' "$TOOLS" | while IFS= read -r n_row; do
         n_rest=${n_row#*:}
-        printf ' %s' "${n_rest%%:*}"
+        [ -z "${n_rest%%:*}" ] || printf ' %s' "${n_rest%%:*}"
     done
 }
 
@@ -123,7 +124,6 @@ tools:
   hanzod         Hanzo Node
   hanzozt        ZT zero-trust networking
   hanzo-gen      Hanzo Gen
-  hanzo-dev      Hanzo Dev (co-installs hanzo-mcp)
   hanzo-mcp      the MCP server
   hanzo-cloud    Hanzo Cloud
 
@@ -136,11 +136,10 @@ options:
 
 shortcuts:
   curl -fsSL hanzo.sh | sh           # every installable tool
-  curl -fsSL hanzo.sh/cli | sh       # the CLI only
+  curl -fsSL hanzo.sh/cli | sh       # the CLI and what it runs
   curl -fsSL hanzo.sh/node | sh      # Hanzo Node (hanzod) only
   curl -fsSL hanzo.sh/zt | sh        # ZT networking only
   curl -fsSL hanzo.sh/gen | sh       # Hanzo Gen only
-  curl -fsSL hanzo.sh/dev | sh       # Hanzo Dev (+ MCP server)
   curl -fsSL hanzo.sh/mcp | sh       # the MCP server only
   curl -fsSL hanzo.sh/cloud | sh     # Hanzo Cloud only
 
@@ -196,8 +195,8 @@ validate_wanted() {
 # wanted <name> <display> <binary> <alias> — did the caller ask for this tool?
 # `default`, `full` and `all` named the old bundles. They meant "everything",
 # which is what naming nothing means, so they map to that rather than failing an
-# install someone already scripted. The prefixed name (`hanzo-dev`) selects the
-# same row as the short name.
+# install someone already scripted. The prefixed name selects the same row as
+# the short name.
 wanted() {
     for w in $WANT; do
         case $w in
@@ -208,14 +207,16 @@ wanted() {
     return 1
 }
 
-# Requesting `dev` or `hanzo-dev` always co-installs `mcp` (`hanzo-mcp`).
+# `hanzo` runs the agent engine and the MCP server, so asking for it brings both.
 expand_verbs() {
     case " $WANT " in
-        *" dev "*|*" hanzo-dev "*)
-            case " $WANT " in
-                *" mcp "*|*" hanzo-mcp "*) ;;
-                *) WANT="$WANT mcp" ;;
-            esac
+        *" hanzo "*)
+            for e_dep in dev mcp; do
+                case " $WANT " in
+                    *" $e_dep "*) ;;
+                    *) WANT="$WANT $e_dep" ;;
+                esac
+            done
             ;;
     esac
 }
@@ -245,6 +246,7 @@ fetch_one_installer() {
 # install <display> <repo> <binary> <second-name> <signer>
 install_tool() {
     i_disp="$1"; i_repo="$2"; i_bin="$3"; i_alias="$4"; i_signer="$5"
+    i_name="${i_disp:-$i_bin}"
 
     # HANZO_VERSION names a CLI release. Passing it to anything else would pin a
     # tag that repo has never published, so it reaches exactly one tool.
@@ -266,8 +268,8 @@ install_tool() {
           | sed 's/^/    /' || true
     else
         printf '%s\n' "$i_out" | sed 's/^/    /'
-        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_disp"
-        fail "$i_disp"; return 1
+        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_name"
+        fail "$i_name"; return 1
     fi
 
     EXT=''
@@ -282,8 +284,8 @@ install_tool() {
         EXT=''
     fi
     if [ ! -x "$bin_path" ]; then
-        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_disp"
-        fail "$i_disp (nothing at $bin_path)"; return 1
+        FAILED_N=$((FAILED_N + 1)); FAILED_LIST="$FAILED_LIST $i_name"
+        fail "$i_name (nothing at $bin_path)"; return 1
     fi
     if [ "$i_bin" = dev ]; then
         rm -f "${HANZO_HOME:-$HOME/.hanzo}/dev/version.json"
@@ -314,12 +316,13 @@ install_tool() {
             fail "$i_alias was not installed alongside $i_bin"; return 1
         fi
     fi
+    INSTALLED_N=$((INSTALLED_N + 1))
+    [ -n "$i_disp" ] || return 0
     if [ "$i_unverified" = 1 ]; then
         warn "$i_disp $i_ver — installed; provenance unverified"
     else
         ok "$i_disp $i_ver"
     fi
-    INSTALLED_N=$((INSTALLED_N + 1))
     INSTALLED_LIST="$INSTALLED_LIST $i_disp"
 }
 

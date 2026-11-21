@@ -31,18 +31,16 @@ That installs every Hanzo tool published as a public native binary:
 - `hanzod` (also `hanzo-node`) — Hanzo Node, the L1 network validator and RPC node, with the inference engine built in
 - `hanzozt` (also `zt`, `hanzo-zt`) — ZT zero-trust networking: tunnel, controller and router
 - `hanzo-gen` (also `gen`) — Hanzo Gen, the harness that launches and routes any coding agent
-- `hanzo-dev` (also `dev`) — Hanzo Dev, the coding agent `hanzo dev` runs by default (co-installs `hanzo-mcp`)
 - `hanzo-mcp` (also `mcp`) — the MCP server
 - `hanzo-cloud` (also `cloud`) — Hanzo Cloud, self-hosted AI gateway, encrypted KMS, IAM and chat UI
 
 One tool at a time:
 
 ```sh
-curl -fsSL https://hanzo.sh/cli | sh       # the CLI only
+curl -fsSL https://hanzo.sh/cli | sh       # the CLI and what it runs
 curl -fsSL https://hanzo.sh/node | sh      # Hanzo Node (hanzod) only
 curl -fsSL https://hanzo.sh/zt | sh        # ZT networking only
 curl -fsSL https://hanzo.sh/gen | sh       # Hanzo Gen only
-curl -fsSL https://hanzo.sh/dev | sh       # the coding agent (+ MCP server)
 curl -fsSL https://hanzo.sh/mcp | sh       # the MCP server only
 curl -fsSL https://hanzo.sh/cloud | sh     # Hanzo Cloud only
 ```
@@ -70,8 +68,8 @@ Every command below exists in the shipped binary; `hanzo --help` lists them all.
 # launches it accelerated. After that, `hanzo` alone launches your favourite.
 hanzo
 
-# Switch agent (saved as your favourite), or run Hanzo Dev
-hanzo dev --claude      # --codex, --cursor, --agy; plain `hanzo dev` is Hanzo Dev
+# Switch agent (saved as your favourite), or run Hanzo's own
+hanzo dev --claude      # --codex, --cursor, --agy; plain `hanzo dev` is Hanzo's own
 hanzo dev "fix the failing test"
 
 # Continue the last conversation
@@ -123,7 +121,6 @@ for a signed-in caller and returns 401 without a bearer token.
 - [Careers](https://hanzo.ai/careers)
 - [CLI source](https://github.com/hanzoai/cli)
 - [MCP source](https://github.com/hanzoai/mcp)
-- [Dev source](https://github.com/hanzoai/dev)
 - [Gen source](https://github.com/hanzoai/gen)
 
 ## Contact

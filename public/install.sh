@@ -1,8 +1,8 @@
 #!/bin/sh
 # hanzo installer
 #
-#   curl -fsSL hanzo.sh | sh
-#   curl -fsSL hanzo.sh | bash
+#   curl -fsSL https://hanzo.sh | sh
+#   curl -fsSL https://hanzo.sh | bash
 #
 # copyright (c) Hanzo AI, Inc.
 # https://hanzo.ai
@@ -113,8 +113,8 @@ usage() {
     cat <<'EOF'
 hanzo installer
 
-usage: curl -fsSL hanzo.sh | sh
-       curl -fsSL hanzo.sh | sh -s -- [options] [tool...]
+usage: curl -fsSL https://hanzo.sh | sh
+       curl -fsSL https://hanzo.sh | sh -s -- [options] [tool...]
 
 Downloads one prebuilt native binary per tool and verifies its checksum.
 With no tool named, installs every tool that ships as a public native binary.
@@ -135,13 +135,13 @@ options:
   -h, --help           show this help
 
 shortcuts:
-  curl -fsSL hanzo.sh | sh           # every installable tool
-  curl -fsSL hanzo.sh/cli | sh       # the CLI and what it runs
-  curl -fsSL hanzo.sh/node | sh      # Hanzo Node (hanzod) only
-  curl -fsSL hanzo.sh/zt | sh        # ZT networking only
-  curl -fsSL hanzo.sh/gen | sh       # Hanzo Gen only
-  curl -fsSL hanzo.sh/mcp | sh       # the MCP server only
-  curl -fsSL hanzo.sh/cloud | sh     # Hanzo Cloud only
+  curl -fsSL https://hanzo.sh | sh           # every installable tool
+  curl -fsSL https://hanzo.sh/cli | sh       # the CLI and what it runs
+  curl -fsSL https://hanzo.sh/node | sh      # Hanzo Node (hanzod) only
+  curl -fsSL https://hanzo.sh/zt | sh        # ZT networking only
+  curl -fsSL https://hanzo.sh/gen | sh       # Hanzo Gen only
+  curl -fsSL https://hanzo.sh/mcp | sh       # the MCP server only
+  curl -fsSL https://hanzo.sh/cloud | sh     # Hanzo Cloud only
 
 Re-run any time to upgrade; installing is just downloading the current build.
 EOF

@@ -16,7 +16,7 @@ Pick the installer for the OS you are running on. Check with `uname -s` (`Darwin
 macOS, Linux, WSL and Windows Git Bash:
 
 ```sh
-curl -fsSL hanzo.sh | sh
+curl -fsSL https://hanzo.sh | sh
 ```
 
 Windows PowerShell:

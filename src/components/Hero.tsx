@@ -1,6 +1,7 @@
 import { Terminal, Copy, Check, Code, Download, ExternalLink, Package, Cpu, Globe, BookOpen, ShieldCheck, Laptop, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { TopologyDots } from "./TopologyDots";
 
 const GitHubIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
@@ -117,6 +118,7 @@ const TOOLS = [
 ];
 
 const Hero = () => {
+  const heroRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [platform, setPlatform] = useState<PlatformTab>(() => (onWindows() ? "ps1" : "unix"));
 
@@ -160,12 +162,11 @@ const Hero = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
-      {/* Masthead — mirrors hanzo.ai */}
+      {/* Masthead — clean text wordmark; H mark lives along the page edge & footer */}
       <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-xl">
         <div className="max-w-[1200px] mx-auto px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
-            <a href="https://hanzo.ai" className="inline-flex items-center gap-2 font-semibold tracking-tight text-[var(--ink)]">
-              <HanzoLogo className="w-5 h-5" />
+            <a href="https://hanzo.ai" className="inline-flex items-center font-semibold tracking-tight text-[var(--ink)]">
               <span>Hanzo AI</span>
             </a>
             <nav className="hidden sm:flex items-center gap-1" aria-label="Primary">
@@ -192,7 +193,7 @@ const Hero = () => {
               <GitHubIcon className="w-[18px] h-[18px]" />
             </a>
             <a
-              href="https://hanzo.app"
+              href="https://hanzo.ai/signup"
               className="inline-flex items-center justify-center rounded-full bg-[var(--solid-bg)] text-[var(--solid-ink)] hover:bg-[var(--solid-hover)] px-4 py-1.5 text-sm font-medium transition-colors"
             >
               Try Hanzo
@@ -201,37 +202,46 @@ const Hero = () => {
         </div>
       </header>
 
-      {/* Hero with hanzo.ai edge halftone field */}
-      <section className="hz-hero border-b border-[var(--line)]">
-        <div className="relative z-10 max-w-4xl mx-auto px-6 pt-16 pb-16 md:pt-20 md:pb-20 space-y-10">
-          {/* Headline */}
-          <div className="text-center space-y-4">
+      {/* Side rail H mark along wide viewports */}
+      <a
+        href="https://hanzo.ai"
+        aria-label="Hanzo AI"
+        className="hidden xl:flex fixed left-5 bottom-8 z-30 w-9 h-9 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--bg)]/85 backdrop-blur-md text-[var(--ink)] opacity-60 hover:opacity-100 hover:border-[var(--line-strong)] transition-all"
+      >
+        <HanzoLogo className="w-4 h-4" />
+      </a>
+
+      {/* Hero with organic 3D topological dot-matrix & Blinn-Phong hover gleam */}
+      <section ref={heroRef} className="hz-hero border-b border-[var(--line)]">
+        <TopologyDots host={heroRef} drift />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 pt-12 pb-12 md:pt-16 md:pb-16 space-y-7">
+          {/* Rapid-fire headline */}
+          <div className="text-center space-y-3">
             <a
               href="https://hanzo.ai/security"
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[var(--bg)] px-3.5 py-1 text-xs font-mono text-[var(--soft)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[var(--bg)]/90 backdrop-blur-sm px-3.5 py-1 text-xs font-mono text-[var(--soft)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
             >
               <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Open source · SHA-256 verified binaries</span>
+              <span>Open source · SHA-256 verified</span>
               <ArrowRight className="w-3 h-3" aria-hidden="true" />
             </a>
-            <h1 className="text-[clamp(2rem,4.6vw,3.5rem)] font-semibold tracking-[-0.038em] leading-[1.06] text-[var(--ink)]">
-              <span className="block font-normal text-[0.58em] tracking-[-0.02em] text-[var(--soft)] mb-2">
+            <h1 className="text-[clamp(1.85rem,4.4vw,3.35rem)] font-semibold tracking-[-0.038em] leading-[1.06] text-[var(--ink)]">
+              <span className="block font-normal text-[0.54em] tracking-[-0.02em] text-[var(--soft)] mb-1.5">
                 One command. Native binaries.
               </span>
               <code className="font-mono font-semibold text-[0.76em] tracking-[-0.03em]">
                 curl -fsSL https://hanzo.sh | sh
               </code>
             </h1>
-            <p className="text-base md:text-lg text-[var(--soft)] max-w-xl mx-auto leading-relaxed">
-              The Hanzo CLI, MCP server, and coding agent as prebuilt native binaries.
-              No runtime, no package manager, nothing to build.
+            <p className="text-sm md:text-base text-[var(--soft)] max-w-lg mx-auto">
+              CLI, MCP, and coding agent. Prebuilt. Zero runtime.
             </p>
           </div>
 
           {/* Interactive Install Terminal */}
-          <div className="max-w-2xl mx-auto space-y-3">
+          <div className="max-w-2xl mx-auto space-y-2.5">
             {/* OS / Shell Selector */}
-            <div className="flex flex-wrap justify-center gap-1 p-1 bg-[var(--surface-2)] border border-[var(--line)] rounded-full w-fit mx-auto">
+            <div className="flex flex-wrap justify-center gap-1 p-1 bg-[var(--surface-2)]/90 backdrop-blur-sm border border-[var(--line)] rounded-full w-fit mx-auto">
               {PLATFORM_TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -306,31 +316,24 @@ const Hero = () => {
               </button>
             </div>
 
-            <div className="text-center space-y-1 pt-1">
-              <p className="text-xs text-[var(--soft)]">
-                {PLATFORM_TABS.find((t) => t.id === platform)?.note}
-              </p>
-              <p className="text-xs text-[var(--faint)]">
-                SHA-256 verified against GitHub Releases. Pass{" "}
-                <code className="font-mono text-[var(--soft)]">--strict</code> for attestation verification,{" "}
-                <a href="https://hanzo.sh/install.sh" className="underline underline-offset-4 hover:text-[var(--ink)]">
-                  inspect install.sh
-                </a>
-                , or re-run to upgrade.
-              </p>
-            </div>
+            <p className="text-center text-xs text-[var(--faint)] pt-0.5">
+              SHA-256 verified · <code className="font-mono text-[var(--soft)]">--strict</code> attestation ·{" "}
+              <a href="https://hanzo.sh/install.sh" className="underline underline-offset-4 hover:text-[var(--ink)]">
+                install.sh
+              </a>
+            </p>
           </div>
 
           {/* Paste into your agent */}
-          <div className="max-w-2xl mx-auto space-y-2">
+          <div className="max-w-2xl mx-auto space-y-1.5">
             <p className="text-center text-xs font-mono uppercase tracking-[0.12em] text-[var(--faint)]">
-              Or paste into Claude Code, Codex, Cursor, or Antigravity
+              Or paste into any agent
             </p>
             <button
               type="button"
               aria-label="Copy the line to paste into your coding agent"
               onClick={() => handleCopy(AGENT_LINE, "agent")}
-              className="group w-full flex items-center gap-3 bg-[var(--surface)] border border-[var(--line-strong)] hover:border-[var(--ink)] px-4 py-3 rounded-xl text-left transition-colors cursor-pointer"
+              className="group w-full flex items-center gap-3 bg-[var(--surface)]/95 backdrop-blur-sm border border-[var(--line-strong)] hover:border-[var(--ink)] px-4 py-2.5 rounded-xl text-left transition-colors cursor-pointer"
             >
               <Terminal className="w-4 h-4 text-[var(--faint)] flex-shrink-0" />
               <code className="text-[var(--ink)] font-mono text-xs md:text-sm flex-1 break-words">
@@ -514,19 +517,28 @@ const Hero = () => {
         </section>
       </main>
 
-      {/* Footer — mirrors hanzo.ai */}
+      {/* Footer — copyright left, Terms/Privacy centered (above on mobile), H mark flush right opposite copyright */}
       <footer className="border-t border-[var(--line)] py-8 px-6">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--soft)]">
-          <div className="flex items-center gap-2">
-            <HanzoLogo className="w-4 h-4 text-[var(--ink)]" />
-            <span>© {new Date().getFullYear()} Hanzo AI, Inc.</span>
-          </div>
-          <div className="flex items-center gap-5">
-            <a href="https://hanzo.ai/security" className="hover:text-[var(--ink)] transition-colors">Security</a>
-            <a href="https://hanzo.ai/privacy" className="hover:text-[var(--ink)] transition-colors">Privacy</a>
+        <div className="max-w-4xl mx-auto flex flex-col gap-4 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center text-xs text-[var(--soft)]">
+          <nav
+            aria-label="Legal and links"
+            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:order-2"
+          >
             <a href="https://hanzo.ai/terms" className="hover:text-[var(--ink)] transition-colors">Terms</a>
+            <a href="https://hanzo.ai/privacy" className="hover:text-[var(--ink)] transition-colors">Privacy</a>
+            <a href="https://hanzo.ai/security" className="hover:text-[var(--ink)] transition-colors">Security</a>
             <a href="https://status.hanzo.ai" className="hover:text-[var(--ink)] transition-colors">Status</a>
             <a href="https://github.com/hanzoai" className="hover:text-[var(--ink)] transition-colors">GitHub</a>
+          </nav>
+          <div className="flex items-center justify-between w-full sm:contents">
+            <span className="sm:order-1 sm:justify-self-start">© {new Date().getFullYear()} Hanzo AI, Inc.</span>
+            <a
+              href="https://hanzo.ai"
+              aria-label="Hanzo AI"
+              className="sm:order-3 sm:justify-self-end inline-flex items-center text-[var(--ink)] hover:opacity-75 transition-opacity"
+            >
+              <HanzoLogo className="w-5 h-5" />
+            </a>
           </div>
         </div>
       </footer>

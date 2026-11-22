@@ -1,6 +1,6 @@
 #!/bin/sh
 # Hanzo desktop.
-#   curl -fsSL hanzo.sh/desktop | sh
+#   curl -fsSL https://hanzo.sh/desktop | sh
 #
 # Routing only. The installer is the one place that knows which tools ship as a
 # native binary and what to say about the ones that do not.

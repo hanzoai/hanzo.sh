@@ -1,35 +1,25 @@
-import { Terminal, Copy, Check, Code, Download, ExternalLink, Package, Cpu, Globe, BookOpen, Zap, Laptop } from "lucide-react";
+import { Terminal, Copy, Check, Code, Download, ExternalLink, Package, Cpu, Globe, BookOpen, ShieldCheck, Laptop, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const GitHubIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+const GitHubIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
     <path d="M12 0.297C5.37 0.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
   </svg>
 );
 
-const HanzoLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
-  <svg viewBox="0 0 67 67" className={className} xmlns="http://www.w3.org/2000/svg">
-    <path d="M22.21 67V44.6369H0V67H22.21Z" fill="currentColor"/>
-    <path d="M0 44.6369L22.21 46.8285V44.6369H0Z" fill="currentColor" opacity="0.867"/>
-    <path d="M66.7038 22.3184H22.2534L0.0878906 44.6367H44.4634L66.7038 22.3184Z" fill="currentColor"/>
-    <path d="M22.21 0H0V22.3184H22.21V0Z" fill="currentColor"/>
-    <path d="M66.7198 0H44.5098V22.3184H66.7198V0Z" fill="currentColor"/>
-    <path d="M66.6753 22.3185L44.5098 20.0822V22.3185H66.6753Z" fill="currentColor" opacity="0.867"/>
-    <path d="M66.7198 67V44.6369H44.5098V67H66.7198Z" fill="currentColor"/>
+const HanzoLogo = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg viewBox="0 0 67 67" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M22.21 67V44.6369H0V67H22.21Z" fill="currentColor" />
+    <path d="M0 44.6369L22.21 46.8285V44.6369H0Z" fill="currentColor" opacity="0.867" />
+    <path d="M66.7038 22.3184H22.2534L0.0878906 44.6367H44.4634L66.7038 22.3184Z" fill="currentColor" />
+    <path d="M22.21 0H0V22.3184H22.21V0Z" fill="currentColor" />
+    <path d="M66.7198 0H44.5098V22.3184H66.7198V0Z" fill="currentColor" />
+    <path d="M66.6753 22.3185L44.5098 20.0822V22.3185H66.6753Z" fill="currentColor" opacity="0.867" />
+    <path d="M66.7198 67V44.6369H44.5098V67H66.7198Z" fill="currentColor" />
   </svg>
 );
 
-// lucide 1.0 dropped its brand icons; these are the paths its Github icon drew.
-const Github = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
-    <path d="M9 18c-4.51 2-5-2-7-2"/>
-  </svg>
-);
-
-// What a person pastes into a coding agent: the agent fetches setup.md, installs
-// the CLI and hands back to the person, who runs `hanzo`.
 const AGENT_LINE = "Set up Hanzo on this machine: follow https://hanzo.sh/setup.md";
 
 const onWindows = () => typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent);
@@ -39,38 +29,90 @@ type PlatformTab = "unix" | "ps1" | "gitbash" | "cmd";
 const PLATFORM_TABS: { id: PlatformTab; label: string; note: string }[] = [
   { id: "unix", label: "macOS / Linux / WSL", note: "POSIX sh / bash / zsh (Apple Silicon, Intel, Linux amd64/arm64)." },
   { id: "ps1", label: "Windows PowerShell", note: "Native Windows 10/11 (x64) — installs .exe binaries to ~\\.local\\bin and updates User PATH." },
-  { id: "gitbash", label: "Windows Git Bash", note: "Git Bash / MSYS2 — runs the same curl | sh installer natively on Windows." },
+  { id: "gitbash", label: "Windows Git Bash", note: "Git Bash / MSYS2 — runs the same curl -fsSL installer natively on Windows." },
   { id: "cmd", label: "Windows CMD", note: "Command Prompt — downloads install.cmd, verifies checksums via PowerShell, cleans up." },
 ];
 
 const DESKTOP_APPS = [
   {
-    name: "Hanzo App",
+    name: "Hanzo Desktop",
     domain: "hanzo.app",
-    desc: "Native AI workspace & chat client with local models, MCP tools, and encrypted sync.",
-    winUrl: "https://github.com/hanzoai/desktop/releases/latest",
+    desc: "Native AI workspace and coding client with local models, MCP tools, and encrypted sync.",
+    winUrl: "https://hanzo.ai/download",
     allUrl: "https://github.com/hanzoai/desktop/releases",
   },
   {
     name: "Hanzo Bot",
     domain: "hanzo.bot",
-    desc: "Autonomous multi-channel desktop assistant, scheduler, and agent runner.",
+    desc: "Local-first multi-channel assistant, scheduler, and agent runner.",
     winUrl: "https://github.com/hanzoai/bot/releases/latest",
     allUrl: "https://github.com/hanzoai/bot/releases",
   },
   {
-    name: "Hanzo Codes",
+    name: "Hanzo IDE",
     domain: "hanzo.codes",
-    desc: "Native AI IDE + local Git forge (`gitd`) for code review, editing, and agent sessions.",
+    desc: "Native AI workspace built around repositories, agent diffs, inline reviews, and terminals.",
     winUrl: "https://github.com/hanzoai/ide/releases/latest",
-    allUrl: "https://github.com/hanzoai/codes/releases",
+    allUrl: "https://github.com/hanzoai/ide/releases",
   },
   {
     name: "Hanzo Team",
     domain: "hanzo.team",
-    desc: "Collaborative team workspace, project boards, and agent orchestration client.",
+    desc: "Shared workspace where your team and agents coordinate tasks, repositories, and approvals.",
     winUrl: "https://github.com/hanzoai/team/releases/latest",
     allUrl: "https://github.com/hanzoai/team/releases",
+  },
+];
+
+const TOOLS = [
+  {
+    bin: "hanzo",
+    also: "hanzo-cli",
+    desc: "The Hanzo CLI — auth, billing, coding sessions, and every product of the Hanzo cloud.",
+    href: "https://github.com/hanzoai/cli",
+    icon: Cpu,
+  },
+  {
+    bin: "hanzod",
+    also: "hanzo-node",
+    desc: "Hanzo Node — the local daemon, L1 network validator, consensus mesh, and JSON-RPC node.",
+    href: "https://github.com/hanzoai/node",
+    icon: Globe,
+  },
+  {
+    bin: "hanzozt",
+    also: "zt",
+    desc: "ZT — zero-trust networking, tunnels, controller, and router.",
+    href: "https://github.com/hanzozt/zt",
+    icon: ShieldCheck,
+  },
+  {
+    bin: "hanzo-gen",
+    also: "gen",
+    desc: "Hanzo Gen — the native Rust coding harness.",
+    href: "https://github.com/hanzoai/gen",
+    icon: Code,
+  },
+  {
+    bin: "hanzo-dev",
+    also: "dev",
+    desc: "Hanzo Dev — the coding agent `hanzo dev` runs by default (co-installs hanzo-mcp).",
+    href: "https://github.com/hanzoai/dev",
+    icon: Terminal,
+  },
+  {
+    bin: "hanzo-mcp",
+    also: "mcp",
+    desc: "The MCP server — the Hanzo toolset over stdio or HTTP for any MCP client.",
+    href: "https://github.com/hanzoai/mcp",
+    icon: Package,
+  },
+  {
+    bin: "hanzo-cloud",
+    also: "cloud",
+    desc: "Hanzo Cloud — self-hosted AI gateway, encrypted KMS, IAM, and local control plane in one binary.",
+    href: "https://github.com/hanzoai/cloud",
+    icon: Globe,
   },
 ];
 
@@ -81,92 +123,124 @@ const Hero = () => {
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
     setCopied(id);
-    toast.success("Copied to clipboard!");
+    toast.success("Copied to clipboard");
     setTimeout(() => setCopied(null), 2000);
   };
 
   const installCommandsByPlatform: Record<PlatformTab, { id: string; label: string; cmd: string }[]> = {
     unix: [
-      { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
-      { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
-      { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
+      { id: "all", label: "Everything", cmd: "curl -fsSL https://hanzo.sh | sh" },
+      { id: "cli", label: "CLI", cmd: "curl -fsSL https://hanzo.sh/cli | sh" },
+      { id: "mcp", label: "MCP", cmd: "curl -fsSL https://hanzo.sh/mcp | sh" },
+      { id: "dev", label: "Dev", cmd: "curl -fsSL https://hanzo.sh/dev | sh" },
     ],
     ps1: [
       { id: "all", label: "Everything", cmd: "irm https://hanzo.sh/install.ps1 | iex" },
       { id: "cli", label: "CLI", cmd: "irm https://hanzo.sh/cli.ps1 | iex" },
       { id: "mcp", label: "MCP", cmd: "irm https://hanzo.sh/mcp.ps1 | iex" },
+      { id: "dev", label: "Dev", cmd: "irm https://hanzo.sh/dev.ps1 | iex" },
     ],
     gitbash: [
-      { id: "all", label: "Everything", cmd: "curl -fsSL hanzo.sh | sh" },
-      { id: "cli", label: "CLI", cmd: "curl -fsSL hanzo.sh/cli | sh" },
-      { id: "mcp", label: "MCP", cmd: "curl -fsSL hanzo.sh/mcp | sh" },
+      { id: "all", label: "Everything", cmd: "curl -fsSL https://hanzo.sh | sh" },
+      { id: "cli", label: "CLI", cmd: "curl -fsSL https://hanzo.sh/cli | sh" },
+      { id: "mcp", label: "MCP", cmd: "curl -fsSL https://hanzo.sh/mcp | sh" },
+      { id: "dev", label: "Dev", cmd: "curl -fsSL https://hanzo.sh/dev | sh" },
     ],
     cmd: [
       { id: "all", label: "Everything", cmd: "curl -fsSL https://hanzo.sh/install.cmd -o install.cmd && install.cmd && del install.cmd" },
       { id: "cli", label: "CLI", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/cli.ps1 | iex\"" },
       { id: "mcp", label: "MCP", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/mcp.ps1 | iex\"" },
+      { id: "dev", label: "Dev", cmd: "powershell -NoProfile -Command \"irm https://hanzo.sh/dev.ps1 | iex\"" },
     ],
   };
 
   const installCommands = installCommandsByPlatform[platform];
   const [activeInstall, setActiveInstall] = useState("all");
+  const currentCmd = installCommands.find((c) => c.id === activeInstall)?.cmd || installCommands[0].cmd;
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/90 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <a href="https://hanzo.ai" className="flex items-center gap-2.5 text-white font-medium">
-            <HanzoLogo className="w-6 h-6" />
-            <span>Hanzo</span>
-          </a>
-          <nav className="flex items-center gap-1">
-            <a href="https://docs.hanzo.ai" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              Docs
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
+      {/* Masthead — mirrors hanzo.ai */}
+      <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-xl">
+        <div className="max-w-[1200px] mx-auto px-6 h-14 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <a href="https://hanzo.ai" className="inline-flex items-center gap-2 font-semibold tracking-tight text-[var(--ink)]">
+              <HanzoLogo className="w-5 h-5" />
+              <span>Hanzo AI</span>
             </a>
-            <a href="https://hanzo.ai/university" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              University
+            <nav className="hidden sm:flex items-center gap-1" aria-label="Primary">
+              <a href="https://docs.hanzo.ai" className="px-3 py-1.5 text-sm text-[var(--soft)] hover:text-[var(--ink)] transition-colors rounded-full">
+                Docs
+              </a>
+              <a href="https://hanzoskills.com" className="px-3 py-1.5 text-sm text-[var(--soft)] hover:text-[var(--ink)] transition-colors rounded-full">
+                Skills
+              </a>
+              <a href="https://hanzo.ai/download" className="px-3 py-1.5 text-sm text-[var(--soft)] hover:text-[var(--ink)] transition-colors rounded-full">
+                Download
+              </a>
+              <a href="https://hanzo.ai/security" className="px-3 py-1.5 text-sm text-[var(--soft)] hover:text-[var(--ink)] transition-colors rounded-full">
+                Security
+              </a>
+            </nav>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://github.com/hanzoai/hanzo.sh"
+              aria-label="hanzo.sh on GitHub"
+              className="p-2 text-[var(--soft)] hover:text-[var(--ink)] transition-colors rounded-full"
+            >
+              <GitHubIcon className="w-[18px] h-[18px]" />
             </a>
-            <a href="https://hanzo.market" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              Market
+            <a
+              href="https://hanzo.app"
+              className="inline-flex items-center justify-center rounded-full bg-[var(--solid-bg)] text-[var(--solid-ink)] hover:bg-[var(--solid-hover)] px-4 py-1.5 text-sm font-medium transition-colors"
+            >
+              Try Hanzo
             </a>
-            <a href="https://sensei.group" className="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              Sensei
-            </a>
-            <a href="https://github.com/hanzoai" aria-label="Hanzo GitHub" className="ml-2 p-2 text-white/60 hover:text-white transition-colors rounded-md hover:bg-white/5">
-              <GitHubIcon className="w-5 h-5" />
-            </a>
-          </nav>
+          </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <main className="pt-28 pb-16 px-6">
-        <div className="max-w-4xl mx-auto space-y-12">
-          {/* Header */}
+      {/* Hero with hanzo.ai edge halftone field */}
+      <section className="hz-hero border-b border-[var(--line)]">
+        <div className="relative z-10 max-w-4xl mx-auto px-6 pt-16 pb-16 md:pt-20 md:pb-20 space-y-10">
+          {/* Headline */}
           <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              <code className="text-white/90">curl</code>{" "}
-              <span className="bg-gradient-to-r from-[#d81c33] to-[#f0506a] bg-clip-text text-transparent">hanzo.sh</span>
+            <a
+              href="https://hanzo.ai/security"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[var(--bg)] px-3.5 py-1 text-xs font-mono text-[var(--soft)] hover:text-[var(--ink)] hover:border-[var(--ink)] transition-colors"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Open source · SHA-256 verified binaries</span>
+              <ArrowRight className="w-3 h-3" aria-hidden="true" />
+            </a>
+            <h1 className="text-[clamp(2rem,4.6vw,3.5rem)] font-semibold tracking-[-0.038em] leading-[1.06] text-[var(--ink)]">
+              <span className="block font-normal text-[0.58em] tracking-[-0.02em] text-[var(--soft)] mb-2">
+                One command. Native binaries.
+              </span>
+              <code className="font-mono font-semibold text-[0.76em] tracking-[-0.03em]">
+                curl -fsSL https://hanzo.sh | sh
+              </code>
             </h1>
-            <p className="text-lg text-white/50 max-w-xl mx-auto">
-              The Hanzo CLI, the MCP server and the coding agent, as native
-              binaries. One command, nothing to build.
+            <p className="text-base md:text-lg text-[var(--soft)] max-w-xl mx-auto leading-relaxed">
+              The Hanzo CLI, MCP server, and coding agent as prebuilt native binaries.
+              No runtime, no package manager, nothing to build.
             </p>
           </div>
 
-          {/* Main Install */}
-          <div className="max-w-xl mx-auto space-y-3">
-            {/* OS / Shell Selector (Antigravity-style platform switcher) */}
-            <div className="flex flex-wrap justify-center gap-1 p-1 bg-white/[0.04] border border-white/10 rounded-lg w-fit mx-auto">
+          {/* Interactive Install Terminal */}
+          <div className="max-w-2xl mx-auto space-y-3">
+            {/* OS / Shell Selector */}
+            <div className="flex flex-wrap justify-center gap-1 p-1 bg-[var(--surface-2)] border border-[var(--line)] rounded-full w-fit mx-auto">
               {PLATFORM_TABS.map((tab) => (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setPlatform(tab.id)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                     platform === tab.id
-                      ? "bg-[#d81c33] text-white"
-                      : "text-white/50 hover:text-white"
+                      ? "bg-[var(--solid-bg)] text-[var(--solid-ink)]"
+                      : "text-[var(--soft)] hover:text-[var(--ink)]"
                   }`}
                 >
                   {tab.label}
@@ -174,313 +248,285 @@ const Hero = () => {
               ))}
             </div>
 
-            <div className="flex justify-center gap-1 p-1 bg-white/5 rounded-lg w-fit mx-auto">
-              {installCommands.map((item) => (
+            {/* Dark terminal card matching hanzo.ai hero */}
+            <div className="hz-term rounded-2xl overflow-hidden shadow-[0_20px_50px_-24px_rgba(0,0,0,0.45)]">
+              <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/10">
+                <div className="flex items-center gap-1.5" aria-hidden="true">
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                </div>
+                <div className="flex items-center gap-1" role="tablist" aria-label="Install target">
+                  {installCommands.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeInstall === item.id}
+                      onClick={() => setActiveInstall(item.id)}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-mono transition-colors cursor-pointer ${
+                        activeInstall === item.id
+                          ? "bg-white text-black font-medium"
+                          : "text-white/55 hover:text-white"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
                 <button
-                  key={item.id}
-                  onClick={() => setActiveInstall(item.id)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    activeInstall === item.id
-                      ? "bg-white text-black"
-                      : "text-white/50 hover:text-white"
-                  }`}
+                  type="button"
+                  onClick={() => handleCopy(currentCmd, activeInstall)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-0.5 text-xs font-mono text-white/75 hover:text-white hover:border-white/35 transition-colors cursor-pointer"
+                  aria-label="Copy install command"
                 >
-                  {item.label}
+                  {copied === activeInstall ? (
+                    <>
+                      <Check className="w-3 h-3" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </>
+                  )}
                 </button>
-              ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCopy(currentCmd, activeInstall)}
+                className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/[0.03] transition-colors cursor-pointer"
+                aria-label="Click to copy install command"
+              >
+                <span className="font-mono text-sm text-white/40 select-none">$</span>
+                <code className="font-mono text-sm md:text-[15px] text-white flex-1 overflow-x-auto select-all">
+                  {currentCmd}
+                </code>
+              </button>
             </div>
 
-            <div
-              className="group flex items-center gap-3 bg-[#0d1117] border border-white/10 hover:border-white/20 p-3 rounded-lg cursor-pointer transition-colors"
-              onClick={() => handleCopy(installCommands.find((c) => c.id === activeInstall)?.cmd || "", activeInstall)}
-            >
-              <Terminal className="w-4 h-4 text-white/40 flex-shrink-0" />
-              <code className="text-[#e6edf3] font-mono text-sm flex-1 select-all overflow-x-auto">
-                {installCommands.find((c) => c.id === activeInstall)?.cmd}
-              </code>
-              {copied === activeInstall ? (
-                <Check className="w-4 h-4 text-green-400" />
-              ) : (
-                <Copy className="w-4 h-4 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-              )}
+            <div className="text-center space-y-1 pt-1">
+              <p className="text-xs text-[var(--soft)]">
+                {PLATFORM_TABS.find((t) => t.id === platform)?.note}
+              </p>
+              <p className="text-xs text-[var(--faint)]">
+                SHA-256 verified against GitHub Releases. Pass{" "}
+                <code className="font-mono text-[var(--soft)]">--strict</code> for attestation verification,{" "}
+                <a href="https://hanzo.sh/install.sh" className="underline underline-offset-4 hover:text-[var(--ink)]">
+                  inspect install.sh
+                </a>
+                , or re-run to upgrade.
+              </p>
             </div>
-
-            <p className="text-center text-white/60 text-xs">
-              {PLATFORM_TABS.find((t) => t.id === platform)?.note}
-            </p>
-            <p className="text-center text-white/40 text-xs">
-              One prebuilt native binary per tool, SHA-256 verified. No runtime,
-              no package manager, no build step. Re-run to upgrade.
-            </p>
           </div>
 
           {/* Paste into your agent */}
-          <div className="max-w-xl mx-auto space-y-2">
-            <p className="text-center text-white/50 text-sm">
-              Or paste this into Claude Code, Codex, Cursor or Antigravity
+          <div className="max-w-2xl mx-auto space-y-2">
+            <p className="text-center text-xs font-mono uppercase tracking-[0.12em] text-[var(--faint)]">
+              Or paste into Claude Code, Codex, Cursor, or Antigravity
             </p>
             <button
               type="button"
               aria-label="Copy the line to paste into your coding agent"
               onClick={() => handleCopy(AGENT_LINE, "agent")}
-              className="group w-full flex items-start gap-3 bg-[#0d1117] border border-white/10 hover:border-white/20 p-3 rounded-lg text-left transition-colors"
+              className="group w-full flex items-center gap-3 bg-[var(--surface)] border border-[var(--line-strong)] hover:border-[var(--ink)] px-4 py-3 rounded-xl text-left transition-colors cursor-pointer"
             >
-              <Terminal className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5" />
-              <code className="text-[#e6edf3] font-mono text-sm flex-1 break-words">{AGENT_LINE}</code>
-              {copied === "agent" ? (
-                <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-              ) : (
-                <Copy className="w-4 h-4 text-white/40 flex-shrink-0 mt-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
-              )}
+              <Terminal className="w-4 h-4 text-[var(--faint)] flex-shrink-0" />
+              <code className="text-[var(--ink)] font-mono text-xs md:text-sm flex-1 break-words">
+                {AGENT_LINE}
+              </code>
+              <span className="inline-flex items-center gap-1 text-xs font-mono text-[var(--soft)] group-hover:text-[var(--ink)] flex-shrink-0">
+                {copied === "agent" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{copied === "agent" ? "Copied" : "Copy"}</span>
+              </span>
             </button>
           </div>
 
-          {/* Quick shortcuts */}
-          <div className="flex flex-wrap justify-center gap-2 text-sm">
+          {/* Per-tool shortcuts */}
+          <div className="flex flex-wrap justify-center gap-2">
             {[
-              { path: "/cli", label: "CLI Only" },
-              { path: "/node", label: "Node" },
-              { path: "/zt", label: "ZT" },
-              { path: "/gen", label: "Gen" },
-              { path: "/mcp", label: "MCP Server" },
-              { path: "/cloud", label: "Cloud" },
+              { path: "/cli", label: "hanzo.sh/cli" },
+              { path: "/node", label: "hanzo.sh/node" },
+              { path: "/zt", label: "hanzo.sh/zt" },
+              { path: "/gen", label: "hanzo.sh/gen" },
+              { path: "/dev", label: "hanzo.sh/dev" },
+              { path: "/mcp", label: "hanzo.sh/mcp" },
+              { path: "/cloud", label: "hanzo.sh/cloud" },
             ].map((shortcut) => (
               <button
                 key={shortcut.path}
-                onClick={() => handleCopy(`curl -fsSL hanzo.sh${shortcut.path} | sh`, shortcut.path)}
-                className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-colors font-mono text-xs"
+                type="button"
+                onClick={() => handleCopy(`curl -fsSL https://hanzo.sh${shortcut.path} | sh`, shortcut.path)}
+                className="px-3 py-1.5 rounded-full bg-[var(--bg)] border border-[var(--line-strong)] hover:border-[var(--ink)] text-[var(--soft)] hover:text-[var(--ink)] transition-colors font-mono text-xs cursor-pointer"
               >
-                hanzo.sh{shortcut.path}
-                {copied === shortcut.path && <Check className="w-3 h-3 text-green-400 inline ml-1" />}
+                {shortcut.label}
+                {copied === shortcut.path && <Check className="w-3 h-3 inline ml-1.5" />}
               </button>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* What gets installed */}
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-6 py-16 space-y-16">
+        {/* What gets installed */}
+        <section className="space-y-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-xl font-semibold tracking-[-0.025em]">Included native binaries</h2>
+            <a
+              href="https://github.com/hanzoai/cli"
+              className="text-xs font-mono text-[var(--soft)] hover:text-[var(--ink)] underline underline-offset-4"
+            >
+              Build from source →
+            </a>
+          </div>
           <div className="grid md:grid-cols-2 gap-3">
-            {[
-              {
-                bin: "hanzo",
-                also: "hanzo-cli",
-                desc: "The Hanzo CLI \u2014 auth, billing, coding sessions, and every product of the Hanzo cloud.",
-                href: "https://github.com/hanzoai/cli",
-                icon: <Cpu className="w-4 h-4 text-orange-400" />,
-                tint: "bg-orange-500/10",
-              },
-              {
-                bin: "hanzod",
-                also: "hanzo-node",
-                desc: "Hanzo Node \u2014 the L1 network validator, consensus mesh and JSON-RPC node.",
-                href: "https://github.com/hanzoai/node",
-                icon: <Globe className="w-4 h-4 text-emerald-400" />,
-                tint: "bg-emerald-500/10",
-              },
-              {
-                bin: "hanzozt",
-                also: "zt",
-                desc: "ZT \u2014 zero-trust networking, tunnels, controller and router.",
-                href: "https://github.com/hanzozt/zt",
-                icon: <Cpu className="w-4 h-4 text-blue-400" />,
-                tint: "bg-blue-500/10",
-              },
-              {
-                bin: "hanzo-gen",
-                also: "gen",
-                desc: "Hanzo Gen \u2014 the native coding harness.",
-                href: "https://github.com/hanzoai/gen",
-                icon: <Code className="w-4 h-4 text-purple-400" />,
-                tint: "bg-purple-500/10",
-              },
-              {
-                bin: "hanzo-mcp",
-                also: "mcp",
-                desc: "The MCP server \u2014 the Hanzo toolset, for any MCP client.",
-                href: "https://github.com/hanzoai/mcp",
-                icon: <Package className="w-4 h-4 text-green-400" />,
-                tint: "bg-green-500/10",
-              },
-              {
-                bin: "hanzo-cloud",
-                also: "cloud",
-                desc: "Hanzo Cloud \u2014 self-hosted AI gateway, encrypted KMS, IAM and chat UI in one binary.",
-                href: "https://github.com/hanzoai/cloud",
-                icon: <Globe className="w-4 h-4 text-rose-400" />,
-                tint: "bg-rose-500/10",
-              },
-            ].map((t) => (
-              <div key={t.bin} className="bg-white/[0.02] border border-white/10 rounded-xl p-5">
-                <div className="flex items-center gap-2.5 mb-3">
-                  <div className={`w-8 h-8 rounded-lg ${t.tint} flex items-center justify-center`}>
-                    {t.icon}
+            {TOOLS.map((t) => {
+              const Icon = t.icon;
+              return (
+                <div
+                  key={t.bin}
+                  className="bg-[var(--surface)] border border-[var(--line)] hover:border-[var(--line-strong)] rounded-2xl p-5 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--surface-2)] border border-[var(--line)] flex items-center justify-center text-[var(--ink)]">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <h3 className="font-mono font-medium text-sm text-[var(--ink)]">{t.bin}</h3>
+                    </div>
+                    <a
+                      href={t.href}
+                      className="text-xs font-mono text-[var(--faint)] hover:text-[var(--ink)] transition-colors"
+                    >
+                      source →
+                    </a>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-white text-sm font-mono">{t.bin}</h3>
-                    <a href={t.href} className="text-xs text-white/40 hover:text-white/60">source →</a>
-                  </div>
+                  <p className="text-sm text-[var(--soft)] leading-relaxed mb-3">{t.desc}</p>
+                  {t.also && (
+                    <p className="text-xs text-[var(--faint)] font-mono">
+                      alias: <code className="text-[var(--soft)]">{t.also}</code>
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-white/50 mb-3">{t.desc}</p>
-                {t.also && (
-                  <p className="text-[11px] text-white/30">
-                    alias: <code className="text-white/50">{t.also}</code>
-                  </p>
-                )}
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Desktop Apps */}
+        <section className="space-y-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Laptop className="w-4 h-4 text-[var(--soft)]" />
+              <h2 className="text-xl font-semibold tracking-[-0.025em]">Desktop applications</h2>
+            </div>
+            <span className="text-xs font-mono text-[var(--faint)]">macOS · Windows · Linux</span>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {DESKTOP_APPS.map((app) => (
+              <div
+                key={app.name}
+                className="bg-[var(--surface)] border border-[var(--line)] hover:border-[var(--line-strong)] rounded-2xl p-5 flex flex-col justify-between gap-4 transition-colors"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <h3 className="font-semibold text-sm text-[var(--ink)]">{app.name}</h3>
+                    <span className="text-xs font-mono text-[var(--faint)]">{app.domain}</span>
+                  </div>
+                  <p className="text-sm text-[var(--soft)] leading-relaxed">{app.desc}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={app.winUrl}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--solid-bg)] text-[var(--solid-ink)] hover:bg-[var(--solid-hover)] text-xs font-medium transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download
+                  </a>
+                  <a
+                    href={app.allUrl}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-[var(--line-strong)] text-[var(--soft)] hover:text-[var(--ink)] hover:border-[var(--ink)] text-xs transition-colors"
+                  >
+                    Releases →
+                  </a>
+                </div>
               </div>
             ))}
           </div>
+        </section>
 
-          {/* Desktop Apps */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
-                <Laptop className="w-4 h-4 text-[#f0506a]" />
-                <span>Desktop Apps (Windows x64, macOS, Linux)</span>
+        {/* After install */}
+        <section className="hz-term rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-mono uppercase tracking-[0.12em] text-white/60">After install</h2>
+            <span className="text-xs font-mono text-white/40">~/.local/bin</span>
+          </div>
+          <div className="font-mono text-sm space-y-2.5">
+            {[
+              { cmd: "hanzo", desc: "Sign in, pick your coding agent, launch it" },
+              { cmd: "hanzo doctor --verify", desc: "Verify installed binaries against GitHub Release checksums" },
+              { cmd: "hanzo dev --claude", desc: "Switch agent: --claude, --codex, --cursor, --agy" },
+              { cmd: "hanzo -- -c", desc: "Continue the last conversation" },
+              { cmd: "hanzo up", desc: "Run the local cloud on this machine" },
+              { cmd: "hanzo-mcp", desc: "Run the MCP server" },
+            ].map((line, i) => (
+              <div key={i} className="flex items-center gap-3 text-white/95">
+                <span className="text-white/35 select-none w-4">$</span>
+                <span className="flex-1 overflow-x-auto">{line.cmd}</span>
+                <span className="text-white/45 text-xs hidden md:block">{line.desc}</span>
               </div>
-              <span className="text-xs text-white/40">Native installers</span>
-            </div>
-            <div className="grid md:grid-cols-2 gap-3">
-              {DESKTOP_APPS.map((app) => (
-                <div key={app.name} className="bg-white/[0.02] border border-white/10 rounded-xl p-5 flex flex-col justify-between gap-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <h3 className="font-medium text-white text-sm">{app.name}</h3>
-                      <span className="text-xs font-mono text-white/40">{app.domain}</span>
-                    </div>
-                    <p className="text-xs text-white/50">{app.desc}</p>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <a
-                      href={app.winUrl}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-medium hover:bg-white/90 transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Download
-                    </a>
-                    <a
-                      href={app.allUrl}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-white/15 text-white/60 hover:text-white text-xs transition-colors"
-                    >
-                      All platforms →
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
+        </section>
 
-          {/* After install */}
-          <div className="bg-[#0d1117] border border-white/10 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-white/60 mb-3">After install</h2>
-            <div className="font-mono text-sm space-y-2">
-              {[
-                { cmd: "hanzo", desc: "Sign in, pick your coding agent, launch it" },
-                { cmd: "hanzo dev --claude", desc: "Switch agent: --claude, --codex, --cursor, --agy" },
-                { cmd: "hanzo -- -c", desc: "Continue the last conversation" },
-                { cmd: "hanzo up", desc: "Run the cloud on this machine" },
-                { cmd: "hanzo --help", desc: "Every command" },
-                { cmd: "hanzo-mcp", desc: "Run the MCP server" },
-              ].map((line, i) => (
-                <div key={i} className="flex items-center gap-3 text-[#e6edf3]">
-                  <span className="text-white/30 select-none w-4">$</span>
-                  <span className="flex-1">{line.cmd}</span>
-                  <span className="text-white/30 text-xs hidden md:block">{line.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Continuity: hanzo.sh -> Hanzo University (L1-L9) -> hanzo.market & sensei.group */}
-          <div className="bg-white/[0.02] border border-white/10 rounded-xl p-5 space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <h2 className="text-sm font-medium text-white">Continue from CLI to Credentials &amp; Marketplace</h2>
-              <span className="text-xs font-mono text-white/40">One Hanzo IAM session across every surface</span>
-            </div>
-            <div className="grid md:grid-cols-3 gap-3 text-xs">
-              <a
-                href="https://hanzo.ai/university"
-                className="block rounded-lg border border-white/10 bg-[#0d1117] p-4 hover:border-white/25 transition-colors"
-              >
-                <div className="font-mono text-white/40 mb-1">1 · hanzo.university</div>
-                <div className="font-medium text-white mb-1">Start Free L1–L3 Track →</div>
-                <p className="text-white/50">
-                  Run labs locally with your CLI and Zen 6, track L1–L9 progress, and mint Chain 36963 credentials.
-                </p>
-              </a>
-              <a
-                href="https://sensei.group"
-                className="block rounded-lg border border-white/10 bg-[#0d1117] p-4 hover:border-white/25 transition-colors"
-              >
-                <div className="font-mono text-white/40 mb-1">2 · sensei.group</div>
-                <div className="font-medium text-white mb-1">Unlock L3–L9 Sensei Roster →</div>
-                <p className="text-white/50">
-                  Passing L3 unlocks verified human Sensei eligibility for enterprise and agent-escalated work.
-                </p>
-              </a>
-              <a
-                href="https://hanzo.market"
-                className="block rounded-lg border border-white/10 bg-[#0d1117] p-4 hover:border-white/25 transition-colors"
-              >
-                <div className="font-mono text-white/40 mb-1">3 · hanzo.market</div>
-                <div className="font-medium text-white mb-1">Apply, Deliver &amp; Settle →</div>
-                <p className="text-white/50">
-                  Complete org clearance at /sell, claim escrowed jobs, deliver verified work, and track payouts.
-                </p>
-              </a>
-            </div>
-          </div>
-
-          {/* Resources */}
-          <div className="flex flex-wrap justify-center gap-3">
-            <a
-              href="https://hanzo.ai/university"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-medium text-sm hover:bg-white/90 transition-colors"
-            >
-              <BookOpen className="w-4 h-4" />
-              Hanzo University (L1–L9)
-            </a>
-            <a
-              href="https://hanzo.market"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
-            >
-              <Package className="w-4 h-4" />
-              Hanzo Market
-            </a>
-            <a
-              href="https://sensei.group"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
-            >
-              <Globe className="w-4 h-4" />
-              Sensei Group
-            </a>
-            <a
-              href="https://hanzo.ai/bounty"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
-            >
-              <Zap className="w-4 h-4" />
-              Open Bounties
-            </a>
-            <a
-              href="https://docs.hanzo.ai"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white font-medium text-sm hover:bg-white/5 transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Documentation
-            </a>
-          </div>
-        </div>
+        {/* Resources */}
+        <section className="flex flex-wrap justify-center gap-2.5">
+          <a
+            href="https://hanzo.ai/download"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--solid-bg)] text-[var(--solid-ink)] hover:bg-[var(--solid-hover)] font-medium text-sm transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            All Downloads
+          </a>
+          <a
+            href="https://hanzoskills.com"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--line-strong)] text-[var(--ink)] hover:border-[var(--ink)] font-medium text-sm transition-colors"
+          >
+            <BookOpen className="w-4 h-4" />
+            Hanzo Skills
+          </a>
+          <a
+            href="https://docs.hanzo.ai"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--line-strong)] text-[var(--ink)] hover:border-[var(--ink)] font-medium text-sm transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Documentation
+          </a>
+          <a
+            href="https://hanzo.ai/security"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[var(--line-strong)] text-[var(--ink)] hover:border-[var(--ink)] font-medium text-sm transition-colors"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            Security
+          </a>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-6 px-6">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/40">
+      {/* Footer — mirrors hanzo.ai */}
+      <footer className="border-t border-[var(--line)] py-8 px-6">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--soft)]">
           <div className="flex items-center gap-2">
-            <HanzoLogo className="w-4 h-4" />
+            <HanzoLogo className="w-4 h-4 text-[var(--ink)]" />
             <span>© {new Date().getFullYear()} Hanzo AI, Inc.</span>
           </div>
-          <div className="flex items-center gap-4">
-            <a href="https://hanzo.ai/privacy" className="hover:text-white transition-colors">Privacy</a>
-            <a href="https://hanzo.ai/terms" className="hover:text-white transition-colors">Terms</a>
-            <a href="https://status.hanzo.ai" className="hover:text-white transition-colors">Status</a>
-            <a href="https://github.com/hanzoai" className="hover:text-white transition-colors">GitHub</a>
+          <div className="flex items-center gap-5">
+            <a href="https://hanzo.ai/security" className="hover:text-[var(--ink)] transition-colors">Security</a>
+            <a href="https://hanzo.ai/privacy" className="hover:text-[var(--ink)] transition-colors">Privacy</a>
+            <a href="https://hanzo.ai/terms" className="hover:text-[var(--ink)] transition-colors">Terms</a>
+            <a href="https://status.hanzo.ai" className="hover:text-[var(--ink)] transition-colors">Status</a>
+            <a href="https://github.com/hanzoai" className="hover:text-[var(--ink)] transition-colors">GitHub</a>
           </div>
         </div>
       </footer>

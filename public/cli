@@ -1,6 +1,6 @@
 #!/bin/sh
 # The Hanzo CLI only.
-#   curl -fsSL hanzo.sh/cli | sh
+#   curl -fsSL https://hanzo.sh/cli | sh
 #
 # Routing only. The installer is the one place that knows which tools ship as a
 # native binary and what to say about the ones that do not.

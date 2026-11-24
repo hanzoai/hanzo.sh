@@ -20,7 +20,7 @@ $Tools = @(
     @{ Name = 'node';   Display = 'hanzod';       Repo = 'hanzoai/node';   Bin = 'hanzod';       Alias = 'hanzo-node' },
     @{ Name = 'zt';     Display = 'hanzozt';      Repo = 'hanzozt/zt';     Bin = 'zt';           Alias = 'hanzozt' },
     @{ Name = 'gen';    Display = 'hanzo-gen';    Repo = 'hanzoai/gen';    Bin = 'gen';          Alias = 'hanzo-gen' },
-    @{ Name = 'dev';    Display = '';             Repo = 'hanzoai/dev-v1'; Bin = 'dev';          Alias = '' },
+    @{ Name = 'dev';    Display = '';             Repo = 'hanzoai/dev';    Bin = 'dev';          Alias = '' },
     @{ Name = 'mcp';    Display = 'hanzo-mcp';    Repo = 'hanzoai/mcp';    Bin = 'hanzo-mcp';    Alias = 'mcp' },
     @{ Name = 'cloud';  Display = 'hanzo-cloud';  Repo = 'hanzoai/cloud';  Bin = 'hanzo-cloud';  Alias = 'cloud' }
 )
